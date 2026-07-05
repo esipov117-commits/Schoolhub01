@@ -1,7 +1,309 @@
-<h2>Регистрация</h2>
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Зарегистрироваться</button>
-</form>
-<p>Уже есть аккаунт? <a href="/accounts/login/">Войти</a></p>
+<!DOCTYPE html>
+<html lang="ru" id="html-root">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Регистрация | SchoolHub</title>
+    <style>
+        :root {
+            --bg: #f4f5f7;
+            --panel: #ffffff;
+            --text: #1c1c1f;
+            --muted: #6b7280;
+            --border: rgba(28, 28, 31, 0.08);
+            --accent: #111827;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: #f4f5f7;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 24px;
+            color: var(--text);
+        }
+        .page { width: min(420px, 100%); }
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 0 4px;
+        }
+        .brand {
+            font-weight: 800;
+            font-size: 22px;
+            letter-spacing: -0.02em;
+            color: var(--text);
+        }
+        .lang-switch {
+            display: flex;
+            gap: 2px;
+            background: #eceef1;
+            border-radius: 999px;
+            padding: 3px;
+        }
+        .lang-btn {
+            border: none;
+            background: transparent;
+            padding: 6px 14px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--muted);
+            cursor: pointer;
+            width: auto;
+            margin: 0;
+            transition: all 0.15s ease;
+        }
+        .lang-btn:hover { background: transparent; color: var(--text); }
+        .lang-btn.active {
+            background: #ffffff;
+            color: var(--text);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .login-card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 36px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.04);
+        }
+        .avatar-placeholder {
+            width: 72px;
+            height: 72px;
+            margin: 0 auto 20px;
+            border-radius: 50%;
+            background: #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .avatar-placeholder svg { width: 36px; height: 36px; color: #9ca3af; }
+        .login-title { text-align: center; margin: 0; font-size: 22px; font-weight: 700; }
+        .subtitle { text-align: center; color: var(--muted); margin: 6px 0 28px; font-size: 14px; }
+
+        form p { margin: 0 0 14px; }
+        form label { display: none; }
+        form input {
+            width: 100%;
+            padding: 13px 16px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            outline: none;
+            font-size: 14px;
+            background: #f9fafb;
+            color: var(--text);
+            transition: border-color 0.15s ease, background 0.15s ease;
+        }
+        form input::placeholder { color: #9ca3af; opacity: 0.85; }
+        form input:focus { border-color: #9ca3af; background: #fff; }
+
+        /* Хелптекст Django (username, пароль) — приводим к единому мелкому серому виду */
+        form .helptext,
+        form ul:not(.errorlist) {
+            display: block;
+            list-style: none;
+            padding: 0;
+            margin: 6px 2px 0;
+            font-size: 12px;
+            line-height: 1.5;
+            color: #9ca3af;
+        }
+        form ul:not(.errorlist) li {
+            margin: 0 0 2px;
+            padding-left: 12px;
+            position: relative;
+        }
+        form ul:not(.errorlist) li::before {
+            content: "–";
+            position: absolute;
+            left: 0;
+            color: #c7cad1;
+        }
+
+        form ul.errorlist {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 6px;
+        }
+        form ul.errorlist li {
+            color: #b91c1c;
+            font-size: 13px;
+            background: #fef2f2;
+            padding: 8px 12px;
+            border-radius: 10px;
+            margin-bottom: 4px;
+        }
+
+        button[type="submit"] {
+            width: 100%;
+            padding: 13px;
+            border: none;
+            border-radius: 12px;
+            background: var(--accent);
+            color: #fff;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: background 0.15s ease;
+        }
+        button[type="submit"]:hover { background: #2b2f38; }
+        .footer { margin-top: 22px; text-align: center; color: var(--muted); font-size: 13px; }
+        .footer a { color: var(--text); font-weight: 600; text-decoration: none; }
+        .footer a:hover { text-decoration: underline; }
+        .copyright { margin-top: 24px; text-align: center; color: #9ca3af; font-size: 12px; }
+    </style>
+</head>
+<body>
+<div class="page">
+    <div class="topbar">
+        <div class="brand">SchoolHub</div>
+        <div class="lang-switch">
+            <button type="button" class="lang-btn active" data-lang="ru" onclick="setLang('ru')">RU</button>
+            <button type="button" class="lang-btn" data-lang="en" onclick="setLang('en')">EN</button>
+        </div>
+    </div>
+    <div class="login-card">
+        <div class="avatar-placeholder">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 12c2.7 0 4.9-2.2 4.9-4.9S14.7 2.2 12 2.2 7.1 4.4 7.1 7.1 9.3 12 12 12zm0 2.4c-3.3 0-9.8 1.6-9.8 4.9v2.4h19.6v-2.4c0-3.3-6.5-4.9-9.8-4.9z"/>
+            </svg>
+        </div>
+        <h1 class="login-title" data-i18n="title">Регистрация</h1>
+        <p class="subtitle" data-i18n="subtitle">Создайте аккаунт SchoolHub</p>
+        <form method="post" id="register-form">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" data-i18n="submit">Зарегистрироваться</button>
+        </form>
+        <div class="footer">
+            <span data-i18n="have_account">Уже есть аккаунт?</span> <a href="/accounts/login/" data-i18n="login">Войти</a>
+        </div>
+    </div>
+    <div class="copyright" data-i18n="copyright">© 2025 SchoolHub. Все права защищены.</div>
+</div>
+
+<script>
+    const translations = {
+        ru: {
+            title: "Регистрация",
+            subtitle: "Создайте аккаунт SchoolHub",
+            submit: "Зарегистрироваться",
+            have_account: "Уже есть аккаунт?",
+            login: "Войти",
+            page_title: "Регистрация | SchoolHub",
+            copyright: "© 2025 SchoolHub. Все права защищены.",
+            placeholders: {
+                username: "Имя пользователя",
+                email: "Электронная почта",
+                password1: "Пароль",
+                password2: "Повторите пароль",
+                first_name: "Имя",
+                last_name: "Фамилия"
+            }
+        },
+        en: {
+            title: "Sign up",
+            subtitle: "Create your SchoolHub account",
+            submit: "Sign up",
+            have_account: "Already have an account?",
+            login: "Log in",
+            page_title: "Sign up | SchoolHub",
+            copyright: "© 2025 SchoolHub. All rights reserved.",
+            placeholders: {
+                username: "Username",
+                email: "Email address",
+                password1: "Password",
+                password2: "Confirm password",
+                first_name: "First name",
+                last_name: "Last name"
+            }
+        }
+    };
+
+    // Точечный перевод стандартных фраз Django (help text и ошибки валидации пароля/логина).
+    // Ключ — часть оригинальной английской фразы, значение — русский перевод.
+    // Сопоставление идёт по вхождению подстроки, регистр не важен.
+    const phraseTranslations = [
+        ["150 characters or fewer", "Не более 150 символов. Только буквы, цифры и символы @/./+/-/_"],
+        ["too similar to your other personal information", "Пароль не должен быть слишком похож на ваши личные данные"],
+        ["must contain at least 8 characters", "Пароль должен содержать не менее 8 символов"],
+        ["can’t be a commonly used password", "Пароль не должен быть слишком простым или распространённым"],
+        ["can't be a commonly used password", "Пароль не должен быть слишком простым или распространённым"],
+        ["can’t be entirely numeric", "Пароль не должен состоять только из цифр"],
+        ["can't be entirely numeric", "Пароль не должен состоять только из цифр"],
+        ["Enter the same password as before, for verification", "Введите тот же пароль ещё раз для подтверждения"],
+        ["This password is too short", "Пароль слишком короткий. Минимум 8 символов"],
+        ["This password is too common", "Этот пароль слишком распространён"],
+        ["This password is entirely numeric", "Пароль не может состоять только из цифр"],
+        ["The two password fields didn’t match", "Пароли не совпадают"],
+        ["The two password fields didn't match", "Пароли не совпадают"],
+        ["A user with that username already exists", "Пользователь с таким именем уже существует"],
+        ["This field is required", "Это поле обязательно для заполнения"]
+    ];
+
+    // Проходит по всем текстовым узлам внутри формы и переводит известные фразы.
+    // Работает независимо от того, в каком теге Django вывел текст (span, li, p и т.д.)
+    function translateKnownPhrases() {
+        const form = document.getElementById('register-form');
+        const walker = document.createTreeWalker(form, NodeFilter.SHOW_TEXT, null);
+        const nodes = [];
+        let node;
+        while ((node = walker.nextNode())) {
+            nodes.push(node);
+        }
+        nodes.forEach(textNode => {
+            let value = textNode.nodeValue;
+            let changed = false;
+            phraseTranslations.forEach(([en, ru]) => {
+                if (value.toLowerCase().includes(en.toLowerCase())) {
+                    value = ru;
+                    changed = true;
+                }
+            });
+            if (changed) {
+                textNode.nodeValue = value;
+            }
+        });
+    }
+
+    function setLang(lang) {
+        const dict = translations[lang];
+        if (!dict) return;
+
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (dict[key] !== undefined) el.textContent = dict[key];
+        });
+
+        document.getElementById('page-title').textContent = dict.page_title;
+        document.getElementById('html-root').setAttribute('lang', lang);
+
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
+        });
+
+        const form = document.getElementById('register-form');
+        form.querySelectorAll('input').forEach(input => {
+            const fieldName = input.getAttribute('name');
+            if (dict.placeholders[fieldName]) {
+                input.placeholder = dict.placeholders[fieldName];
+            }
+        });
+
+        localStorage.setItem('preferredLang', lang);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        translateKnownPhrases();
+        const saved = localStorage.getItem('preferredLang') || 'ru';
+        setLang(saved);
+    });
+</script>
+</body>
+</html>
