@@ -1,0 +1,18 @@
+<h2>FEED</h2>
+
+<form method="POST">
+    {% csrf_token %}
+    <textarea name="content" placeholder="What's on your mind?"></textarea>
+    <button type="submit">Post</button>
+</form>
+
+<hr>
+
+{% for post in posts %}
+    <div>
+        <strong>{{ post.author.username }}</strong> - {{ post.created.at }}
+        <p> {{ post.content }}</p>
+    </div>
+    <hr>
+{% endfor %}
+
