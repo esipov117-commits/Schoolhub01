@@ -1,25 +1,25 @@
-<h1>SchoolHub</h1>
+{% extends "base.html" %}
+{% block title %}Главная — SchoolHub{% endblock %}
 
-{% if user.is_authenticated %}
-    <nav>
-        <a href="/feed/">Лента</a> |
-        <a href="/schedule/">Расписание</a> |
-        <a href="/accounts/logout/">Выйти</a>
-    </nav>
-
-    <h2>Привет, {{ user.username }}! 👋</h2>
-
-    <h3>Последние посты в ленте:</h3>
-    {% for post in recent_posts %}
-        <div>
-            <strong>{{ post.author.username }}</strong>
-            <p>{{ post.content }}</p>
+{% block content %}
+    {% if user.is_authenticated %}
+        <div class="card">
+            <p>Привет, {{ user.username }} 👋</p>
         </div>
-    {% empty %}
-        <p>Пока постов нет. <a href="/feed/">Напишите первый!</a></p>
-    {% endfor %}
 
-{% else %}
-    <p>Добро пожаловать в школьную соцсеть!</p>
-    <p><a href="/accounts/login/">Войти</a> или <a href="/register/">Зарегистрироваться</a></p>
-{% endif %}
+        <h3 style="margin-bottom: 12px;">Последние посты в ленте:</h3>
+        {% for post in recent_posts %}
+        <div class="card">
+            <div class="post-author">{{ post.author.username }}</div>
+            <div class="post-content">{{ post.content }}</div>
+        </div>
+        {% empty %}
+        <div class="card">Пока постов нет. <a href="/feed/">Напишите первый!</a></div>
+        {% endfor %}
+    {% else %}
+        <div class="card">
+            <h2>Добро пожаловать в SchoolHub!</h2>
+            <p><a href="/accounts/login/">Войти</a> или <a href="/register/">Зарегистрироваться</a></p>
+        </div>
+    {% endif %}
+{% endblock %}

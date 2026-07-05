@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Профиль — SchoolHub{% endblock %}
+
+{% block content %}
+    <div class="card" style="display:flex; align-items:center; gap:16px;">
+        {% if profile.avatar %}
+            <img src="{{ profile.avatar.url }}" style="width:80px; height:80px; border-radius:50%; object-fit:cover;">
+        {% else %}
+            <div style="width:80px; height:80px; border-radius:50%; background:#ddd;"></div>
+        {% endif %}
+        <div>
+            <h2>
+                {{ profile.display_name|default:user.username }}
+                {% if profile.is_verified %}
+                    <span style="color:#3182ce; font-size:14px;">✔ Верифицирован</span>
+                {% endif %}
+            </h2>
+            <p>{{ profile.group_name|default:"Группа не указана" }}</p>
+        </div>
+    </div>
+
+    <h3 style="margin-bottom: 12px;">Посты пользователя</h3>
+    {% for post in user_posts %}
+    <div class="card">
+        <div>{{ post.content }}</div>
+    </div>
+    {% empty %}
+    <div class="card">Пока нет постов.</div>
+    {% endfor %}
+{% endblock %}
