@@ -6,28 +6,101 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: -apple-system, Arial, sans-serif; background: #f5f6f8; color: #1a1a1a; }
-        .topbar { background: white; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; }
-        .topbar h1 { font-size: 20px; }
-        .topbar-right { display: flex; align-items: center; gap: 12px; }
-        .layout { display: flex; max-width: 1100px; margin: 24px auto; gap: 20px; }
-        .sidebar { width: 220px; background: white; border-radius: 12px; padding: 16px; height: fit-content; }
-        .sidebar a { display: block; padding: 10px 12px; border-radius: 8px; color: #333; text-decoration: none; margin-bottom: 4px; }
-        .sidebar a:hover { background: #f0f0f0; }
-        .main { flex: 1; }
-        .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+
+        .topbar {
+            background: white;
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+        }
+        .topbar h1 { font-size: 22px; font-weight: 700; }
+        .topbar-right { display: flex; align-items: center; gap: 16px; }
+        .search-box {
+            background: #f5f6f8;
+            border-radius: 8px;
+            padding: 8px 16px;
+            color: #888;
+            width: 300px;
+        }
+
+        .layout {
+            display: flex;
+            max-width: 1200px;
+            margin: 24px auto;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .sidebar {
+            width: 220px;
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+        }
+        .sidebar a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            color: #333;
+            text-decoration: none;
+            margin-bottom: 4px;
+            font-size: 15px;
+        }
+        .sidebar a:hover, .sidebar a.active { background: #f0f0f0; }
+
+        .main { flex: 1; min-width: 0; }
+
+        .rightbar { width: 260px; }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .post-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
         .post-author { font-weight: 600; }
-        .post-content { margin-top: 8px; color: #333; }
-        .avatar-small { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; background: #ddd; display: inline-block; }
-        textarea { width: 100%; border: 1px solid #ddd; border-radius: 8px; padding: 10px; resize: vertical; min-height: 60px; font-family: inherit; }
-        button { background: #4a5568; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; margin-top: 8px; }
+        .post-date { color: #888; font-size: 13px; }
+        .post-content { color: #333; margin-bottom: 10px; }
+        .post-actions { display: flex; gap: 20px; color: #888; font-size: 14px; }
+
+        .avatar-small { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; background: #ddd; flex-shrink: 0; }
+        .avatar-medium { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; background: #ddd; flex-shrink: 0; }
+        .avatar-large { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; background: #ddd; flex-shrink: 0; }
+
+        .profile-card { text-align: center; }
+
+        textarea {
+            width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            resize: vertical;
+            min-height: 50px;
+            font-family: inherit;
+        }
+        button {
+            background: #4a5568;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
+
 <div class="topbar">
     <h1>SchoolHub</h1>
+    <div class="search-box">Поиск</div>
     {% if user.is_authenticated %}
     <div class="topbar-right">
-        {{ user.username }}
         <a href="/profile/">
             {% if user.profile.avatar %}
                 <img src="{{ user.profile.avatar.url }}" class="avatar-small">
@@ -35,24 +108,42 @@
                 <div class="avatar-small"></div>
             {% endif %}
         </a>
-        <a href="/accounts/logout/">Выйти</a>
+        <span>{{ user.username }}</span>
+        <a href="/accounts/logout/" style="color:#888; text-decoration:none; font-size:14px;">Выйти</a>
     </div>
     {% endif %}
 </div>
+
 <div class="layout">
     {% if user.is_authenticated %}
     <div class="sidebar">
         <a href="/">Главная</a>
         <a href="/feed/">Лента</a>
-        <a href="/profile/">Профиль</a>
-        <a href="/schedule/">Расписание</a>
         <a href="#">Чат</a>
+        <a href="/schedule/">Расписание</a>
+        <a href="/profile/">Профиль</a>
     </div>
     {% endif %}
+
     <div class="main">
         {% block content %}
         {% endblock %}
     </div>
+
+    {% if user.is_authenticated %}
+    <div class="rightbar">
+        <div class="card profile-card">
+            {% if user.profile.avatar %}
+                <img src="{{ user.profile.avatar.url }}" class="avatar-large" style="margin:0 auto;">
+            {% else %}
+                <div class="avatar-large" style="margin:0 auto;"></div>
+            {% endif %}
+            <h3 style="margin-top:10px;">{{ user.profile.display_name|default:user.username }}</h3>
+            <p style="color:#888; font-size:14px;">{{ user.profile.group_name|default:"Группа не указана" }}</p>
+        </div>
+    </div>
+    {% endif %}
 </div>
+
 </body>
 </html>

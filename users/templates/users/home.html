@@ -4,17 +4,35 @@
 {% block content %}
     {% if user.is_authenticated %}
         <div class="card">
-            <p>Привет, {{ user.username }} 👋</p>
+            <form method="POST" action="/feed/">
+                {% csrf_token %}
+                <textarea name="content" placeholder="Что нового, {{ user.username }}?"></textarea>
+                <br><br>
+                <button type="submit">Опубликовать</button>
+            </form>
         </div>
 
-        <h3 style="margin-bottom: 12px;">Последние посты в ленте:</h3>
         {% for post in recent_posts %}
         <div class="card">
-            <div class="post-author">{{ post.author.username }}</div>
+            <div class="post-header">
+                {% if post.author.profile.avatar %}
+                    <img src="{{ post.author.profile.avatar.url }}" class="avatar-medium">
+                {% else %}
+                    <div class="avatar-medium"></div>
+                {% endif %}
+                <div>
+                    <div class="post-author">{{ post.author.username }}</div>
+                    <div class="post-date">{{ post.created_at }}</div>
+                </div>
+            </div>
             <div class="post-content">{{ post.content }}</div>
+            <div class="post-actions">
+                <span>0</span>
+                <span>0</span>
+            </div>
         </div>
         {% empty %}
-        <div class="card">Пока постов нет. <a href="/feed/">Напишите первый!</a></div>
+        <div class="card">Пока постов нет. Напишите первый!</div>
         {% endfor %}
     {% else %}
         <div class="card">

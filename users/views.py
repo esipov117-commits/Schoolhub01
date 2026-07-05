@@ -31,3 +31,30 @@ def profile(request):
         'profile': profile_obj,
         'user_posts': user_posts,
     })
+
+
+#добавлять аватар
+
+from django.contrib.auth.decorators import login_required
+from .models import Profile
+from posts.models import Post
+
+
+@login_required
+def edit_profile(request):
+    profile_obj, created = Profile.objects.get_or_create(user=request.user)
+    
+    if request.method == 'POST':
+        display_name = request.POST.get('display_name')
+        group_name = request.POST.get('group_name')
+        avatar = request.FILES.get('avatar')
+        
+        profile_obj.display_name = display_name
+        profile_obj.group_name = group_name
+        if avatar:
+            profile_obj.avatar = avatar
+        profile_obj.save()
+        
+        return redirect('profile')
+    
+    return render(request, 'users/edit_profile.html', {'profile': profile_obj})
