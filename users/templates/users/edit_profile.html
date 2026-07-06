@@ -1,0 +1,10 @@
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <input type="text" name="display_name" placeholder="Имя">
+    <input type="text" name="group_name" placeholder="Класс">
+
+    <input type="file" name="avatar">
+
+    <button type="submit">Сохранить</button>
+</form>
