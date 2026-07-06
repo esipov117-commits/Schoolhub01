@@ -17,11 +17,12 @@ def register(request):
 
 
 def home(request):
-    if request.user.is_authenticated:
-        Profile.objects.get_or_create(user=request.user)
+    if not request.user.is_authenticated:
+        return redirect('register')
+    
+    Profile.objects.get_or_create(user=request.user)
     recent_posts = Post.objects.all()[:3]
     return render(request, 'users/home.html', {'recent_posts': recent_posts})
-
 
 @login_required
 def profile(request):
