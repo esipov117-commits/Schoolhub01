@@ -1,130 +1,320 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <title>{% block title %}SchoolHub{% endblock %}</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, Arial, sans-serif; background: #f5f6f8; color: #1a1a1a; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}SchoolHub{% endblock %}</title>
+<style>
+    :root {
+        --bg: #f7f7f8;
+        --panel: #ffffff;
+        --text: #1c1c1f;
+        --muted: #8b8f98;
+        --border: #eceef1;
+        --accent: #6b7480;
+        --accent-hover: #565f6a;
+        --sidebar-active-bg: #f1f2f4;
+        --online-dot: #3fb950;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+    }
+    a { color: inherit; }
 
-        .topbar {
-            background: white;
-            padding: 16px 32px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #eee;
-        }
-        .topbar h1 { font-size: 22px; font-weight: 700; }
-        .topbar-right { display: flex; align-items: center; gap: 16px; }
-        .search-box {
-            background: #f5f6f8;
-            border-radius: 8px;
-            padding: 8px 16px;
-            color: #888;
-            width: 300px;
-        }
+    /* ---------- Верхняя панель ---------- */
+    .topbar {
+        background: var(--panel);
+        padding: 16px 32px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid var(--border);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    .topbar h1 {
+        font-size: 22px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+    }
+    .topbar-right { display: flex; align-items: center; gap: 22px; }
 
-        .layout {
-            display: flex;
-            max-width: 1200px;
-            margin: 24px auto;
-            gap: 20px;
-            align-items: flex-start;
-        }
+    .search-box {
+        background: var(--bg);
+        border-radius: 10px;
+        padding: 9px 14px;
+        color: var(--muted);
+        width: 300px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 14px;
+    }
+    .search-box svg { width: 17px; height: 17px; flex-shrink: 0; }
 
-        .sidebar {
-            width: 220px;
-            background: white;
-            border-radius: 12px;
-            padding: 16px;
-        }
-        .sidebar a {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 12px;
-            border-radius: 8px;
-            color: #333;
-            text-decoration: none;
-            margin-bottom: 4px;
-            font-size: 15px;
-        }
-        .sidebar a:hover, .sidebar a.active { background: #f0f0f0; }
+    .icon-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2px;
+    }
+    .icon-btn svg { width: 21px; height: 21px; }
 
-        .main { flex: 1; min-width: 0; }
+    .user-menu { position: relative; }
+    .user-chip {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 10px;
+    }
+    .user-chip:hover { background: var(--bg); }
+    .user-chip-name { font-size: 14.5px; font-weight: 600; }
+    .user-chip svg.chevron { width: 15px; height: 15px; color: var(--muted); }
 
-        .rightbar { width: 260px; }
+    .user-dropdown {
+        position: absolute;
+        right: 0;
+        top: calc(100% + 8px);
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        min-width: 160px;
+        padding: 6px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        display: none;
+        flex-direction: column;
+    }
+    .user-menu:hover .user-dropdown,
+    .user-menu:focus-within .user-dropdown { display: flex; }
+    .user-dropdown a, .user-dropdown button {
+        display: block;
+        width: 100%;
+        text-align: left;
+        padding: 9px 10px;
+        border-radius: 8px;
+        border: none;
+        background: none;
+        font-family: inherit;
+        font-size: 14px;
+        cursor: pointer;
+        text-decoration: none;
+        color: var(--text);
+    }
+    .user-dropdown a:hover, .user-dropdown button:hover { background: var(--bg); }
 
-        .card {
-            background: white;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 16px;
-        }
+    /* ---------- Общая раскладка ---------- */
+    .layout {
+        display: grid;
+        grid-template-columns: 240px 1fr 280px;
+        max-width: 1280px;
+        margin: 24px auto;
+        gap: 20px;
+        align-items: start;
+        padding: 0 24px;
+    }
 
-        .post-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-        .post-author { font-weight: 600; }
-        .post-date { color: #888; font-size: 13px; }
-        .post-content { color: #333; margin-bottom: 10px; }
-        .post-actions { display: flex; gap: 20px; color: #888; font-size: 14px; }
+    /* ---------- Левый сайдбар ---------- */
+    .sidebar {
+        background: var(--panel);
+        border-radius: 16px;
+        padding: 16px;
+        position: sticky;
+        top: 92px;
+    }
+    .sidebar a {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 11px 12px;
+        border-radius: 10px;
+        color: var(--text);
+        text-decoration: none;
+        margin-bottom: 2px;
+        font-size: 15px;
+        font-weight: 500;
+        transition: background 0.15s ease;
+    }
+    .sidebar a svg { width: 19px; height: 19px; flex-shrink: 0; }
+    .sidebar a:hover { background: var(--bg); }
+    .sidebar a.active { background: var(--sidebar-active-bg); font-weight: 700; }
 
-        .avatar-small { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; background: #ddd; flex-shrink: 0; }
-        .avatar-medium { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; background: #ddd; flex-shrink: 0; }
-        .avatar-large { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; background: #ddd; flex-shrink: 0; }
+    /* ---------- Центральная колонка ---------- */
+    .main { min-width: 0; }
 
-        .profile-card { text-align: center; }
+    /* ---------- Правая колонка ---------- */
+    .rightbar { display: flex; flex-direction: column; gap: 16px; position: sticky; top: 92px; }
 
-        textarea {
-            width: 100%;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 10px;
-            resize: vertical;
-            min-height: 50px;
-            font-family: inherit;
-        }
-        button {
-            background: #4a5568;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-    </style>
+    /* ---------- Карточки (общие) ---------- */
+    .card {
+        background: var(--panel);
+        border-radius: 16px;
+        padding: 20px;
+    }
+    .card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 14px;
+    }
+    .card-title { font-weight: 700; font-size: 15px; }
+    .card-link { color: var(--accent); font-size: 13px; font-weight: 600; text-decoration: none; }
+
+    /* ---------- Профиль (правая колонка) ---------- */
+    .profile-card { text-align: center; }
+    .profile-card h3 { margin-top: 10px; font-size: 16px; }
+    .profile-card p { color: var(--muted); font-size: 13.5px; margin-top: 2px; }
+    .profile-stats {
+        display: flex;
+        justify-content: space-between;
+        text-align: center;
+        border-top: 1px solid var(--border);
+        margin-top: 16px;
+        padding-top: 14px;
+    }
+    .profile-stat-value { font-weight: 700; font-size: 16px; }
+    .profile-stat-label { color: var(--muted); font-size: 12px; margin-top: 2px; }
+
+    /* ---------- Аватары ---------- */
+    .avatar {
+        border-radius: 50%;
+        background: #e2e4e8;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #9aa0a8;
+        flex-shrink: 0;
+        overflow: hidden;
+    }
+    .avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .avatar svg { width: 55%; height: 55%; }
+    .avatar-small { width: 32px; height: 32px; }
+    .avatar-medium { width: 44px; height: 44px; }
+    .avatar-large { width: 64px; height: 64px; margin: 0 auto; }
+
+    /* ---------- Посты (используются в лентах) ---------- */
+    .post-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
+    .post-author-block { display: flex; gap: 12px; }
+    .post-author { font-weight: 700; font-size: 15px; }
+    .post-date { color: var(--muted); font-size: 13px; margin-top: 2px; }
+    .post-content { color: var(--text); margin-bottom: 12px; font-size: 15px; line-height: 1.6; }
+    .post-image { width: 100%; border-radius: 12px; display: block; margin-bottom: 12px; background: #f0f1f3; }
+    .post-actions { display: flex; gap: 22px; color: var(--muted); font-size: 14px; }
+    .post-actions button { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 6px; font-family: inherit; }
+    .post-actions svg { width: 17px; height: 17px; }
+
+    /* ---------- Формы (общие) ---------- */
+    textarea, input[type="text"] {
+        width: 100%;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 10px 12px;
+        resize: vertical;
+        min-height: 50px;
+        font-family: inherit;
+        font-size: 14px;
+        outline: none;
+        background: var(--bg);
+    }
+    textarea:focus, input[type="text"]:focus { border-color: #c7cad1; background: #fff; }
+
+    button.btn-primary {
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 700;
+        transition: background 0.15s ease;
+    }
+    button.btn-primary:hover { background: var(--accent-hover); }
+
+    @media (max-width: 980px) {
+        .layout { grid-template-columns: 1fr; }
+        .sidebar, .rightbar { display: none; }
+        .search-box { width: 180px; }
+    }
+</style>
 </head>
 <body>
 
 <div class="topbar">
     <h1>SchoolHub</h1>
-    <div class="search-box">Поиск</div>
+
+    <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        Поиск
+    </div>
+
     {% if user.is_authenticated %}
     <div class="topbar-right">
-        <a href="/profile/">
-            {% if user.profile.avatar %}
-                <img src="{{ user.profile.avatar.url }}" class="avatar-small">
-            {% else %}
-                <div class="avatar-small"></div>
-            {% endif %}
-        </a>
-        <span>{{ user.username }}</span>
-        <form method="post" action="/accounts/logout/" style="display:inline; margin:0;">
-            {% csrf_token %}
-            <button type="submit" style="background:none; border:none; color:#888; cursor:pointer; font-size:14px; padding:0; font-family:inherit;">Выйти</button>
-        </form>
+        <button class="icon-btn" aria-label="Уведомления">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9a6 6 0 0 1 12 0c0 4 1.5 5.5 1.5 5.5H4.5S6 13 6 9z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg>
+        </button>
+        <button class="icon-btn" aria-label="Сообщения">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="5.5" width="17" height="13" rx="2"/><path d="M4 6.5l8 6.5 8-6.5"/></svg>
+        </button>
+
+        <div class="user-menu" tabindex="0">
+            <div class="user-chip">
+                <div class="avatar avatar-small">
+                    {% if user.profile.avatar %}
+                        <img src="{{ user.profile.avatar.url }}" alt="{{ user.username }}">
+                    {% else %}
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.7 0 4.9-2.2 4.9-4.9S14.7 2.2 12 2.2 7.1 4.4 7.1 7.1 9.3 12 12 12zm0 2.4c-3.3 0-9.8 1.6-9.8 4.9v2.4h19.6v-2.4c0-3.3-6.5-4.9-9.8-4.9z"/></svg>
+                    {% endif %}
+                </div>
+                <span class="user-chip-name">{{ user.username }}</span>
+                <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+            </div>
+            <div class="user-dropdown">
+                <a href="/profile/">Профиль</a>
+                <form method="post" action="/accounts/logout/" style="margin:0;">
+                    {% csrf_token %}
+                    <button type="submit">Выйти</button>
+                </form>
+            </div>
+        </div>
     </div>
     {% endif %}
 </div>
 
 <div class="layout">
+
     {% if user.is_authenticated %}
     <div class="sidebar">
-        <a href="/">Главная</a>
-        <a href="/feed/">Лента</a>
-        <a href="#">Чат</a>
-        <a href="/schedule/">Расписание</a>
-        <a href="/profile/">Профиль</a>
+        <a href="/" class="{% block nav_home %}{% endblock %}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v9.5a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"/></svg>
+            Главная
+        </a>
+        <a href="/feed/" class="{% block nav_feed %}{% endblock %}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M7.5 9h9M7.5 12.5h9M7.5 16h5"/></svg>
+            Лента
+        </a>
+        <a href="#" class="{% block nav_chat %}{% endblock %}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5.5h16v10H9l-4 3.5v-3.5H4z"/></svg>
+            Чат
+        </a>
+        <a href="/schedule/" class="{% block nav_schedule %}{% endblock %}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M8 3v3.5M16 3v3.5"/></svg>
+            Расписание
+        </a>
+        <a href="/profile/" class="{% block nav_profile %}{% endblock %}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8.5" r="3.2"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6"/></svg>
+            Профиль
+        </a>
     </div>
     {% endif %}
 
@@ -137,16 +327,37 @@
     <div class="rightbar">
         <div class="card profile-card">
             {% if user.profile.avatar %}
-                <img src="{{ user.profile.avatar.url }}" class="avatar-large" style="margin:0 auto;">
+                <img src="{{ user.profile.avatar.url }}" class="avatar avatar-large">
             {% else %}
-                <div class="avatar-large" style="margin:0 auto;"></div>
+                <div class="avatar avatar-large">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.7 0 4.9-2.2 4.9-4.9S14.7 2.2 12 2.2 7.1 4.4 7.1 7.1 9.3 12 12 12zm0 2.4c-3.3 0-9.8 1.6-9.8 4.9v2.4h19.6v-2.4c0-3.3-6.5-4.9-9.8-4.9z"/></svg>
+                </div>
             {% endif %}
-            <h3 style="margin-top:10px;">{{ user.profile.display_name|default:user.username }}</h3>
-            <p style="color:#888; font-size:14px;">{{ user.profile.group_name|default:"Группа не указана" }}</p>
+            <h3>{{ user.profile.display_name|default:user.username }}</h3>
+            <p>{{ user.profile.group_name|default:"Группа не указана" }}</p>
+
+            {% block profile_stats %}
+            <div class="profile-stats">
+                <div>
+                    <div class="profile-stat-value">{{ stats.posts_count|default:0 }}</div>
+                    <div class="profile-stat-label">Посты</div>
+                </div>
+                <div>
+                    <div class="profile-stat-value">{{ stats.friends_count|default:0 }}</div>
+                    <div class="profile-stat-label">Друзья</div>
+                </div>
+                <div>
+                    <div class="profile-stat-value">{{ stats.groups_count|default:0 }}</div>
+                    <div class="profile-stat-label">Группы</div>
+                </div>
+            </div>
+            {% endblock %}
         </div>
+
+        {% block sidebar_extra %}{% endblock %}
     </div>
     {% endif %}
-</div>
 
+</div>
 </body>
 </html>
