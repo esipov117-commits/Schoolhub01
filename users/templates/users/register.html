@@ -157,6 +157,47 @@
         .footer a { color: var(--text); font-weight: 600; text-decoration: none; }
         .footer a:hover { text-decoration: underline; }
         .copyright { margin-top: 24px; text-align: center; color: #9ca3af; font-size: 12px; }
+
+        /* --- НОВОЕ: глазик для полей пароля --- */
+        .password-wrapper {
+            position: relative;
+        }
+        .password-wrapper input {
+            padding-right: 44px; /* место под иконку */
+        }
+        .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            width: auto;
+            padding: 4px;
+            margin: 0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #9ca3af;
+        }
+        .toggle-password:hover {
+            color: var(--text);
+        }
+        .toggle-password svg {
+            width: 20px;
+            height: 20px;
+        }
+        .toggle-password .icon-eye-off {
+            display: none;
+        }
+        .toggle-password.showing .icon-eye {
+            display: none;
+        }
+        .toggle-password.showing .icon-eye-off {
+            display: block;
+        }
+        /* --- конец нового --- */
     </style>
 </head>
 <body>
@@ -299,8 +340,46 @@
         localStorage.setItem('preferredLang', lang);
     }
 
+    // --- НОВОЕ: добавляем глазик ко всем полям password ---
+    function addPasswordToggles() {
+        const form = document.getElementById('register-form');
+        const passwordInputs = form.querySelectorAll('input[type="password"]');
+
+        passwordInputs.forEach(input => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'password-wrapper';
+            input.parentNode.insertBefore(wrapper, input);
+            wrapper.appendChild(input);
+
+            const toggleBtn = document.createElement('button');
+            toggleBtn.type = 'button';
+            toggleBtn.className = 'toggle-password';
+            toggleBtn.setAttribute('aria-label', 'Показать пароль');
+            toggleBtn.innerHTML = `
+                <svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                </svg>
+                <svg class="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a18.5 18.5 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                    <line x1="1" y1="1" x2="23" y2="23"/>
+                </svg>
+            `;
+
+            toggleBtn.addEventListener('click', () => {
+                const isPassword = input.type === 'password';
+                input.type = isPassword ? 'text' : 'password';
+                toggleBtn.classList.toggle('showing', isPassword);
+            });
+
+            wrapper.appendChild(toggleBtn);
+        });
+    }
+    // --- конец нового ---
+
     document.addEventListener('DOMContentLoaded', () => {
         translateKnownPhrases();
+        addPasswordToggles();
         const saved = localStorage.getItem('preferredLang') || 'ru';
         setLang(saved);
     });
