@@ -21,7 +21,7 @@ def register(request):
 
 def home(request):
     if not request.user.is_authenticated:
-        return redirect('login')
+        return render(request, 'welcome.html')
 
     Profile.objects.get_or_create(user=request.user)
     recent_posts = Post.objects.all()[:3]
