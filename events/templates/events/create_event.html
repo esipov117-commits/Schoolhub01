@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block title %}Новое событие{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <h2 style="margin-bottom: 16px;">Создать событие</h2>
+        <form method="POST">
+            {% csrf_token %}
+            <label>Название:</label><br>
+            <input type="text" name="title" required><br><br>
+
+            <label>Описание:</label><br>
+            <textarea name="description"></textarea><br><br>
+
+            <label>Дата и время:</label><br>
+            <input type="datetime-local" name="date" required><br><br>
+
+            <label>Место:</label><br>
+            <input type="text" name="location"><br><br>
+
+            <button type="submit" class="btn-primary">Создать</button>
+        </form>
+    </div>
+{% endblock %}

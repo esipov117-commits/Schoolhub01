@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block title %}События{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Ближайшие события</div>
+            {% if user.profile.is_organizer %}
+                <a href="{% url 'create_event' %}" class="card-link">+ Добавить событие</a>
+            {% endif %}
+        </div>
+    </div>
+
+    {% for event in events %}
+    <div class="card">
+        <div class="post-author">{{ event.title }}</div>
+        <div class="post-date">{{ event.date }}</div>
+        {% if event.location %}
+            <div class="post-content">📍 {{ event.location }}</div>
+        {% endif %}
+        {% if event.description %}
+            <div class="post-content">{{ event.description }}</div>
+        {% endif %}
+    </div>
+    {% empty %}
+    <div class="card">Пока нет запланированных событий.</div>
+    {% endfor %}
+{% endblock %}
