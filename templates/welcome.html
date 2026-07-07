@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" id="html-root">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SchoolHub — Добро пожаловать</title>
+<title id="page-title">SchoolHub — Добро пожаловать</title>
 <style>
     :root {
         --bg: #f7f7f8;
@@ -11,7 +11,7 @@
         --text: #1c1c1f;
         --muted: #8b8f98;
         --border: #eceef1;
-        --accent: #006eff;
+        --accent: #2563eb;
         --accent-hover: #1d4ed8;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -23,13 +23,38 @@
         display: flex;
         flex-direction: column;
     }
-
     .topbar {
         background: var(--panel);
         padding: 16px 32px;
         border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
     .topbar h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; }
+
+    .lang-switch {
+        display: flex;
+        gap: 2px;
+        background: var(--bg);
+        border-radius: 999px;
+        padding: 3px;
+    }
+    .lang-btn {
+        border: none;
+        background: transparent;
+        padding: 6px 14px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--muted);
+        cursor: pointer;
+    }
+    .lang-btn.active {
+        background: #ffffff;
+        color: var(--text);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
 
     .hero {
         flex: 1;
@@ -53,7 +78,6 @@
         margin-bottom: 32px;
         line-height: 1.6;
     }
-
     .buttons { display: flex; gap: 12px; }
     .btn {
         padding: 12px 28px;
@@ -68,12 +92,6 @@
         color: #fff;
     }
     .btn-primary:hover { background: var(--accent-hover); }
-    .btn-secondary {
-        background: var(--panel);
-        color: var(--text);
-        border: 1px solid var(--border);
-    }
-    .btn-secondary:hover { background: var(--bg); }
 
     .features {
         display: flex;
@@ -97,31 +115,90 @@
 
 <div class="topbar">
     <h1>SchoolHub</h1>
+    <div class="lang-switch">
+        <button type="button" class="lang-btn active" data-lang="ru" onclick="setLang('ru')">RU</button>
+        <button type="button" class="lang-btn" data-lang="en" onclick="setLang('en')">EN</button>
+    </div>
 </div>
 
 <div class="hero">
-    <h2>Добро пожаловать в SchoolHub</h2>
-    <p>Социальная сеть для школьников: лента, чат и календарь событий — всё в одном месте.</p>
+    <h2 data-i18n="title">Добро пожаловать в SchoolHub</h2>
+    <p data-i18n="subtitle">Социальная сеть для школьников: лента, чат и расписание — всё в одном месте.</p>
 
     <div class="buttons">
-        <a href="{% url 'register' %}" class="btn btn-primary">Присоединиться</a>
+        <a href="{% url 'register' %}" class="btn btn-primary" data-i18n="join">Присоединиться</a>
     </div>
 
     <div class="features">
         <div class="feature-card">
-            <h3>📰 Лента</h3>
-            <p>Делитесь новостями с одноклассниками</p>
+            <h3 data-i18n="feature_feed_title">📰 Лента</h3>
+            <p data-i18n="feature_feed_text">Делитесь новостями с одноклассниками</p>
         </div>
         <div class="feature-card">
-            <h3>💬 Чат</h3>
-            <p>Общайтесь в реальном времени</p>
+            <h3 data-i18n="feature_chat_title">💬 Чат</h3>
+            <p data-i18n="feature_chat_text">Общайтесь в реальном времени</p>
         </div>
         <div class="feature-card">
-            <h3>📅 Календарь событий</h3>
-            <p>Не пропустите важные даты и мероприятия</p>
+            <h3 data-i18n="feature_schedule_title">📅 Календарь событий</h3>
+            <p data-i18n="feature_schedule_text">Не пропустите ивенты и важные мероприятия</p>
         </div>
     </div>
 </div>
+
+<script>
+    const translations = {
+        ru: {
+            title: "Добро пожаловать в SchoolHub",
+            subtitle: "Социальная сеть для школьников: лента, чат и расписание — всё в одном месте.",
+            join: "Присоединиться",
+            feature_feed_title: "📰 Лента",
+            feature_feed_text: "Делитесь новостями с одноклассниками",
+            feature_chat_title: "💬 Чат",
+            feature_chat_text: "Общайтесь в реальном времени",
+            feature_schedule_title: "📅 Календарь событий",
+            feature_schedule_text: "Не пропустите ивенты и важные мероприятия",
+            page_title: "SchoolHub — Добро пожаловать"
+        },
+        en: {
+            title: "Welcome to SchoolHub",
+            subtitle: "A social network for students: feed, chat and schedule — all in one place.",
+            join: "Join now",
+            feature_feed_title: "📰 Feed",
+            feature_feed_text: "Share news with your classmates",
+            feature_chat_title: "💬 Chat",
+            feature_chat_text: "Chat in real time",
+            feature_schedule_title: "📅 Schedule",
+            feature_schedule_text: "Always know what event is next",
+            page_title: "SchoolHub — Welcome"
+        }
+    };
+
+    function setLang(lang) {
+        const dict = translations[lang];
+        if (!dict) return;
+
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (dict[key] !== undefined) {
+                el.textContent = dict[key];
+            }
+        });
+
+        document.getElementById('page-title').textContent = dict.page_title;
+        document.getElementById('html-root').setAttribute('lang', lang);
+
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
+        });
+
+        localStorage.setItem('preferredLang', lang);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const saved = localStorage.getItem('preferredLang') || 'ru';
+        setLang(saved);
+    });
+</script>
 
 </body>
 </html>
