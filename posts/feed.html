@@ -1,65 +1,31 @@
 {% extends "base.html" %}
-
-{% block title %}Лента | SchoolHub{% endblock %}
-{% block nav_feed %}active{% endblock %}
-
+{% block title %}Лента — SchoolHub{% endblock %}
 {% block content %}
-<style>
-    .composer-top { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-    .composer-actions { display: flex; align-items: center; justify-content: flex-end; margin-top: 12px; }
-    .feed { display: flex; flex-direction: column; gap: 16px; margin-top: 16px; }
-    .post-menu-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 18px; }
-</style>
+    <h2 style="margin-bottom: 16px;">Лента</h2>
 
-<!-- Композер нового поста -->
-<div class="card">
-    <form method="post" action="{% url 'feed' %}">
-        {% csrf_token %}
-        <div class="composer-top">
-            <div class="avatar avatar-medium">
-                {% if user.profile.avatar %}
-                    <img src="{{ user.profile.avatar.url }}" alt="{{ user.username }}">
-                {% else %}
-                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.7 0 4.9-2.2 4.9-4.9S14.7 2.2 12 2.2 7.1 4.4 7.1 7.1 9.3 12 12 12zm0 2.4c-3.3 0-9.8 1.6-9.8 4.9v2.4h19.6v-2.4c0-3.3-6.5-4.9-9.8-4.9z"/></svg>
-                {% endif %}
-            </div>
-            <input type="text" name="content" placeholder="Что нового, {{ user.username }}?">
-        </div>
-        <div class="composer-actions">
-            <button type="submit" class="btn-primary">Опубликовать</button>
-        </div>
-    </form>
-</div>
-
-<!-- Полная лента всех постов -->
-<div class="feed">
-    {% for post in posts %}
-    <article class="card">
-        <div class="post-header">
-            <div class="post-author-block">
-                <div class="avatar avatar-small">
-                    {% if post.author.profile.avatar %}
-                        <img src="{{ post.author.profile.avatar.url }}" alt="{{ post.author.username }}">
-                    {% else %}
-                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.7 0 4.9-2.2 4.9-4.9S14.7 2.2 12 2.2 7.1 4.4 7.1 7.1 9.3 12 12 12zm0 2.4c-3.3 0-9.8 1.6-9.8 4.9v2.4h19.6v-2.4c0-3.3-6.5-4.9-9.8-4.9z"/></svg>
-                    {% endif %}
-                </div>
-                <div>
-                    <div class="post-author">{{ post.author.get_full_name|default:post.author.username }}</div>
-                    <div class="post-date">{{ post.created_at|timesince }} назад</div>
-                </div>
-            </div>
-            <button class="post-menu-btn">•••</button>
-        </div>
-
-        <p class="post-content">{{ post.content }}</p>
-    </article>
-    {% empty %}
     <div class="card">
-        <p class="post-content" style="color: var(--muted); text-align:center; margin:0;">
-            Пока нет постов. Будь первым, кто напишет что-нибудь!
-        </p>
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <textarea name="content" placeholder="Что нового?"></textarea>
+            <br><br>
+            <input type="file" name="image" accept="image/*">
+            <br><br>
+            <button type="submit" class="btn-primary">Опубликовать</button>
+        </form>
     </div>
+
+    {% for post in posts %}
+    <div class="card">
+        <span class="post-author">{{ post.author.username }}</span>
+        <span style="color:#888; font-size:13px; margin-left:6px;">{{ post.created_at }}</span>
+        {% if post.content %}
+            <div class="post-content">{{ post.content }}</div>
+        {% endif %}
+        {% if post.image %}
+            <img src="{{ post.image.url }}" class="post-image">
+        {% endif %}
+    </div>
+    {% empty %}
+    <div class="card">Пока постов нет. Напишите первый!</div>
     {% endfor %}
-</div>
 {% endblock %}

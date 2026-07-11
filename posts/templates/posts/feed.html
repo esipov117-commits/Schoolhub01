@@ -1,25 +1,56 @@
 {% extends "base.html" %}
 {% block title %}Лента — SchoolHub{% endblock %}
-
 {% block content %}
     <h2 style="margin-bottom: 16px;">Лента</h2>
 
+    <div class="card">
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <textarea name="content" placeholder="Что нового?"></textarea>
+            <br><br>
+            <input type="file" name="image" accept="image/*">
+            <br><br>
+            <button type="submit" class="btn-primary">Опубликовать</button>
+        </form>
+    </div>
+
     {% for post in posts %}
     <div class="card">
-        <span class="post-author">{{ post.author.username }}</span>
-        <span style="color:#888; font-size:13px; margin-left:6px;">{{ post.created_at }}</span>
-        <div class="post-content">{{ post.content }}</div>
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom: 6px;">
+            <a href="{% url 'profile_user' post.author.username %}">
+                {% if post.author.profile.avatar %}
+                    <img src="{{ post.author.profile.avatar.url }}" class="avatar avatar-small">
+                {% else %}
+                    <div class="avatar avatar-small"></div>
+                {% endif %}
+            </a>
+            <a href="{% url 'profile_user' post.author.username %}" style="text-decoration:none; color:inherit;">
+                <span class="post-author">{{ post.author.username }}</span>
+            </a>
+            <span style="color:#888; font-size:13px;">{{ post.created_at }}</span>
+        </div>
+        {% if post.content %}
+            <div class="post-content">{{ post.content }}</div>
+        {% endif %}
+        {% if post.image %}
+            <img src="{{ post.image.url }}" class="post-image">
+        {% endif %}
+
+        <div class="post-actions">
+            <form method="POST" action="{% url 'toggle_like' post.id %}" style="display:inline; margin:0;">
+                {% csrf_token %}
+                <button type="submit" style="background:none; border:none; cursor:pointer; color:inherit; font-family:inherit; font-size:14px; padding:0; display:flex; align-items:center; gap:6px;">
+                    {% if post.id in liked_post_ids %}
+                        ❤️
+                    {% else %}
+                        🤍
+                    {% endif %}
+                    {{ post.likes.count }}
+                </button>
+            </form>
+        </div>
     </div>
     {% empty %}
     <div class="card">Пока постов нет. Напишите первый!</div>
     {% endfor %}
-
-    <div class="card">
-        <form method="POST">
-            {% csrf_token %}
-            <textarea name="content" placeholder="Что нового?"></textarea>
-            <br>
-            <button type="submit">Опубликовать</button>
-        </form>
-    </div>
 {% endblock %}

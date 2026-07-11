@@ -16,7 +16,9 @@
                 {% endif %}
             </h2>
             <p>{{ profile.group_name|default:"Группа не указана" }}</p>
-            <a href="{% url 'edit_profile' %}">✏️ Редактировать профиль</a>
+            {% if is_own_profile %}
+                <a href="{% url 'edit_profile' %}">✏️ Редактировать профиль</a>
+            {% endif %}
         </div>
     </div>
 
