@@ -1,10 +1,28 @@
-<form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
+{% extends 'base.html' %}
+{% block title %}Редактировать профиль{% endblock %}
 
-    <input type="text" name="display_name" placeholder="Имя">
-    <input type="text" name="group_name" placeholder="Класс">
-
-    <input type="file" name="avatar">
-
-    <button type="submit">Сохранить</button>
-</form>
+{% block content %}
+    <div class="card">
+        <h2 style="margin-bottom: 16px;">Редактировать профиль</h2>
+        
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <label>Отображаемое имя:</label><br>
+            <input type="text" name="display_name" value="{{ profile.display_name }}"><br><br>
+            
+            <label>Группа/класс:</label><br>
+            <input type="text" name="group_name" value="{{ profile.group_name }}"><br><br>
+            
+            <label>Фото профиля:</label><br>
+            {% if profile.avatar %}
+                <div class="avatar avatar-medium" style="margin-bottom:8px;">
+                    <img src="{{ profile.avatar.url }}">
+                </div>
+            {% endif %}
+            <input type="file" name="avatar" accept="image/*"><br><br>
+            
+            <button type="submit" class="btn-primary">Сохранить</button>
+        </form>
+    </div>
+{% endblock %}
