@@ -134,3 +134,23 @@
     </p>
 </div>
 {% endblock %}
+
+{% block sidebar_extra %}
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">Ближайшие события</div>
+        <a href="/events/" class="card-link">Все</a>
+    </div>
+    {% for event in upcoming_events %}
+        <div style="margin-bottom: 14px;">
+            <div style="font-weight:600; font-size:14px;">{{ event.title }}</div>
+            <div style="color:var(--muted); font-size:13px;">{{ event.date }}</div>
+            {% if event.location %}
+                <div style="color:var(--muted); font-size:13px;">📍 {{ event.location }}</div>
+            {% endif %}
+        </div>
+    {% empty %}
+        <div style="color:var(--muted); font-size:14px;">Нет ближайших событий</div>
+    {% endfor %}
+</div>
+{% endblock %}

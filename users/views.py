@@ -4,6 +4,8 @@ from django.contrib.auth.decorators import login_required
 
 from .models import Profile
 from posts.models import Post
+from events.models import Event
+from django.utils import timezone
 
 
 def register(request):
@@ -25,9 +27,11 @@ def home(request):
 
     Profile.objects.get_or_create(user=request.user)
     recent_posts = Post.objects.all()[:3]
+    upcoming_events = Event.objects.filter(date__gte=timezone.now()).order_by('date')[:3]
 
     return render(request, 'users/home.html', {
-        'recent_posts': recent_posts
+        'recent_posts': recent_posts,
+        'upcoming_events': upcoming_events
     })
 
 
