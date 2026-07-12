@@ -9,6 +9,7 @@ class Profile(models.Model):
     is_verified = models.BooleanField(default=False)
     is_organizer = models.BooleanField(default=False)
     dark_mode = models.BooleanField(default=False)
-
+    banner = models.ImageField(upload_to='banners/', blank=True, null=True)
+    banner_position = models.PositiveSmallIntegerField(default=50)
     def __str__(self):
         return self.user.username

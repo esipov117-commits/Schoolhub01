@@ -30,41 +30,24 @@ def home(request):
     recent_posts = Post.objects.all()[:3]
     upcoming_events = Event.objects.filter(date__gte=timezone.now()).order_by('date')[:3]
 
+    # Счётчики для карточки профиля в правой колонке (rightbar в base.html)
+    stats = {
+        'posts_count': Post.objects.filter(author=request.user).count(),
+        'friends_count': 0,   # пока нет системы друзей
+        'groups_count': 0,    # пока нет групп
+    }
+
     return render(request, 'users/home.html', {
         'recent_posts': recent_posts,
-        'upcoming_events': upcoming_events
+        'upcoming_events': upcoming_events,
+        'stats': stats,
     })
 
 
+# Было два одинаковых def profile(request) — вторая версия (ниже, с username)
+# полностью перекрывала первую, так что первая никогда не вызывалась.
+# Оставляем только рабочую версию и добавляем недостающие posts_count/friends_count.
 @login_required
-def profile(request):
-    profile_obj, _ = Profile.objects.get_or_create(user=request.user)
-    user_posts = Post.objects.filter(author=request.user)
-
-    return render(request, 'users/profile.html', {
-        'profile': profile_obj,
-        'user_posts': user_posts,
-    })
-
-@login_required
-def edit_profile(request):
-    profile_obj, created = Profile.objects.get_or_create(user=request.user)
-    
-    if request.method == 'POST':
-        display_name = request.POST.get('display_name')
-        group_name = request.POST.get('group_name')
-        avatar = request.FILES.get('avatar')
-        
-        profile_obj.display_name = display_name
-        profile_obj.group_name = group_name
-        if avatar:
-            profile_obj.avatar = avatar
-        profile_obj.save()
-        
-        return redirect('profile')
-    
-    return render(request, 'users/edit_profile.html', {'profile': profile_obj})
-
 def profile(request, username=None):
     if username:
         target_user = get_object_or_404(User, username=username)
@@ -75,12 +58,41 @@ def profile(request, username=None):
     user_posts = Post.objects.filter(author=target_user)
     is_own_profile = (target_user == request.user)
 
+    posts_count = user_posts.count()
+    friends_count = 0  # пока нет системы друзей
+
     return render(request, 'users/profile.html', {
         'profile': profile_obj,
         'user_posts': user_posts,
         'profile_user': target_user,
         'is_own_profile': is_own_profile,
+        'posts_count': posts_count,
+        'friends_count': friends_count,
     })
+
+
+@login_required
+def edit_profile(request):
+    profile_obj, created = Profile.objects.get_or_create(user=request.user)
+
+    if request.method == 'POST':
+        profile_obj.display_name = request.POST.get('display_name')
+        profile_obj.group_name = request.POST.get('group_name')
+
+        avatar = request.FILES.get('avatar')
+        if avatar:
+            profile_obj.avatar = avatar
+
+        banner = request.FILES.get('banner')
+        if banner:
+            profile_obj.banner = banner
+        profile_obj.banner_position = request.POST.get('banner_position', profile_obj.banner_position or 50)
+
+        profile_obj.save()
+        return redirect('profile')
+
+    return render(request, 'users/edit_profile.html', {'profile': profile_obj})
+
 
 @login_required
 def toggle_theme(request):
