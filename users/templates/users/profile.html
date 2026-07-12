@@ -17,7 +17,9 @@
             </h2>
             <p>{{ profile.group_name|default:"Группа не указана" }}</p>
             {% if is_own_profile %}
-                <a href="{% url 'edit_profile' %}">✏️ Редактировать профиль</a>
+                <a href="{% url 'edit_profile' %}" style="display:inline-flex; align-items:center; gap:6px; margin-top:8px; padding:8px 16px; background:var(--bg); border:1px solid var(--border); border-radius:10px; color:var(--text); text-decoration:none; font-size:13.5px; font-weight:600; transition:background 0.15s ease;" onmouseover="this.style.background='var(--sidebar-active-bg)'" onmouseout="this.style.background='var(--bg)'">
+                    ✏️ Редактировать профиль
+                </a>
             {% endif %}
         </div>
     </div>

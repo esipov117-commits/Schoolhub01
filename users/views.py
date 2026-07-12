@@ -81,3 +81,10 @@ def profile(request, username=None):
         'profile_user': target_user,
         'is_own_profile': is_own_profile,
     })
+
+@login_required
+def toggle_theme(request):
+    profile_obj, _ = Profile.objects.get_or_create(user=request.user)
+    profile_obj.dark_mode = not profile_obj.dark_mode
+    profile_obj.save()
+    return redirect(request.META.get('HTTP_REFERER', 'home'))
