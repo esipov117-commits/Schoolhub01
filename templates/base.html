@@ -128,7 +128,7 @@
     /* ---------- Общая раскладка ---------- */
     .layout {
         display: grid;
-        grid-template-columns: 240px 1fr 280px;
+        grid-template-columns: var(--grid-cols, 240px 1fr 280px);
         max-width: 1280px;
         margin: 24px auto;
         gap: 20px;
@@ -374,7 +374,7 @@
 {% endif %}
 </div>
 
-<div class="layout" style="grid-template-columns: {% block grid_columns %}240px 1fr 280px{% endblock %};">
+<div class="layout" style="--grid-cols: {% block grid_columns %}240px 1fr 280px{% endblock %};">
 
 {% if user.is_authenticated %}
 <div class="sidebar">
