@@ -1,48 +1,50 @@
 {% extends 'base.html' %}
 
-{% block title %}Новое событие{% endblock %}
+{% block title %}Редактировать событие{% endblock %}
 {% block nav_events %}active{% endblock %}
 
 {% block content %}
 <div class="card event-form-card">
-    <h2 style="margin-bottom: 4px;">Создать событие</h2>
-    <p class="event-form-sub">Заполни детали — событие появится в общем списке</p>
+    <h2 style="margin-bottom: 4px;">Редактировать событие</h2>
+    <p class="event-form-sub">Измени детали и сохрани</p>
 
     <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
         <div class="field-group">
             <label class="field-label" for="id_title">Название</label>
-            <input type="text" id="id_title" name="title" placeholder="Например, Контрольная работа" required>
+            <input type="text" id="id_title" name="title" value="{{ event.title }}" required>
         </div>
 
         <div class="field-group">
             <label class="field-label" for="id_description">Описание</label>
-            <textarea id="id_description" name="description" placeholder="Дополнительные детали (необязательно)"></textarea>
+            <textarea id="id_description" name="description">{{ event.description }}</textarea>
         </div>
 
         <div class="field-group">
             <label class="field-label" for="id_date">Дата и время</label>
-            <input type="datetime-local" id="id_date" name="date" required>
+            <input type="datetime-local" id="id_date" name="date"
+                   value="{{ event.date|date:'Y-m-d\TH:i' }}" required>
         </div>
 
         <div class="field-group">
             <label class="field-label" for="id_location">Место</label>
-            <input type="text" id="id_location" name="location" placeholder="Например, Актовый зал">
+            <input type="text" id="id_location" name="location" value="{{ event.location }}">
         </div>
 
         <div class="field-group">
             <label class="field-label" for="id_image">Фото / афиша</label>
+            <div id="imagePreviewBox" style="{% if not event.image %}display:none;{% endif %} margin-bottom:10px;">
+                <img id="imagePreview" src="{% if event.image %}{{ event.image.url }}{% endif %}"
+                     style="max-width:100%; border-radius:12px; display:block;">
+            </div>
             <label class="upload-btn">
-                🖼 Загрузить фото
+                🖼 {% if event.image %}Заменить фото{% else %}Загрузить фото{% endif %}
                 <input type="file" id="id_image" name="image" accept="image/*" style="display:none;" onchange="previewEventImage(this)">
             </label>
-            <div id="imagePreviewBox" style="margin-top:10px; display:none;">
-                <img id="imagePreview" style="max-width:100%; border-radius:12px; display:block;">
-            </div>
         </div>
 
         <div class="form-actions">
-            <button type="submit" class="btn-primary">Создать</button>
+            <button type="submit" class="btn-primary">Сохранить</button>
             <a href="{% url 'events_list' %}" class="btn-secondary">Отмена</a>
         </div>
     </form>
