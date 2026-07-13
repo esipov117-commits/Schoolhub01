@@ -65,15 +65,14 @@
 
         <!-- Статистика -->
         <div class="stats">
-            <div>
+            <a href="{% url 'followers_list' profile_user.username %}" style="text-decoration:none; color:inherit;">
                 <b>{{ followers_count|default:"0" }}</b>
                 <span>Подписчики</span>
-            </div>
-            <div>
+            </a>
+            <a href="{% url 'following_list' profile_user.username %}" style="text-decoration:none; color:inherit;">
                 <b>{{ following_count|default:"0" }}</b>
                 <span>Подписки</span>
-            </div>
-            <div>
+            </a>
                 <b>{{ posts_count|default:"0" }}</b>
                 <span>Посты</span>
             </div>

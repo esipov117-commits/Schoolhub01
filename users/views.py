@@ -124,3 +124,28 @@ def search_users(request):
         'results': results,
         'following_ids': following_ids,
     })
+
+@login_required
+def followers_list(request, username):
+    target_user = get_object_or_404(User, username=username)
+    followers = User.objects.filter(following__following=target_user)
+    following_ids = Follow.objects.filter(follower=request.user).values_list('following_id', flat=True)
+    return render(request, 'users/follow_list.html', {
+        'target_user': target_user,
+        'people': followers,
+        'following_ids': following_ids,
+        'list_title': 'Подписчики',
+    })
+
+
+@login_required
+def following_list(request, username):
+    target_user = get_object_or_404(User, username=username)
+    following = User.objects.filter(followers__follower=target_user)
+    following_ids = Follow.objects.filter(follower=request.user).values_list('following_id', flat=True)
+    return render(request, 'users/follow_list.html', {
+        'target_user': target_user,
+        'people': following,
+        'following_ids': following_ids,
+        'list_title': 'Подписки',
+    })
