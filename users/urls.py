@@ -4,8 +4,10 @@ from . import views
 urlpatterns = [
     path("", views.home, name="home"),
     path("register/", views.register, name="register"),
+    path("profile/edit/", views.edit_profile, name="edit_profile"),
     path("profile/", views.profile, name="profile"),
-    path('profile/edit/', views.edit_profile, name='edit_profile'),
-    path('profile/<str:username>/', views.profile, name='profile_user'),
-    path('toggle-theme/', views.toggle_theme, name='toggle_theme'),
+    path("profile/<str:username>/follow/", views.toggle_follow, name="toggle_follow"),
+    path("profile/<str:username>/", views.profile, name="profile_user"),
+    path("toggle-theme/", views.toggle_theme, name="toggle_theme"),
+    path("search/", views.search_users, name="search_users"),
 ]

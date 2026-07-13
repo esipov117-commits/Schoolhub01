@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Поиск — SchoolHub{% endblock %}
+
+{% block content %}
+{% if query %}
+    {% for u in results %}
+    <div class="card" style="display:flex; align-items:center; justify-content:space-between;">
+        <a href="{% url 'profile_user' u.username %}" style="display:flex; align-items:center; gap:12px; text-decoration:none; color:inherit;">
+            {% if u.profile.avatar %}
+                <img src="{{ u.profile.avatar.url }}" class="avatar avatar-medium">
+            {% else %}
+                <div class="avatar avatar-medium"></div>
+            {% endif %}
+            <div style="font-weight:600;">{{ u.profile.display_name|default:u.username }}</div>
+        </a>
+        <form method="POST" action="{% url 'toggle_follow' u.username %}" style="margin:0;">
+            {% csrf_token %}
+            <button type="submit" class="profile-btn" style="background:var(--sidebar-active-bg); border:1px solid var(--border); padding:8px 14px; border-radius:10px; cursor:pointer; font-family:inherit; font-size:13.5px; font-weight:600; color:var(--text);">
+                {% if u.id in following_ids %}✅ Подписан{% else %}➕ Подписаться{% endif %}
+            </button>
+        </form>
+    </div>
+    {% empty %}
+    <div class="card">Никого не найдено по запросу "{{ query }}"</div>
+    {% endfor %}
+{% endif %}
+{% endblock %}

@@ -1,9 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Профиль — SchoolHub{% endblock %}
 {% block nav_profile %}active{% endblock %}
-
-<!-- Убираем правую колонку (аватар + 0/0/0) — на этой странице она дублирует
-     информацию, которая уже показана в самой карточке профиля выше -->
 {% block grid_columns %}240px 1fr{% endblock %}
 {% block rightbar %}{% endblock %}
 
@@ -14,9 +11,9 @@
     <!-- Обложка -->
     {% if profile.banner %}
     <div class="profile-cover" style="background-image: url('{{ profile.banner.url }}'); background-size: cover; background-position: center {{ profile.banner_position }}%;"></div>
-{% else %}
+    {% else %}
     <div class="profile-cover"></div>
-{% endif %}
+    {% endif %}
 
     <!-- Основная карточка профиля -->
     <div class="profile-card card">
@@ -27,14 +24,14 @@
                 <img class="profile-avatar" src="{{ profile.avatar.url }}">
             {% else %}
                 <div class="profile-avatar empty-avatar">
-                    {{ user.username|first|upper }}
+                    {{ profile_user.username|first|upper }}
                 </div>
             {% endif %}
 
             <div class="profile-info">
                 <div class="name-row">
                     <h1>
-                        {{ profile.display_name|default:user.username }}
+                        {{ profile.display_name|default:profile_user.username }}
                         {% if profile.is_verified %}
                             <svg viewBox="0 0 24 24" width="14" height="14" style="display:inline-block; vertical-align:middle; margin-left:1px;">
                                 <circle cx="12" cy="12" r="10" fill="#3b82f6"/>
@@ -49,7 +46,12 @@
                                 ✏️ Редактировать
                             </a>
                         {% else %}
-                            <button class="profile-btn">➕ Добавить в друзья</button>
+                            <form method="POST" action="{% url 'toggle_follow' profile_user.username %}" style="display:inline; margin:0;">
+                                {% csrf_token %}
+                                <button type="submit" class="profile-btn">
+                                    {% if is_following %}✅ Подписан{% else %}➕ Подписаться{% endif %}
+                                </button>
+                            </form>
                             <button class="profile-btn">💬 Написать</button>
                         {% endif %}
                     </div>
@@ -64,16 +66,16 @@
         <!-- Статистика -->
         <div class="stats">
             <div>
-                <b>{{ friends_count|default:"0" }}</b>
-                <span>Друзья</span>
+                <b>{{ followers_count|default:"0" }}</b>
+                <span>Подписчики</span>
+            </div>
+            <div>
+                <b>{{ following_count|default:"0" }}</b>
+                <span>Подписки</span>
             </div>
             <div>
                 <b>{{ posts_count|default:"0" }}</b>
                 <span>Посты</span>
-            </div>
-            <div>
-                <b>{{ profile.group_name|default:"-" }}</b>
-                <span>Класс</span>
             </div>
         </div>
 
@@ -92,26 +94,8 @@
         <!-- Левая часть -->
         <div>
             <div class="card">
-                <h3>👤 О себе</h3>
+                <h3>�� О себе</h3>
                 <p>{{ profile.bio|default:"Пользователь пока ничего не рассказал о себе." }}</p>
-            </div>
-
-            <div class="card">
-                <h3>👥 Друзья</h3>
-                <div class="friends">
-                    {% for friend in friends %}
-                    <div class="friend">
-                        {% if friend.avatar %}
-                            <img src="{{ friend.avatar.url }}">
-                        {% else %}
-                            <div class="friend-empty">{{ friend.username|first }}</div>
-                        {% endif %}
-                        <span>{{ friend.username }}</span>
-                    </div>
-                    {% empty %}
-                    <p>Пока нет друзей</p>
-                    {% endfor %}
-                </div>
             </div>
         </div>
 
@@ -131,152 +115,32 @@
 
 <style>
     .profile-page { display: flex; flex-direction: column; gap: 16px; }
-
-    .profile-cover {
-        height: 120px;
-        border-radius: 18px 18px 0 0;
-        background: linear-gradient(135deg, #777, #aaa);
-    }
-
-    /* карточка профиля */
-    .profile-card {
-        margin-top: -25px;
-        position: relative;
-        padding: 25px;
-    }
-
-    .profile-top {
-        display: flex;
-        align-items: flex-start;
-        gap: 20px;
-    }
-
-    .profile-avatar {
-        width: 110px;
-        height: 110px;
-        border-radius: 50%;
-        object-fit: cover;
-        border: 5px solid var(--panel);
-        margin-top: -55px;
-        flex-shrink: 0;
-    }
-    .empty-avatar {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: var(--sidebar-active-bg);
-        font-size: 36px;
-        font-weight: 700;
-        color: var(--muted);
-    }
-
+    .profile-cover { height: 120px; border-radius: 18px 18px 0 0; background: linear-gradient(135deg, #777, #aaa); }
+    .profile-card { margin-top: -25px; position: relative; padding: 25px; }
+    .profile-top { display: flex; align-items: flex-start; gap: 20px; }
+    .profile-avatar { width: 110px; height: 110px; border-radius: 50%; object-fit: cover; border: 5px solid var(--panel); margin-top: -55px; flex-shrink: 0; }
+    .empty-avatar { display: flex; align-items: center; justify-content: center; background: var(--sidebar-active-bg); font-size: 36px; font-weight: 700; color: var(--muted); }
     .profile-info { flex: 1; min-width: 0; }
-
-    .name-row {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 20px;
-        flex-wrap: wrap;
-    }
-    .profile-info h1 {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin: 0;
-        font-size: 24px;
-    }
+    .name-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+    .profile-info h1 { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 24px; }
     .verified { color: var(--accent); font-size: 16px; }
-
     .profile-buttons { display: flex; gap: 10px; flex-shrink: 0; }
-    .profile-btn {
-        padding: 9px 16px;
-        border-radius: 10px;
-        background: var(--sidebar-active-bg);
-        border: 1px solid var(--border);
-        color: var(--text);
-        text-decoration: none;
-        font-weight: 600;
-        font-size: 13.5px;
-        cursor: pointer;
-        white-space: nowrap;
-        font-family: inherit;
-        transition: opacity 0.15s ease;
-    }
+    .profile-btn { padding: 9px 16px; border-radius: 10px; background: var(--sidebar-active-bg); border: 1px solid var(--border); color: var(--text); text-decoration: none; font-weight: 600; font-size: 13.5px; cursor: pointer; white-space: nowrap; font-family: inherit; transition: opacity 0.15s ease; }
     .profile-btn:hover { opacity: 0.75; }
-
-    .group, .status {
-        color: var(--muted);
-        font-size: 14px;
-        margin-top: 6px;
-    }
-
-    /* статистика */
-    .stats {
-        display: flex;
-        gap: 48px;
-        margin-top: 22px;
-        padding-top: 18px;
-        border-top: 1px solid var(--border);
-    }
+    .group, .status { color: var(--muted); font-size: 14px; margin-top: 6px; }
+    .stats { display: flex; gap: 48px; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border); }
     .stats div { text-align: left; }
     .stats b { display: block; font-size: 16px; }
     .stats span { color: var(--muted); font-size: 12.5px; }
-
-    /* меню */
-    .profile-menu {
-        display: flex;
-        width: 100%;
-        padding: 0;
-        overflow: hidden;
-    }
-    .profile-menu a {
-        flex: 1;
-        text-align: center;
-        padding: 15px;
-        text-decoration: none;
-        color: var(--text);
-        font-size: 14px;
-        border-bottom: 2px solid transparent;
-    }
+    .profile-menu { display: flex; width: 100%; padding: 0; overflow: hidden; }
+    .profile-menu a { flex: 1; text-align: center; padding: 15px; text-decoration: none; color: var(--text); font-size: 14px; border-bottom: 2px solid transparent; }
     .profile-menu a:hover { background: var(--sidebar-active-bg); }
     .profile-menu .active { border-bottom: 2px solid var(--text); font-weight: 700; }
-
-    /* колонки */
-    .profile-columns {
-        display: grid;
-        grid-template-columns: 320px 1fr;
-        gap: 16px;
-        align-items: start;
-    }
+    .profile-columns { display: grid; grid-template-columns: 320px 1fr; gap: 16px; align-items: start; }
     .profile-columns > div { display: flex; flex-direction: column; gap: 16px; }
     .profile-columns h3 { margin: 0 0 12px; font-size: 15px; }
     .profile-columns .card p { color: var(--muted); font-size: 14px; line-height: 1.5; }
     .post.card { font-size: 14.5px; line-height: 1.5; }
-
-    /* друзья */
-    .friends { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-    .friend { text-align: center; }
-    .friend img, .friend-empty {
-        width: 56px;
-        height: 56px;
-        border-radius: 50%;
-        object-fit: cover;
-        margin: 0 auto;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: var(--sidebar-active-bg);
-        color: var(--muted);
-        font-weight: 700;
-    }
-    .friend span {
-        display: block;
-        margin-top: 6px;
-        font-size: 12.5px;
-        color: var(--text);
-    }
-
     @media (max-width: 700px) {
         .profile-top { flex-direction: column; }
         .name-row { flex-direction: column; align-items: flex-start; }
