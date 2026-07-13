@@ -1,7 +1,12 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Чат — SchoolHub{% endblock %}
 
 {% block content %}
     <!-- твой HTML пойдёт сюда -->
-    <h3>Мы пока работаем над этой вкладкой. Следите за обновлениями!</h3>
+    <div style="text-align: center; padding: 40px;">
+        <img src="{% static 'images/chat_soon.jpeg' %}" alt="Чат скоро появится" style="max-width: 300px; margin-bottom: 20px;">
+        <h2>Чат скоро появится!</h2>
+        <p style="color: var(--muted);">Мы уже работаем над этим 👀</p>
+    </div>
 {% endblock %}

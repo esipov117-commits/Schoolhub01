@@ -33,3 +33,16 @@ def toggle_like(request, post_id):
     if not created:
         like.delete()
     return redirect(f'/feed/#post-{post_id}')
+
+@login_required
+def delete_post(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+    
+    previous_post = Post.objects.filter(created_at__lt=post.created_at).first()
+    
+    if post.author == request.user:
+        post.delete()
+    
+    if previous_post:
+        return redirect(f'/feed/#post-{previous_post.id}')
+    return redirect('feed')

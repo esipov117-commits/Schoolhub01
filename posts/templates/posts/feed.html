@@ -8,7 +8,11 @@
             {% csrf_token %}
             <textarea name="content" placeholder="Что нового?"></textarea>
             <br><br>
-            <input type="file" name="image" accept="image/*">
+            <label for="image-upload" style="cursor:pointer; display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:50%; background:var(--bg); border:1px solid var(--border); font-size:20px; color:var(--muted);">
+                +
+            </label>
+            <input type="file" id="image-upload" name="image" accept="image/*" style="display:none;" onchange="document.getElementById('image-filename').textContent = this.files[0] ? this.files[0].name : '';">
+            <span id="image-filename" style="font-size:13px; color:var(--muted); margin-left:8px;"></span>
             <br><br>
             <button type="submit" class="btn-primary">Опубликовать</button>
         </form>
@@ -16,19 +20,40 @@
 
     {% for post in posts %}
     <div class="card" id="post-{{ post.id }}">
-        <div style="display:flex; align-items:center; gap:10px; margin-bottom: 6px;">
-            <a href="{% url 'profile_user' post.author.username %}">
-                {% if post.author.profile.avatar %}
-                    <img src="{{ post.author.profile.avatar.url }}" class="avatar avatar-small">
-                {% else %}
-                    <div class="avatar avatar-small"></div>
-                {% endif %}
-            </a>
-            <a href="{% url 'profile_user' post.author.username %}" style="text-decoration:none; color:inherit;">
-                <span class="post-author">{{ post.author.username }}</span>
-            </a>
-            <span style="color:#888; font-size:13px;">{{ post.created_at }}</span>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <a href="{% url 'profile_user' post.author.username %}">
+                    {% if post.author.profile.avatar %}
+                        <img src="{{ post.author.profile.avatar.url }}" class="avatar avatar-small">
+                    {% else %}
+                        <div class="avatar avatar-small"></div>
+                    {% endif %}
+                </a>
+                <div>
+                    <a href="{% url 'profile_user' post.author.username %}" style="text-decoration:none; color:inherit;">
+                        <span class="post-author">
+                            {{ post.author.username }}
+                            {% if post.author.profile.is_verified %}
+                                <svg viewBox="0 0 24 24" width="14" height="14" style="display:inline-block; vertical-align:middle; margin-left:1px;">
+                                    <circle cx="12" cy="12" r="10" fill="#3b82f6"/>
+                                    <path d="M8.5 12.5l2.5 2.5 4.5-5" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            {% endif %}
+                        </span>
+                    </a>
+                    <span style="color:#888; font-size:13px; margin-left:4px;">{{ post.created_at }}</span>
+                </div>
+            </div>
+            {% if post.author == user %}
+            <form method="POST" action="{% url 'delete_post' post.id %}" style="margin:0;" onsubmit="return confirm('Удалить этот пост?');">
+                {% csrf_token %}
+                <button type="submit" style="background:none; border:none; cursor:pointer; color:var(--muted); font-size:16px;">
+                    🗑️
+                </button>
+            </form>
+            {% endif %}
         </div>
+
         {% if post.content %}
             <div class="post-content">{{ post.content }}</div>
         {% endif %}

@@ -12,7 +12,11 @@
 <div class="profile-page">
 
     <!-- Обложка -->
+    {% if profile.banner %}
+    <div class="profile-cover" style="background-image: url('{{ profile.banner.url }}'); background-size: cover; background-position: center {{ profile.banner_position }}%;"></div>
+{% else %}
     <div class="profile-cover"></div>
+{% endif %}
 
     <!-- Основная карточка профиля -->
     <div class="profile-card card">
@@ -32,7 +36,10 @@
                     <h1>
                         {{ profile.display_name|default:user.username }}
                         {% if profile.is_verified %}
-                            <span class="verified">✔</span>
+                            <svg viewBox="0 0 24 24" width="14" height="14" style="display:inline-block; vertical-align:middle; margin-left:1px;">
+                                <circle cx="12" cy="12" r="10" fill="#3b82f6"/>
+                                <path d="M8.5 12.5l2.5 2.5 4.5-5" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
                         {% endif %}
                     </h1>
 
