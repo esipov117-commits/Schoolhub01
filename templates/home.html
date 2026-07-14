@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}
+Главная | SchoolHub
+{% endblock %}
+
+{% block nav_home %}
+active
+{% endblock %}
+
+{% block content %}
+
+<div class="card">
+    <h2 style="font-size:24px; margin-bottom:8px;">
+        Добро пожаловать, {{ user.profile.display_name|default:user.username }} 👋
+    </h2>
+
+    <p style="color:var(--muted);">
+        Твой личный учебный центр
+    </p>
+</div>
+
+
+<div style="height:16px;"></div>
+
+
+<div class="card">
+
+<div class="card-header">
+    <div class="card-title">
+        📅 Расписание на сегодня
+    </div>
+
+    <a class="card-link">
+        Всё расписание
+    </a>
+</div>
+
+
+<div style="
+display:flex;
+flex-direction:column;
+gap:12px;
+">
+
+
+<div style="
+padding:14px;
+background:var(--bg);
+border-radius:12px;
+">
+<b>09:00</b> — Математика
+<br>
+<span style="color:var(--muted)">
+Кабинет 204
+</span>
+</div>
+
+
+<div style="
+padding:14px;
+background:var(--bg);
+border-radius:12px;
+">
+<b>10:40</b> — Информатика
+<br>
+<span style="color:var(--muted)">
+Кабинет 312
+</span>
+</div>
+
+
+<div style="
+padding:14px;
+background:var(--bg);
+border-radius:12px;
+">
+<b>12:20</b> — Английский язык
+</div>
+
+
+</div>
+
+</div>
+
+
+<div style="height:16px;"></div>
+
+
+<div class="card">
+
+<div class="card-header">
+    <div class="card-title">
+        ✅ Мои задачи
+    </div>
+
+    <a class="card-link">
+        Все задачи
+    </a>
+</div>
+
+
+<div style="
+display:flex;
+flex-direction:column;
+gap:10px;
+">
+
+
+<label>
+<input type="checkbox">
+ Сделать домашнее задание по алгебре
+</label>
+
+
+<label>
+<input type="checkbox">
+ Подготовиться к контрольной
+</label>
+
+
+<label>
+<input type="checkbox">
+ Тренировка 🏐
+</label>
+
+
+</div>
+
+
+</div>
+
+
+<div style="height:16px;"></div>
+
+
+<div class="card">
+
+<div class="card-header">
+<div class="card-title">
+👨‍🏫 Репетиторы
+</div>
+
+<a class="card-link">
+Найти
+</a>
+
+</div>
+
+
+<p style="color:var(--muted)">
+Найди преподавателя внутри SchoolHub
+</p>
+
+
+</div>
+
+
+{% endblock %}

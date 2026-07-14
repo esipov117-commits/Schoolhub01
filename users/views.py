@@ -149,3 +149,7 @@ def following_list(request, username):
         'following_ids': following_ids,
         'list_title': 'Подписки',
     })
+
+
+def home(request):
+    return render(request, "home.html")

@@ -1,9 +1,11 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="ru" {% if user.profile.dark_mode %}data-theme="dark"{% endif %}>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{% block title %}SchoolHub{% endblock %}</title>
+{% block extra_head %}{% endblock %}
 <style>
     :root {
         --bg: #f7f7f8;
@@ -402,6 +404,13 @@
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M8 3v3.5M16 3v3.5"/></svg>
             События
 </a>
+<a href="/calendar/" class="{% block nav_calendar %}{% endblock %}">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+<rect x="3.5" y="5" width="17" height="15" rx="2"/>
+<path d="M3.5 9.5h17M8 3v3.5M16 3v3.5"/>
+</svg>
+            Календарь
+</a>
 <a href="/profile/" class="{% block nav_profile %}{% endblock %}">
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8.5" r="3.2"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6"/></svg>
             Профиль
@@ -478,6 +487,13 @@
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M8 3v3.5M16 3v3.5"/></svg>
         События
 </a>
+<a href="/calendar/">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+<rect x="3.5" y="5" width="17" height="15" rx="2"/>
+<path d="M3.5 9.5h17M8 3v3.5M16 3v3.5"/>
+</svg>
+Календарь
+</a>
 <a href="/profile/">
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8.5" r="3.2"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6"/></svg>
         Профиль
@@ -500,5 +516,6 @@ if (saved === 'dark') {
         }
     });
 </script>
+<script src="{% static 'js/main.js' %}"></script>
 </body>
 </html>
