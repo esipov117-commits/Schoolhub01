@@ -8,74 +8,218 @@
             {% csrf_token %}
             <textarea name="content" placeholder="Что нового?"></textarea>
             <br><br>
-            <label for="image-upload" style="cursor:pointer; display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:50%; background:var(--bg); border:1px solid var(--border); font-size:20px; color:var(--muted);">
-                +
-            </label>
-            <input type="file" id="image-upload" name="image" accept="image/*" style="display:none;" onchange="document.getElementById('image-filename').textContent = this.files[0] ? this.files[0].name : '';">
-            <span id="image-filename" style="font-size:13px; color:var(--muted); margin-left:8px;"></span>
-            <br><br>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <label for="image-upload" style="
+                    cursor:pointer;
+                    display:inline-flex;
+                    align-items:center;
+                    justify-content:center;
+                    width:36px;
+                    height:36px;
+                    border-radius:50%;
+                    background:var(--bg);
+                    border:1px solid var(--border);
+                    font-size:20px;
+                    color:var(--muted);
+                    flex-shrink:0;
+                    transition:background 0.15s ease, color 0.15s ease;
+                ">
+                    +
+                </label>
+                <input
+                    type="file"
+                    id="image-upload"
+                    name="image"
+                    accept="image/*"
+                    style="display:none;"
+                    onchange="document.getElementById('image-filename').textContent = this.files[0] ? this.files[0].name : '';">
+                <span id="image-filename" style="font-size:13px; color:var(--muted);"></span>
+            </div>
+            <br>
             <button type="submit" class="btn-primary">Опубликовать</button>
         </form>
     </div>
 
-    {% for post in posts %}
-    <div class="card" id="post-{{ post.id }}">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
-            <div style="display:flex; align-items:center; gap:10px;">
-                <a href="{% url 'profile_user' post.author.username %}">
-                    {% if post.author.profile.avatar %}
-                        <img src="{{ post.author.profile.avatar.url }}" class="avatar avatar-small">
-                    {% else %}
-                        <div class="avatar avatar-small"></div>
-                    {% endif %}
-                </a>
+    <div id="posts-list">
+        {% for post in posts %}
+        <div class="card" id="post-{{ post.id }}" data-post-id="{{ post.id }}">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                 <div>
-                    <a href="{% url 'profile_user' post.author.username %}" style="text-decoration:none; color:inherit;">
-                        <span class="post-author">
-                            {{ post.author.username }}
-                            {% if post.author.profile.is_verified %}
-                                <svg viewBox="0 0 24 24" width="14" height="14" style="display:inline-block; vertical-align:middle; margin-left:1px;">
-                                    <circle cx="12" cy="12" r="10" fill="#3b82f6"/>
-                                    <path d="M8.5 12.5l2.5 2.5 4.5-5" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                                </svg>
-                            {% endif %}
-                        </span>
-                    </a>
-                    <span style="color:#888; font-size:13px; margin-left:4px;">{{ post.created_at }}</span>
+                    <span class="post-author">{{ post.author.username }}</span>
+                    <span style="color:var(--muted); font-size:13px; margin-left:6px;">{{ post.created_at }}</span>
                 </div>
+                {% if post.author == user %}
+                <button
+                    type="button"
+                    class="delete-post-btn"
+                    data-post-id="{{ post.id }}"
+                    style="background:none; border:none; color:red; cursor:pointer; font-size:14px;">
+                    🗑
+                </button>
+                {% endif %}
             </div>
-            {% if post.author == user %}
-            <form method="POST" action="{% url 'delete_post' post.id %}" style="margin:0;" onsubmit="return confirm('Удалить этот пост?');">
-                {% csrf_token %}
-                <button type="submit" style="background:none; border:none; cursor:pointer; color:var(--muted); font-size:16px;">
-                    🗑️
-                </button>
-            </form>
+
+            {% if post.content %}
+                <div class="post-content">{{ post.content }}</div>
             {% endif %}
-        </div>
+            {% if post.image %}
+                <img src="{{ post.image.url }}" class="post-image">
+            {% endif %}
 
-        {% if post.content %}
-            <div class="post-content">{{ post.content }}</div>
-        {% endif %}
-        {% if post.image %}
-            <img src="{{ post.image.url }}" class="post-image">
-        {% endif %}
-
-        <div class="post-actions">
-            <form method="POST" action="{% url 'toggle_like' post.id %}" style="display:inline; margin:0;">
-                {% csrf_token %}
-                <button type="submit" style="background:none; border:none; cursor:pointer; color:inherit; font-family:inherit; font-size:14px; padding:0; display:flex; align-items:center; gap:6px;">
-                    {% if post.id in liked_post_ids %}
-                        ❤️
-                    {% else %}
-                        🤍
-                    {% endif %}
-                    {{ post.likes.count }}
+            <div class="post-actions">
+                <button
+                    type="button"
+                    class="like-btn"
+                    data-post-id="{{ post.id }}"
+                    data-liked="{% if post.id in liked_post_ids %}true{% else %}false{% endif %}"
+                    style="background:none; border:none; cursor:pointer; font-size:14px; color:{% if post.id in liked_post_ids %}#e0245e{% else %}var(--muted){% endif %};">
+                    <span class="like-icon">{% if post.id in liked_post_ids %}❤️{% else %}🤍{% endif %}</span>
+                    <span class="likes-count">{{ post.likes.count }}</span>
                 </button>
-            </form>
+            </div>
+        </div>
+        {% empty %}
+        <div class="card" id="empty-feed">Пока постов нет. Напишите первый!</div>
+        {% endfor %}
+    </div>
+
+    <!-- Модалка подтверждения удаления -->
+    <div id="confirmOverlay" style="
+        display:none;
+        position:fixed;
+        top:0; left:0; right:0; bottom:0;
+        background:rgba(0,0,0,0.45);
+        z-index:1000;
+        align-items:center;
+        justify-content:center;
+    ">
+        <div style="
+            background:var(--panel);
+            padding:24px;
+            border-radius:18px;
+            width:320px;
+            box-shadow:0 15px 40px rgba(0,0,0,.25);
+        ">
+            <h3 style="margin-top:0; margin-bottom:8px;">Удалить пост?</h3>
+            <p style="color:var(--muted); font-size:14px; margin-bottom:20px;">
+                Это действие нельзя отменить.
+            </p>
+            <div style="display:flex; gap:10px; justify-content:flex-end;">
+                <button
+                    type="button"
+                    id="confirmCancelBtn"
+                    style="
+                        background:var(--bg);
+                        border:1px solid var(--border);
+                        color:var(--text);
+                        padding:9px 16px;
+                        border-radius:10px;
+                        cursor:pointer;
+                        font-family:inherit;
+                        font-size:14px;
+                    ">
+                    Отмена
+                </button>
+                <button
+                    type="button"
+                    id="confirmDeleteBtn"
+                    style="
+                        background:#e0245e;
+                        border:none;
+                        color:#fff;
+                        padding:9px 16px;
+                        border-radius:10px;
+                        cursor:pointer;
+                        font-family:inherit;
+                        font-size:14px;
+                        font-weight:700;
+                    ">
+                    Удалить
+                </button>
+            </div>
         </div>
     </div>
-    {% empty %}
-    <div class="card">Пока постов нет. Напишите первый!</div>
-    {% endfor %}
+
+    <script>
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+    const csrftoken = getCookie('csrftoken');
+
+    let pendingDeletePostId = null;
+
+    function openConfirmModal(postId) {
+        pendingDeletePostId = postId;
+        document.getElementById('confirmOverlay').style.display = 'flex';
+    }
+
+    function closeConfirmModal() {
+        pendingDeletePostId = null;
+        document.getElementById('confirmOverlay').style.display = 'none';
+    }
+
+    document.getElementById('confirmCancelBtn').addEventListener('click', closeConfirmModal);
+
+    document.getElementById('confirmOverlay').addEventListener('click', function(e) {
+        if (e.target === this) closeConfirmModal();
+    });
+
+    document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+        if (!pendingDeletePostId) return;
+        const postId = pendingDeletePostId;
+        closeConfirmModal();
+
+        fetch(`/feed/${postId}/delete/`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrftoken },
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.deleted) {
+                document.getElementById(`post-${postId}`).remove();
+                if (!document.querySelector('#posts-list .card:not(#empty-feed)')) {
+                    const list = document.getElementById('posts-list');
+                    const empty = document.createElement('div');
+                    empty.className = 'card';
+                    empty.id = 'empty-feed';
+                    empty.textContent = 'Пока постов нет. Напишите первый!';
+                    list.appendChild(empty);
+                }
+            } else {
+                alert(data.error || 'Не удалось удалить пост');
+            }
+        })
+        .catch(err => console.error('Delete error:', err));
+    });
+
+    document.getElementById('posts-list').addEventListener('click', function(e) {
+        const likeBtn = e.target.closest('.like-btn');
+        if (likeBtn) {
+            const postId = likeBtn.dataset.postId;
+            fetch(`/feed/${postId}/like/`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrftoken },
+            })
+            .then(res => {
+                if (!res.ok) throw new Error('Server error: ' + res.status);
+                return res.json();
+            })
+            .then(data => {
+                likeBtn.dataset.liked = data.liked;
+                likeBtn.style.color = data.liked ? '#e0245e' : 'var(--muted)';
+                likeBtn.querySelector('.likes-count').textContent = data.likes_count;
+                likeBtn.querySelector('.like-icon').textContent = data.liked ? '❤️' : '🤍';
+            })
+            .catch(err => console.error('Like error:', err));
+            return;
+        }
+
+        const deleteBtn = e.target.closest('.delete-post-btn');
+        if (deleteBtn) {
+            openConfirmModal(deleteBtn.dataset.postId);
+        }
+    });
+    </script>
 {% endblock %}

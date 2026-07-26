@@ -10,8 +10,6 @@ urlpatterns = [
     path('', include('posts.urls')),
     path('', include('events.urls')),
     path('', include('chat.urls')),
-    path(
-        "calendar/",
-        include("planner.urls")
-        ),
+    path("calendar/", include("planner.urls")),
+    path("tasks/", include("tasks.urls")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

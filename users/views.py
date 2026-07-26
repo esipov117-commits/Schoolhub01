@@ -1,12 +1,12 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import get_object_or_404
 from django.contrib.auth.models import User
+from django.utils import timezone
+from tasks.models import TodoTask
 from .models import Profile, Follow
 from posts.models import Post
 from events.models import Event
-from django.utils import timezone
 
 
 def register(request):
@@ -14,7 +14,7 @@ def register(request):
         form = UserCreationForm(request.POST, request.FILES)
         if form.is_valid():
             user = form.save()
-            Profile.objects.create(user=user)  # создаём профиль сразу
+            Profile.objects.create(user=user)
             return redirect('login')
     else:
         form = UserCreationForm()
@@ -27,32 +27,32 @@ def home(request):
         return render(request, 'welcome.html')
 
     Profile.objects.get_or_create(user=request.user)
+
+    tasks = TodoTask.objects.filter(user=request.user)
     recent_posts = Post.objects.all()[:3]
     upcoming_events = Event.objects.filter(date__gte=timezone.now()).order_by('date')[:3]
 
-    # Счётчики для карточки профиля в правой колонке (rightbar в base.html)
     stats = {
         'posts_count': Post.objects.filter(author=request.user).count(),
         'friends_count': 0,   # пока нет системы друзей
         'groups_count': 0,    # пока нет групп
     }
 
-    return render(request, 'users/home.html', {
+    return render(request, 'home.html', {
+        'tasks': tasks,
         'recent_posts': recent_posts,
         'upcoming_events': upcoming_events,
         'stats': stats,
     })
 
 
-# Было два одинаковых def profile(request) — вторая версия (ниже, с username)
-# полностью перекрывала первую, так что первая никогда не вызывалась.
-# Оставляем только рабочую версию и добавляем недостающие posts_count/friends_count.
 @login_required
 def profile(request, username=None):
     if username:
         target_user = get_object_or_404(User, username=username)
     else:
         target_user = request.user
+
     profile_obj, _ = Profile.objects.get_or_create(user=target_user)
     user_posts = Post.objects.filter(author=target_user)
     is_own_profile = (target_user == request.user)
@@ -60,6 +60,7 @@ def profile(request, username=None):
     followers_count = target_user.followers.count()
     following_count = target_user.following.count()
     is_following = Follow.objects.filter(follower=request.user, following=target_user).exists()
+
     return render(request, 'users/profile.html', {
         'profile': profile_obj,
         'user_posts': user_posts,
@@ -102,6 +103,7 @@ def toggle_theme(request):
     profile_obj.save()
     return redirect(request.META.get('HTTP_REFERER', 'home'))
 
+
 @login_required
 def toggle_follow(request, username):
     target_user = get_object_or_404(User, username=username)
@@ -111,6 +113,7 @@ def toggle_follow(request, username):
             follow.delete()
     return redirect('profile_user', username=username)
 
+
 @login_required
 def search_users(request):
     query = request.GET.get('q', '').strip()
@@ -118,18 +121,22 @@ def search_users(request):
         results = User.objects.filter(username__icontains=query).exclude(id=request.user.id)
     else:
         results = User.objects.none()
+
     following_ids = Follow.objects.filter(follower=request.user).values_list('following_id', flat=True)
+
     return render(request, 'users/search.html', {
         'query': query,
         'results': results,
         'following_ids': following_ids,
     })
 
+
 @login_required
 def followers_list(request, username):
     target_user = get_object_or_404(User, username=username)
     followers = User.objects.filter(following__following=target_user)
     following_ids = Follow.objects.filter(follower=request.user).values_list('following_id', flat=True)
+
     return render(request, 'users/follow_list.html', {
         'target_user': target_user,
         'people': followers,
@@ -143,13 +150,10 @@ def following_list(request, username):
     target_user = get_object_or_404(User, username=username)
     following = User.objects.filter(followers__follower=target_user)
     following_ids = Follow.objects.filter(follower=request.user).values_list('following_id', flat=True)
+
     return render(request, 'users/follow_list.html', {
         'target_user': target_user,
         'people': following,
         'following_ids': following_ids,
         'list_title': 'Подписки',
     })
-
-
-def home(request):
-    return render(request, "home.html")
