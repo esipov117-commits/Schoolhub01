@@ -1,0 +1,117 @@
+<div class="card" id="post-{{ post.id }}" data-post-id="{{ post.id }}">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div style="display:flex; align-items:center; gap:10px;">
+            <a href="{% url 'profile_user' post.author.username %}">
+                {% if post.author.profile.avatar %}
+                <img src="{{ post.author.profile.avatar.url }}" class="avatar avatar-small">
+                {% else %}
+                <div class="avatar avatar-small">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.7 0 4.9-2.2 4.9-4.9S14.7 2.2 12 2.2 7.1 4.4 7.1 7.1 9.3 12 12 12zm0 2.4c-3.3 0-9.8 1.6-9.8 4.9v2.4h19.6v-2.4c0-3.3-6.5-4.9-9.8-4.9z"/></svg>
+                </div>
+                {% endif %}
+            </a>
+            <div>
+                <a href="{% url 'profile_user' post.author.username %}" style="text-decoration:none; color:inherit;">
+                    <span class="post-author">{{ post.author.username }}</span>
+                </a>
+                <span style="color:var(--muted); font-size:13px; margin-left:6px;">{{ post.created_at }}</span>
+            </div>
+        </div>
+
+        {% if post.author == user %}
+        <button
+            type="button"
+            class="delete-post-btn"
+            data-post-id="{{ post.id }}"
+            style="background:none; border:none; color:var(--muted); cursor:pointer; display:flex; align-items:center;">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/></svg>
+        </button>
+        {% endif %}
+    </div>
+
+    {% if post.content %}
+        <div class="post-content" style="margin-top:10px;">{{ post.content }}</div>
+    {% endif %}
+
+    {% if post.images.all %}
+    <div class="post-carousel" style="position:relative; margin-top:10px;">
+        <div class="carousel-track" style="display:flex; overflow-x:auto; scroll-snap-type:x mandatory; border-radius:12px; scrollbar-width:none;">
+        {% for media in post.images.all %}
+            {% if media.media_type == 'video' %}
+            <video src="{{ media.video.url }}" class="carousel-img" controls playsinline></video>
+            {% else %}
+            <img src="{{ media.image.url }}" class="carousel-img">
+            {% endif %}
+        {% endfor %}
+        </div>
+        {% if post.images.count > 1 %}
+        <div class="carousel-dots" style="display:flex; justify-content:center; gap:6px; margin-top:8px;">
+            {% for media in post.images.all %}
+            <span class="carousel-dot" style="width:6px; height:6px; border-radius:50%; background:{% if forloop.first %}var(--accent){% else %}var(--border){% endif %};"></span>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="post-actions" style="margin-top:10px;">
+        <button
+            type="button"
+            class="like-btn"
+            data-post-id="{{ post.id }}"
+            data-liked="{% if post.id in liked_post_ids %}true{% else %}false{% endif %}"
+            style="background:none; border:none; cursor:pointer; display:flex; align-items:center; gap:6px; color:{% if post.id in liked_post_ids %}#e0245e{% else %}var(--muted){% endif %};">
+            <span class="like-icon" style="display:flex;">
+                {% if post.id in liked_post_ids %}
+                <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor"><path d="M12 21s-.4-.3-1-.8C6.7 16.9 3 13.5 3 9.6 3 6.9 5.1 5 7.7 5c1.5 0 3 .7 3.9 1.9C12.5 5.7 14 5 15.5 5 18.1 5 20.2 6.9 20.2 9.6c0 3.9-3.7 7.3-8 10.6-.6.5-1 .8-1 .8z"/></svg>
+                {% else %}
+                <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s-.4-.3-1-.8C6.7 16.9 3 13.5 3 9.6 3 6.9 5.1 5 7.7 5c1.5 0 3 .7 3.9 1.9C12.5 5.7 14 5 15.5 5 18.1 5 20.2 6.9 20.2 9.6c0 3.9-3.7 7.3-8 10.6-.6.5-1 .8-1 .8z"/></svg>
+                {% endif %}
+            </span>
+            <span class="likes-count" style="font-size:14px;">{{ post.likes.count }}</span>
+        </button>
+        <button
+            type="button"
+            class="toggle-comments-btn"
+            data-post-id="{{ post.id }}"
+            style="background:none; border:none; cursor:pointer; display:flex; align-items:center; gap:6px; color:var(--muted);">
+            <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5.5h16v10H9l-4 3.5v-3.5H4z"/></svg>
+            <span class="comments-count" style="font-size:14px;">{{ post.comments.count }}</span>
+        </button>
+    </div>
+
+    <div class="comments-block" id="comments-{{ post.id }}" style="display:none; margin-top:12px; padding-top:12px; border-top:1px solid var(--border);">
+        <div class="comments-list" style="display:flex; flex-direction:column; gap:8px; margin-bottom:10px;">
+            {% for comment in post.comments.all %}
+            <div class="comment" id="comment-{{ comment.id }}" style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+                <div style="font-size:13.5px;">
+                    <span style="font-weight:700;">{{ comment.author.username }}</span>
+                    <span style="margin-left:6px;">{{ comment.text }}</span>
+                </div>
+                {% if comment.author == user or post.author == user %}
+                <button
+                    type="button"
+                    class="delete-comment-btn"
+                    data-comment-id="{{ comment.id }}"
+                    data-post-id="{{ post.id }}"
+                    style="background:none; border:none; color:var(--muted); cursor:pointer; display:flex; align-items:center; flex-shrink:0;">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6l12 12M18 6L6 18"/></svg>
+                </button>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <form class="add-comment-form" data-post-id="{{ post.id }}" style="display:flex; gap:8px;">
+            <input
+                type="text"
+                name="text"
+                placeholder="Написать комментарий..."
+                maxlength="500"
+                style="flex:1; margin:0;">
+            <button type="submit" class="btn-primary" style="padding:8px 12px; display:flex; align-items:center; justify-content:center;">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h16M14 6l6 6-6 6"/></svg>
+            </button>
+        </form>
+    </div>
+</div>

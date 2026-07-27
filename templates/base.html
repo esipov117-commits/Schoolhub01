@@ -368,6 +368,11 @@
             <circle cx="12" cy="12" r="10" fill="#3b82f6"/>
             <path d="M8.5 12.5l2.5 2.5 4.5-5" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
+    {% elif user.profile.is_donor %}
+        <svg viewBox="0 0 24 24" width="13" height="13" style="display:inline-block; vertical-align:middle;">
+            <circle cx="12" cy="12" r="10" fill="#D4AF37"/>
+            <path d="M8.5 12.5l2.5 2.5 4.5-5" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
     {% endif %}
 </span>
 <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
@@ -432,6 +437,11 @@
     {% if user.profile.is_verified %}
         <svg viewBox="0 0 24 24" width="14" height="14" style="display:inline-block; vertical-align:middle;">
             <circle cx="12" cy="12" r="10" fill="#3b82f6"/>
+            <path d="M8.5 12.5l2.5 2.5 4.5-5" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+    {% elif user.profile.is_donor %}
+        <svg viewBox="0 0 24 24" width="14" height="14" style="display:inline-block; vertical-align:middle;">
+            <circle cx="12" cy="12" r="10" fill="#D4AF37"/>
             <path d="M8.5 12.5l2.5 2.5 4.5-5" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
     {% endif %}

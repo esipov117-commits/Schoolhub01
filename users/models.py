@@ -8,6 +8,10 @@ def validate_image_size(image):
     if image.size > max_size_mb * 1024 * 1024:
         raise ValidationError(f"Размер файла не должен превышать {max_size_mb}MB")
 
+def validate_video_size(video):
+    max_size_mb = 3000  # ~3 ГБ
+    if video.size > max_size_mb * 1024 * 1024:
+        raise ValidationError(f"Размер видео не должен превышать {max_size_mb} MB")
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -16,6 +20,7 @@ class Profile(models.Model):
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True, validators=[validate_image_size])
     is_verified = models.BooleanField(default=False)
     is_organizer = models.BooleanField(default=False)
+    is_donor = models.BooleanField(default=False)
     dark_mode = models.BooleanField(default=False)
     banner = models.ImageField(upload_to='banners/', blank=True, null=True, validators=[validate_image_size])
     banner_position = models.PositiveSmallIntegerField(default=50)

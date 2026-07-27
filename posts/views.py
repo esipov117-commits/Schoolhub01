@@ -1,8 +1,78 @@
+import os
+from django.core.paginator import Paginator
+from django.template.loader import render_to_string
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
-from .models import Post, Like, Comment, PostImage
+from .models import Post, PostImage, Like, Comment
 
+VIDEO_EXTENSIONS = {'.mp4', '.mov', '.webm', '.avi', '.mkv'}
+POSTS_PER_PAGE = 10
+
+
+@login_required
+def feed(request):
+    if request.method == 'POST':
+        content = request.POST.get('content', '').strip()
+        files = request.FILES.getlist('images')
+
+        if content or files:
+            post = Post.objects.create(author=request.user, content=content)
+            for i, f in enumerate(files):
+                ext = os.path.splitext(f.name)[1].lower()
+                if ext in VIDEO_EXTENSIONS:
+                    PostImage.objects.create(post=post, video=f, media_type='video', order=i)
+                else:
+                    PostImage.objects.create(post=post, image=f, media_type='image', order=i)
+
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                media_items = [
+                    {'url': pi.url, 'type': pi.media_type}
+                    for pi in post.images.all()
+                ]
+                return JsonResponse({
+                    'id': post.id,
+                    'author': post.author.username,
+                    'author_avatar': post.author.profile.avatar.url if post.author.profile.avatar else None,
+                    'content': post.content,
+                    'media_items': media_items,
+                    'created_at': post.created_at.strftime('%d.%m.%Y, %H:%M'),
+                })
+        return redirect('feed')
+
+    liked_post_ids = set(Like.objects.filter(user=request.user).values_list('post_id', flat=True))
+
+    # AJAX-запрос на подгрузку следующей страницы (infinite scroll)
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest' and request.GET.get('page'):
+        page_number = request.GET.get('page')
+        paginator = Paginator(Post.objects.all(), POSTS_PER_PAGE)
+        page_obj = paginator.get_page(page_number)
+
+        html_list = [
+            render_to_string('posts/_post_card.html', {
+                'post': p,
+                'liked_post_ids': liked_post_ids,
+                'user': request.user,
+            }, request=request)
+            for p in page_obj
+        ]
+        return JsonResponse({'html': html_list, 'has_next': page_obj.has_next()})
+
+    # Обычный первый рендер страницы
+    paginator = Paginator(Post.objects.all(), POSTS_PER_PAGE)
+    page_obj = paginator.get_page(1)
+
+    stats = {
+        'posts_count': Post.objects.filter(author=request.user).count(),
+        'friends_count': 0,
+        'groups_count': 0,
+    }
+    return render(request, 'posts/feed.html', {
+        'posts': page_obj.object_list,
+        'liked_post_ids': liked_post_ids,
+        'stats': stats,
+        'has_next': page_obj.has_next(),
+    })
 
 @login_required
 def toggle_like(request, post_id):
@@ -59,38 +129,3 @@ def delete_comment(request, comment_id):
     comment.delete()
     post = Post.objects.get(id=post_id)
     return JsonResponse({'deleted': True, 'comments_count': post.comments.count()})
-
-@login_required
-def feed(request):
-    if request.method == 'POST':
-        content = request.POST.get('content', '').strip()
-        images = request.FILES.getlist('images')
-
-        if content or images:
-            post = Post.objects.create(author=request.user, content=content)
-            for i, img in enumerate(images):
-                PostImage.objects.create(post=post, image=img, order=i)
-
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({
-                    'id': post.id,
-                    'author': post.author.username,
-                    'author_avatar': post.author.profile.avatar.url if post.author.profile.avatar else None,
-                    'content': post.content,
-                    'image_urls': [pi.image.url for pi in post.images.all()],
-                    'created_at': post.created_at.strftime('%d.%m.%Y, %H:%M'),
-                })
-        return redirect('feed')
-
-    posts = Post.objects.all()
-    liked_post_ids = set(Like.objects.filter(user=request.user).values_list('post_id', flat=True))
-    stats = {
-        'posts_count': Post.objects.filter(author=request.user).count(),
-        'friends_count': 0,
-        'groups_count': 0,
-    }
-    return render(request, 'posts/feed.html', {
-        'posts': posts,
-        'liked_post_ids': liked_post_ids,
-        'stats': stats,
-    })
