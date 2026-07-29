@@ -1,0 +1,25 @@
+{% extends "users/profile.html" %}
+
+{% block profile_content %}
+<div class="profile-section-card card">
+    <div class="section-header">
+        <h3>Фото</h3>
+        <span>{{ photos_count|default:0 }} фото</span>
+    </div>
+    {% if photos %}
+        <div class="photo-grid">
+            {% for photo in photos %}
+                <div class="photo-card">
+                    {% if photo.image %}
+                        <img src="{{ photo.image.url }}" alt="Фото">
+                    {% elif photo.video %}
+                        <video controls src="{{ photo.video.url }}"></video>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="empty-state">Пока нет фото</p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "users/profile.html" %}
+
+{% block profile_content %}
+<div class="profile-section-card card">
+    <h3>Друзья</h3>
+    {% if friends %}
+        <div class="friend-list">
+            {% for friend in friends %}
+                <a class="friend-item" href="{% url 'profile_user' friend.username %}">
+                    {% if friend.profile.avatar %}
+                        <img src="{{ friend.profile.avatar.url }}" alt="{{ friend.username }}">
+                    {% else %}
+                        <div class="friend-avatar">{{ friend.username|first|upper }}</div>
+                    {% endif %}
+                    <div>
+                        <div class="friend-name">{{ friend.profile.display_name|default:friend.username }}</div>
+                        <div class="friend-meta">{{ friend.profile.group_name|default:"Пользователь" }}</div>
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="empty-state">Пока нет друзей</p>
+    {% endif %}
+</div>
+{% endblock %}

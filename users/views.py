@@ -9,6 +9,27 @@ from posts.models import Post
 from events.models import Event
 
 
+def _build_profile_context(request, target_user):
+    profile_obj, _ = Profile.objects.get_or_create(user=target_user)
+    user_posts = Post.objects.filter(author=target_user)
+    is_own_profile = (target_user == request.user)
+    posts_count = user_posts.count()
+    followers_count = target_user.followers.count()
+    following_count = target_user.following.count()
+    is_following = Follow.objects.filter(follower=request.user, following=target_user).exists()
+
+    return {
+        'profile': profile_obj,
+        'user_posts': user_posts,
+        'profile_user': target_user,
+        'is_own_profile': is_own_profile,
+        'posts_count': posts_count,
+        'followers_count': followers_count,
+        'following_count': following_count,
+        'is_following': is_following,
+    }
+
+
 def register(request):
     if request.method == 'POST':
         form = UserCreationForm(request.POST, request.FILES)
@@ -53,24 +74,43 @@ def profile(request, username=None):
     else:
         target_user = request.user
 
-    profile_obj, _ = Profile.objects.get_or_create(user=target_user)
-    user_posts = Post.objects.filter(author=target_user)
-    is_own_profile = (target_user == request.user)
-    posts_count = user_posts.count()
-    followers_count = target_user.followers.count()
-    following_count = target_user.following.count()
-    is_following = Follow.objects.filter(follower=request.user, following=target_user).exists()
+    context = _build_profile_context(request, target_user)
+    context['active_section'] = 'wall'
+    return render(request, 'users/profile.html', context)
 
-    return render(request, 'users/profile.html', {
-        'profile': profile_obj,
-        'user_posts': user_posts,
-        'profile_user': target_user,
-        'is_own_profile': is_own_profile,
-        'posts_count': posts_count,
-        'followers_count': followers_count,
-        'following_count': following_count,
-        'is_following': is_following,
-    })
+
+@login_required
+def profile_friends(request, username):
+    target_user = get_object_or_404(User, username=username)
+    context = _build_profile_context(request, target_user)
+
+    follower_ids = set(Follow.objects.filter(follower=target_user).values_list('following_id', flat=True))
+    following_ids = set(Follow.objects.filter(following=target_user).values_list('follower_id', flat=True))
+    friend_ids = follower_ids & following_ids
+    friends = User.objects.filter(id__in=friend_ids).order_by('username')
+
+    for friend in friends:
+        Profile.objects.get_or_create(user=friend)
+
+    context['active_section'] = 'friends'
+    context['friends'] = friends
+    return render(request, 'users/friends.html', context)
+
+
+@login_required
+def profile_photos(request, username):
+    target_user = get_object_or_404(User, username=username)
+    context = _build_profile_context(request, target_user)
+
+    photos = []
+    for post in Post.objects.filter(author=target_user).prefetch_related('images'):
+        for image in post.images.all():
+            photos.append(image)
+
+    context['active_section'] = 'photos'
+    context['photos'] = photos
+    context['photos_count'] = len(photos)
+    return render(request, 'users/photos.html', context)
 
 
 @login_required
