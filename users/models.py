@@ -17,6 +17,8 @@ class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     display_name = models.CharField(max_length=100, blank=True)
     group_name = models.CharField(max_length=50, blank=True)
+    status = models.CharField(max_length=100, blank=True)
+    bio = models.TextField(max_length=500, blank=True)
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True, validators=[validate_image_size])
     is_verified = models.BooleanField(default=False)
     is_organizer = models.BooleanField(default=False)

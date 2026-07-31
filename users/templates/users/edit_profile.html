@@ -198,6 +198,23 @@
                    value="{{ profile.group_name }}" placeholder="Например, 10-А">
         </div>
 
+        <!-- Статус -->
+        <div class="field-group">
+            <label class="field-label" for="id_status">Статус</label>
+            <input type="text" id="id_status" name="status"
+                value="{{ profile.status }}" placeholder="Например, «Готовлюсь к ЕГЭ» или «На созвоне»"
+                maxlength="100">
+        </div>
+
+        <!-- О себе -->
+        <div class="field-group">
+            <label class="field-label" for="id_bio">О себе</label>
+            <textarea id="id_bio" name="bio" rows="4"
+                placeholder="Расскажи немного о себе"
+                maxlength="500"
+                style="width:100%; resize:vertical; padding:10px 12px; border-radius:10px; border:1px solid var(--border); background:var(--bg); color:var(--text); font-family:inherit; font-size:14px;">{{ profile.bio }}</textarea>
+        </div>
+
         <div class="form-actions">
             <button type="submit" class="btn-primary">Сохранить</button>
             <a href="{% url 'profile' %}" class="btn-secondary">Отмена</a>

@@ -9,8 +9,10 @@
         scroll-snap-align: start;
         flex: 0 0 100%;
         width: 100%;
-        aspect-ratio: 4 / 5;
-        object-fit: cover;
+        height: auto;
+        max-height: 75vh;
+        object-fit: contain;
+        background: #000;
         border-radius: 12px;
         display: block;
         cursor: pointer;
@@ -492,50 +494,50 @@
     });
 
     // ---------- Infinite scroll ----------
-let currentPage = 1;
-let hasNextPage = {{ has_next|yesno:"true,false" }};
-let isLoadingMore = false;
+    let currentPage = 1;
+    let hasNextPage = {{ has_next|yesno:"true,false" }};
+    let isLoadingMore = false;
 
-const sentinel = document.getElementById('scrollSentinel');
-const loadingIndicator = document.getElementById('loadingIndicator');
+    const sentinel = document.getElementById('scrollSentinel');
+    const loadingIndicator = document.getElementById('loadingIndicator');
 
-const observer = new IntersectionObserver(function(entries) {
-    if (entries[0].isIntersecting && hasNextPage && !isLoadingMore) {
-        loadNextPage();
-    }
-}, { rootMargin: '200px' });
+    const scrollObserver = new IntersectionObserver(function(entries) {
+        if (entries[0].isIntersecting && hasNextPage && !isLoadingMore) {
+            loadNextPage();
+        }
+    }, { rootMargin: '200px' });
 
-observer.observe(sentinel);
+    scrollObserver.observe(sentinel);
 
-function loadNextPage() {
-    isLoadingMore = true;
-    loadingIndicator.style.display = 'block';
+    function loadNextPage() {
+        isLoadingMore = true;
+        loadingIndicator.style.display = 'block';
 
-    fetch(`{% url 'feed' %}?page=${currentPage + 1}`, {
-        headers: { 'X-Requested-With': 'XMLHttpRequest' },
-    })
-    .then(res => res.json())
-    .then(data => {
-        const list = document.getElementById('posts-list');
-        data.html.forEach(cardHtml => {
-            const wrapper = document.createElement('div');
-            wrapper.innerHTML = cardHtml.trim();
-            const cardEl = wrapper.firstElementChild;
-            list.appendChild(cardEl);
-            const carousel = cardEl.querySelector('.post-carousel');
-            if (carousel) initCarousel(carousel);
+        fetch(`{% url 'feed' %}?page=${currentPage + 1}`, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        })
+        .then(res => res.json())
+        .then(data => {
+            const list = document.getElementById('posts-list');
+            data.html.forEach(cardHtml => {
+                const wrapper = document.createElement('div');
+                wrapper.innerHTML = cardHtml.trim();
+                const cardEl = wrapper.firstElementChild;
+                list.appendChild(cardEl);
+                const carousel = cardEl.querySelector('.post-carousel');
+                if (carousel) initCarousel(carousel);
+            });
+
+            currentPage += 1;
+            hasNextPage = data.has_next;
+            isLoadingMore = false;
+            loadingIndicator.style.display = 'none';
+        })
+        .catch(err => {
+            console.error('Infinite scroll error:', err);
+            isLoadingMore = false;
+            loadingIndicator.style.display = 'none';
         });
-
-        currentPage += 1;
-        hasNextPage = data.has_next;
-        isLoadingMore = false;
-        loadingIndicator.style.display = 'none';
-    })
-    .catch(err => {
-        console.error('Infinite scroll error:', err);
-        isLoadingMore = false;
-        loadingIndicator.style.display = 'none';
-    });
-}
+    }
     </script>
 {% endblock %}

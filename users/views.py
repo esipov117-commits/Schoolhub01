@@ -120,6 +120,8 @@ def edit_profile(request):
     if request.method == 'POST':
         profile_obj.display_name = request.POST.get('display_name')
         profile_obj.group_name = request.POST.get('group_name')
+        profile_obj.status = request.POST.get('status', '')
+        profile_obj.bio = request.POST.get('bio', '')
 
         avatar = request.FILES.get('avatar')
         if avatar:
