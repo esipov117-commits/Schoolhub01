@@ -38,7 +38,13 @@
         </div>
     </div>
 
-    <button type="button" class="share-btn" onclick="copyProfileLink()">🔗 Поделиться профилем</button>
+    <button
+        type="button"
+        class="share-btn"
+        onclick="copyProfileLink()"
+        data-profile-url="{{ request.scheme }}://{{ request.get_host }}{% url 'profile_user' profile_user.username %}">
+        🔗 Поделиться профилем
+    </button>
     <div id="profile-copy-toast" class="copy-toast" role="status" aria-live="polite">Ссылка скопирована</div>
 </aside>
 {% endblock %}
@@ -92,11 +98,11 @@
                 </div>
 
                 <div class="profile-meta">
-    <span class="meta-badge">🎓 {{ profile.group_name|default:"Группа не указана" }}</span>
-    {% if profile.status %}
-        <span class="meta-badge status-badge">💬 {{ profile.status }}</span>
-    {% endif %}
-</div>
+                    <span class="meta-badge">🎓 {{ profile.group_name|default:"Группа не указана" }}</span>
+                    {% if profile.status %}
+                        <span class="meta-badge status-badge">💬 {{ profile.status }}</span>
+                    {% endif %}
+                </div>
             </div>
         </div>
 
@@ -148,7 +154,7 @@
 </div>
 <script>
 function copyProfileLink() {
-    const url = window.location.href;
+    const url = document.querySelector('.share-btn').dataset.profileUrl;
     const toast = document.getElementById('profile-copy-toast');
 
     if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -171,7 +177,7 @@ function copyProfileLink() {
     helper.select();
     document.execCommand('copy');
     document.body.removeChild(helper);
-аа
+
     if (toast) {
         toast.classList.add('show');
         clearTimeout(copyProfileLink.timer);
@@ -204,20 +210,20 @@ function closeLightbox() {
     .profile-buttons { display: flex; gap: 10px; flex-shrink: 0; }
     .profile-btn { padding: 9px 16px; border-radius: 10px; background: var(--sidebar-active-bg); border: 1px solid var(--border); color: var(--text); text-decoration: none; font-weight: 600; font-size: 13.5px; cursor: pointer; white-space: nowrap; font-family: inherit; transition: opacity 0.15s ease; }
     .profile-btn:hover { opacity: 0.75; }
-.profile-meta { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
-.meta-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 5px 12px;
-    border-radius: 20px;
-    background: var(--sidebar-active-bg);
-    border: 1px solid var(--border);
-    color: var(--text);
-    font-size: 13px;
-    font-weight: 600;
-}
-.status-badge { color: var(--muted); font-weight: 500; }
+    .profile-meta { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+    .meta-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 5px 12px;
+        border-radius: 20px;
+        background: var(--sidebar-active-bg);
+        border: 1px solid var(--border);
+        color: var(--text);
+        font-size: 13px;
+        font-weight: 600;
+    }
+    .status-badge { color: var(--muted); font-weight: 500; }
     .stats { display: flex; gap: 48px; margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--border); }
     .stats div, .stats a { text-align: left; }
     .stats b { display: block; font-size: 16px; }
@@ -254,7 +260,7 @@ function closeLightbox() {
     .photo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
     .photo-card { overflow: hidden; border-radius: 12px; border: 1px solid var(--border); background: var(--sidebar-active-bg); }
     .photo-card img, .photo-card video { width: 100%; height: 140px; object-fit: cover; display: block; }
- 
+
     @media (max-width: 700px) {
         .profile-top { flex-direction: column; align-items: flex-start; }
         .name-row { flex-direction: column; align-items: flex-start; }
@@ -262,18 +268,18 @@ function closeLightbox() {
         .stats { gap: 20px; flex-wrap: wrap; }
         .profile-menu { grid-template-columns: 1fr; }
     }
-.lightbox-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.85);
-    z-index: 100;
-    justify-content: center;
-    align-items: center;
-    padding: 24px;
-}
-.lightbox-overlay.show { display: flex; }
-.lightbox-overlay img { max-width: 90%; max-height: 90%; border-radius: 12px; object-fit: contain; }
+    .lightbox-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.85);
+        z-index: 100;
+        justify-content: center;
+        align-items: center;
+        padding: 24px;
+    }
+    .lightbox-overlay.show { display: flex; }
+    .lightbox-overlay img { max-width: 90%; max-height: 90%; border-radius: 12px; object-fit: contain; }
 </style>
 
 {% endblock %}
