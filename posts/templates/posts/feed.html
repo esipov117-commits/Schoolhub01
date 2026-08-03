@@ -253,92 +253,167 @@
             : '';
     });
 
-    document.getElementById('new-post-form').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const contentEl = document.getElementById('new-post-content');
-        const imageEl = document.getElementById('image-upload');
-        const submitBtn = document.getElementById('new-post-submit');
+    document.getElementById('new-post-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
 
-        if (!contentEl.value.trim() && imageEl.files.length === 0) return;
+    const contentEl = document.getElementById('new-post-content');
+    const imageEl = document.getElementById('image-upload');
+    const submitBtn = document.getElementById('new-post-submit');
 
-        const MAX_VIDEO_SIZE = 3000 * 1024 * 1024;
-        for (const file of imageEl.files) {
-            if (file.type.startsWith('video/') && file.size > MAX_VIDEO_SIZE) {
-                alert(`Файл "${file.name}" превышает лимит в 3 ГБ`);
-                return;
+    if (!contentEl.value.trim() && imageEl.files.length === 0) {
+        return;
+    }
+
+    const MAX_VIDEO_SIZE = 3000 * 1024 * 1024;
+
+    for (const file of imageEl.files) {
+        if (file.type.startsWith('video/') && file.size > MAX_VIDEO_SIZE) {
+            alert(`Файл "${file.name}" больше 3 ГБ`);
+            return;
+        }
+    }
+
+
+    const formData = new FormData();
+    formData.append('content', contentEl.value.trim());
+
+    for (const file of imageEl.files) {
+        formData.append('images', file);
+    }
+
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Загрузка 0%...";
+
+
+    try {
+
+        const xhr = new XMLHttpRequest();
+
+        xhr.open(
+            "POST",
+            "{% url 'feed' %}",
+            true
+        );
+
+        xhr.setRequestHeader(
+            "X-CSRFToken",
+            csrftoken
+        );
+
+        xhr.setRequestHeader(
+            "X-Requested-With",
+            "XMLHttpRequest"
+        );
+
+
+        xhr.upload.onprogress = function(event) {
+
+            if (event.lengthComputable) {
+
+                const percent = Math.round(
+                    (event.loaded / event.total) * 100
+                );
+
+                submitBtn.textContent =
+                    Загрузка ${percent}%...;
             }
+        };
+
+
+        const result = await new Promise((resolve, reject)=>{
+
+            xhr.onload = function(){
+
+                if(xhr.status >= 200 && xhr.status < 300){
+                    resolve(JSON.parse(xhr.responseText));
+                }
+                else{
+                    reject(
+                        new Error(
+                            "Ошибка сервера: " + xhr.status
+                        )
+                    );
+                }
+
+            };
+
+
+            xhr.onerror = function(){
+                reject(new Error("Ошибка сети"));
+            };
+
+
+            xhr.send(formData);
+
+        });
+
+
+        const data = result;
+
+
+        document.getElementById('empty-feed')?.remove();
+
+
+        const card = document.createElement('div');
+
+        card.className = 'card';
+        card.id = post-${data.id};
+        card.dataset.postId = data.id;
+
+
+        card.innerHTML = `
+            <div class="post-content">
+                ${data.content || ''}
+            </div>
+
+            ${buildCarousel(data.media_items)}
+
+        `;
+
+
+        document.getElementById('posts-list')
+            .prepend(card);
+
+
+        const newCarousel =
+            card.querySelector('.post-carousel');
+
+        if(newCarousel){
+            initCarousel(newCarousel);
         }
 
-        const formData = new FormData();
-        formData.append('content', contentEl.value.trim());
-        for (const file of imageEl.files) {
-            formData.append('images', file);
-        }
 
-        submitBtn.disabled = true;
+        contentEl.value="";
+        imageEl.value="";
+        document.getElementById('image-filename').textContent="";
 
-        fetch("{% url 'feed' %}", {
-            method: 'POST',
-            headers: { 'X-CSRFToken': csrftoken, 'X-Requested-With': 'XMLHttpRequest' },
-            body: formData,
-        })
-        .then(res => res.json())
-        .then(data => {
-            document.getElementById('empty-feed')?.remove();
 
-            const card = document.createElement('div');
-            card.className = 'card';
-            card.id = `post-${data.id}`;
-            card.dataset.postId = data.id;
-            card.innerHTML = `
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <a href="/profile/${data.author}/">
-                            ${data.author_avatar
-                                ? `<img src="${data.author_avatar}" class="avatar avatar-small">`
-                                : `<div class="avatar avatar-small"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.7 0 4.9-2.2 4.9-4.9S14.7 2.2 12 2.2 7.1 4.4 7.1 7.1 9.3 12 12 12zm0 2.4c-3.3 0-9.8 1.6-9.8 4.9v2.4h19.6v-2.4c0-3.3-6.5-4.9-9.8-4.9z"/></svg></div>`}
-                        </a>
-                        <div>
-                            <a href="/profile/${data.author}/" style="text-decoration:none; color:inherit;">
-                                <span class="post-author">${data.author}</span>
-                            </a>
-                            <span style="color:var(--muted); font-size:13px; margin-left:6px;">${data.created_at}</span>
-                        </div>
-                    </div>
-                    <button type="button" class="delete-post-btn" data-post-id="${data.id}"
-                        style="background:none; border:none; color:var(--muted); cursor:pointer; display:flex; align-items:center;">${trashIcon}</button>
-                </div>
-                ${data.content ? `<div class="post-content" style="margin-top:10px;">${data.content}</div>` : ''}
-                ${buildCarousel(data.media_items)}
-                <div class="post-actions" style="margin-top:10px;">
-                    <button type="button" class="like-btn" data-post-id="${data.id}" data-liked="false"
-                        style="background:none; border:none; cursor:pointer; display:flex; align-items:center; gap:6px; color:var(--muted);">
-                        <span class="like-icon" style="display:flex;">${heartOutline}</span> <span class="likes-count" style="font-size:14px;">0</span>
-                    </button>
-                    <button type="button" class="toggle-comments-btn" data-post-id="${data.id}"
-                        style="background:none; border:none; cursor:pointer; display:flex; align-items:center; gap:6px; color:var(--muted);">
-                        ${commentIcon} <span class="comments-count" style="font-size:14px;">0</span>
-                    </button>
-                </div>
-                <div class="comments-block" id="comments-${data.id}" style="display:none; margin-top:12px; padding-top:12px; border-top:1px solid var(--border);">
-                    <div class="comments-list" style="display:flex; flex-direction:column; gap:8px; margin-bottom:10px;"></div>
-                    <form class="add-comment-form" data-post-id="${data.id}" style="display:flex; gap:8px;">
-                        <input type="text" name="text" placeholder="Написать комментарий..." maxlength="500" style="flex:1; margin:0;">
-                        <button type="submit" class="btn-primary" style="padding:8px 12px; display:flex; align-items:center; justify-content:center;">${sendIcon}</button>
-                    </form>
-                </div>
-            `;
-            document.getElementById('posts-list').prepend(card);
-            const newCarousel = card.querySelector('.post-carousel');
-            if (newCarousel) initCarousel(newCarousel);
+    }
 
-            contentEl.value = '';
-            imageEl.value = '';
-            document.getElementById('image-filename').textContent = '';
-        })
-        .catch(err => console.error('Post creation error:', err))
-        .finally(() => { submitBtn.disabled = false; });
-    });
+    catch(err){
+
+        console.error(
+            "Post creation error:",
+            err
+        );
+
+        alert(
+            "Не удалось загрузить пост: " + err.message
+        );
+
+    }
+
+
+    finally{
+
+        submitBtn.disabled=false;
+        submitBtn.textContent="Опубликовать";
+
+    }
+
+
+});
 
     // ---------- Лайки / удаление / комментарии / лайтбокс (делегирование событий) ----------
     let pendingDeletePostId = null;
