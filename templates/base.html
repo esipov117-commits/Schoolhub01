@@ -3,7 +3,7 @@
 <html lang="ru" {% if user.profile.dark_mode %}data-theme="dark"{% endif %}>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>{% block title %}SchoolHub{% endblock %}</title>
 {% block extra_head %}{% endblock %}
 
@@ -295,7 +295,7 @@
         .topbar-right { gap: 14px; }
         .card { padding: 16px; }
         body {
-            padding-bottom: 64px; /* место под нижнюю панель, чтобы контент не перекрывался */
+            padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px));
         }
 
         .bottom-nav {
@@ -303,12 +303,13 @@
             justify-content: space-around;
             align-items: center;
             position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
+            left: 16px;
+            right: 16px;
+            bottom: calc(14px + env(safe-area-inset-bottom, 0px));
             background: var(--panel);
-            border-top: 1px solid var(--border);
-            padding: 8px 0;
+            border-radius: 28px;
+            padding: 10px 6px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.08);
             z-index: 20;
         }
         .bottom-nav a {
@@ -318,10 +319,13 @@
             gap: 2px;
             color: var(--muted);
             text-decoration: none;
-            font-size: 11px;
+            font-size: 10.5px;
+            padding: 6px 10px;
+            border-radius: 18px;
+            transition: background 0.15s ease, color 0.15s ease;
         }
-        .bottom-nav a.active { color: var(--text); font-weight: 700; }
-        .bottom-nav svg { width: 22px; height: 22px; }
+        .bottom-nav a.active { color: var(--text); font-weight: 700; background: var(--sidebar-active-bg); }
+        .bottom-nav svg { width: 21px; height: 21px; }
     }
 
     /* ---------- Очень маленькие экраны ---------- */

@@ -147,11 +147,11 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # Безопасность для продакшена (HTTPS).
 # В DEBUG-режиме (локальная разработка по http://127.0.0.1) не применяется.
 if not DEBUG:
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
-    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+    SECURE_SSL_REDIRECT = False
     SECURE_HSTS_SECONDS = 31536000
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = False
 
 STORAGES = {
     "default": {
