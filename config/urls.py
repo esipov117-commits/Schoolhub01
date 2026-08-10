@@ -12,4 +12,5 @@ urlpatterns = [
     path('', include('chat.urls')),
     path("calendar/", include("planner.urls")),
     path("tasks/", include("tasks.urls")),
+    path("settings/", include("settings.urls")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

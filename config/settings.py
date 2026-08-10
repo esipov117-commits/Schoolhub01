@@ -50,7 +50,8 @@ INSTALLED_APPS = [
     'events',
     'chat',
     'planner',
-    'tasks'
+    'tasks',
+    'settings',
 ]
  
 MIDDLEWARE = [

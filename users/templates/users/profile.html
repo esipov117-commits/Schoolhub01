@@ -1,285 +1,574 @@
 {% extends "base.html" %}
+
 {% block title %}Профиль — SchoolHub{% endblock %}
 {% block nav_profile %}active{% endblock %}
 {% block grid_columns %}240px 1fr 320px{% endblock %}
+
 {% block rightbar %}
+
 <aside class="profile-side-card card">
     <div class="profile-side-card__header">
         <h3>📊 Статистика</h3>
     </div>
-    <div class="profile-side-list">
-        <div class="profile-side-item">
-            <span>Посты</span>
-            <strong>{{ posts_count|default:"0" }}</strong>
-        </div>
-        <div class="profile-side-item">
-            <span>Друзья</span>
-            <strong>{{ following_count|default:"0" }}</strong>
-        </div>
-        <div class="profile-side-item">
-            <span>Фото</span>
-            <strong>0</strong>
-        </div>
+<div class="profile-side-list">
+    <div class="profile-side-item">
+        <span>Посты</span>
+        <strong>{{ posts_count|default:"0" }}</strong>
     </div>
-
-    <div class="profile-side-section">
-        <h4>👤 Информация</h4>
-        <div class="profile-side-item compact">
-            <span>Группа</span>
-            <strong>{{ profile.group_name|default:"Не указана" }}</strong>
-        </div>
-        <div class="profile-side-item compact">
-            <span>Статус</span>
-            <strong>{{ profile.status|default:"Нет статуса" }}</strong>
-        </div>
-        <div class="profile-side-item compact">
-            <span>Регистрация</span>
-            <strong>{{ profile_user.date_joined|date:"d.m.Y" }}</strong>
-        </div>
+    <div class="profile-side-item">
+        <span>Друзья</span>
+        <strong>{{ following_count|default:"0" }}</strong>
     </div>
-
-    <button
-        type="button"
-        class="share-btn"
-        onclick="copyProfileLink()"
-        data-profile-url="{{ request.scheme }}://{{ request.get_host }}{% url 'profile_user' profile_user.username %}">
-        🔗 Поделиться профилем
-    </button>
-    <div id="profile-copy-toast" class="copy-toast" role="status" aria-live="polite">Ссылка скопирована</div>
+    <div class="profile-side-item">
+        <span>Фото</span>
+        <strong>0</strong>
+    </div>
+</div>
+<div class="profile-side-section">
+    <h4>👤 Информация</h4>
+    <div class="profile-side-item compact">
+        <span>Группа</span>
+        <strong>{{ profile.group_name|default:"Не указана" }}</strong>
+    </div>
+    <div class="profile-side-item compact">
+        <span>Статус</span>
+        <strong>{{ profile.status|default:"Нет статуса" }}</strong>
+    </div>
+    <div class="profile-side-item compact">
+        <span>Регистрация</span>
+        <strong>{{ profile_user.date_joined|date:"d.m.Y" }}</strong>
+    </div>
+</div>
+<button
+    type="button"
+    class="share-btn"
+    onclick="copyProfileLink()"
+    data-profile-url="{{ request.scheme }}://{{ request.get_host }}{% url 'profile_user' profile_user.username %}">
+    🔗 Поделиться профилем
+</button>
+<div id="profile-copy-toast" class="copy-toast">
+    Ссылка скопирована
+</div>
 </aside>
 {% endblock %}
 
 {% block content %}
+
 <div class="profile-page">
-
-    <div class="profile-cover">
-        {% if profile.banner %}
-            <div class="profile-cover-image" style="background-image: url('{{ profile.banner.url }}'); background-position: center {{ profile.banner_position }}%;"></div>
+<div class="profile-cover">
+    {% if profile.banner %}
+        <div
+            class="profile-cover-image"
+            style="background-image:url('{{ profile.banner.url }}'); background-position:center {{ profile.banner_position }}%;">
+        </div>
+    {% else %}
+        <div class="profile-cover-image"></div>
+    {% endif %}
+</div>
+<div class="profile-card card">
+    <div class="profile-top">
+        {% if profile.avatar %}
+            <img
+                class="profile-avatar"
+                src="{{ profile.avatar.url }}"
+                alt="{{ profile_user.username }}">
         {% else %}
-            <div class="profile-cover-image"></div>
+            <div class="profile-avatar empty-avatar">
+                {{ profile_user.username|first|upper }}
+            </div>
         {% endif %}
-    </div>
-
-    <div class="profile-card card">
-        <div class="profile-top">
-            {% if profile.avatar %}
-                <img class="profile-avatar" src="{{ profile.avatar.url }}" alt="{{ profile_user.username }}">
-            {% else %}
-                <div class="profile-avatar empty-avatar">
-                    {{ profile_user.username|first|upper }}
-                </div>
-            {% endif %}
-
-            <div class="profile-info">
-                <div class="name-row">
-                    <h1>
-                        {{ profile.display_name|default:profile_user.username }}
-                        {% if profile.is_verified %}
-                            <svg viewBox="0 0 24 24" width="14" height="14" style="display:inline-block; vertical-align:middle; margin-left:1px;">
-                                <circle cx="12" cy="12" r="10" fill="#3b82f6"/>
-                                <path d="M8.5 12.5l2.5 2.5 4.5-5" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        {% endif %}
-                    </h1>
-
-                    <div class="profile-buttons">
-                        {% if is_own_profile %}
-                            <a class="profile-btn" href="{% url 'edit_profile' %}">✏️ Редактировать</a>
-                        {% else %}
-                            <form method="POST" action="{% url 'toggle_follow' profile_user.username %}" style="display:inline; margin:0;">
-                                {% csrf_token %}
-                                <button type="submit" class="profile-btn">
-                                    {% if is_following %}✅ Подписан{% else %}➕ Подписаться{% endif %}
-                                </button>
-                            </form>
-                            <button class="profile-btn">💬 Написать</button>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <div class="profile-meta">
-                    <span class="meta-badge">🎓 {{ profile.group_name|default:"Группа не указана" }}</span>
-                    {% if profile.status %}
-                        <span class="meta-badge status-badge">💬 {{ profile.status }}</span>
+        <div class="profile-info">
+            <div class="name-row">
+                <h1>
+                    {{ profile.display_name|default:profile_user.username }}
+                    {% if profile.is_verified %}
+                        <svg
+                            class="verified-icon"
+                            viewBox="0 0 24 24"
+                            aria-label="Подтверждённый профиль">
+                            <circle cx="12" cy="12" r="10" fill="#3b82f6"></circle>
+                            <path
+                                d="M8.5 12.5l2.5 2.5 4.5-5"
+                                stroke="white"
+                                stroke-width="2"
+                                fill="none"
+                                stroke-linecap="round"
+                                stroke-linejoin="round">
+                            </path>
+                        </svg>
+                    {% endif %}
+                </h1>
+                <div class="profile-buttons">
+                    {% if is_own_profile %}
+                        <a
+                            class="profile-btn"
+                            href="{% url 'edit_profile' %}">
+                            ✏️ Редактировать
+                        </a>
+                        <a
+                            class="profile-btn settings-profile-btn"
+                            href="/settings/">
+                             ⚙️ Настройки
+                        </a>
+                    {% else %}
+                        <form
+                            method="POST"
+                            action="{% url 'toggle_follow' profile_user.username %}"
+                            class="inline-form">
+                            {% csrf_token %}
+                            <button
+                                type="submit"
+                                class="profile-btn">
+                                {% if is_following %}
+                                    ✅ Подписан
+                                {% else %}
+                                    ➕ Подписаться
+                                {% endif %}
+                            </button>
+                        </form>
+                        <button
+                            type="button"
+                            class="profile-btn">
+                            💬 Написать
+                        </button>
                     {% endif %}
                 </div>
             </div>
-        </div>
-
-        <div class="stats">
-            <a href="{% url 'followers_list' profile_user.username %}" style="text-decoration:none; color:inherit;">
-                <b>{{ followers_count|default:"0" }}</b>
-                <span>Подписчики</span>
-            </a>
-            <a href="{% url 'following_list' profile_user.username %}" style="text-decoration:none; color:inherit;">
-                <b>{{ following_count|default:"0" }}</b>
-                <span>Подписки</span>
-            </a>
-            <div>
-                <b>{{ posts_count|default:"0" }}</b>
-                <span>Посты</span>
+            <div class="profile-meta">
+                <span class="meta-badge">
+                    🎓 {{ profile.group_name|default:"Группа не указана" }}
+                </span>
+                {% if profile.status %}
+                    <span class="meta-badge status-badge">
+                        💬 {{ profile.status }}
+                    </span>
+                {% endif %}
             </div>
         </div>
     </div>
-
-    <div class="profile-menu card">
-        <a href="{% if profile_user == request.user %}{% url 'profile' %}{% else %}{% url 'profile_user' profile_user.username %}{% endif %}" class="{% if active_section == 'wall' %}active{% endif %}">📝 Стена</a>
-        <a href="{% url 'profile_friends' profile_user.username %}" class="{% if active_section == 'friends' %}active{% endif %}">👥 Друзья</a>
-        <a href="{% url 'profile_photos' profile_user.username %}" class="{% if active_section == 'photos' %}active{% endif %}">🖼 Фото</a>
+    <div class="stats">
+        <a href="{% url 'followers_list' profile_user.username %}">
+            <b>{{ followers_count|default:"0" }}</b>
+            <span>Подписчики</span>
+        </a>
+        <a href="{% url 'following_list' profile_user.username %}">
+            <b>{{ following_count|default:"0" }}</b>
+            <span>Подписки</span>
+        </a>
+        <div>
+            <b>{{ posts_count|default:"0" }}</b>
+            <span>Посты</span>
+        </div>
     </div>
-
-    {% block profile_content %}
-    <div class="profile-columns">
+</div>
+<div class="profile-menu card">
+    <a
+        href="{% if profile_user == request.user %}{% url 'profile' %}{% else %}{% url 'profile_user' profile_user.username %}{% endif %}"
+        class="{% if active_section == 'wall' %}active{% endif %}">
+        📝 Стена
+    </a>
+    <a
+        href="{% url 'profile_friends' profile_user.username %}"
+        class="{% if active_section == 'friends' %}active{% endif %}">
+        👥 Друзья
+    </a>
+    <a
+        href="{% url 'profile_photos' profile_user.username %}"
+        class="{% if active_section == 'photos' %}active{% endif %}">
+        🖼 Фото
+    </a>
+</div>
+{% block profile_content %}
+<div class="profile-columns">
     <div class="profile-left-column">
         <div class="card profile-about-card">
             <h3>🧑‍🎓 О себе</h3>
-            <p>{{ profile.bio|default:"Пользователь пока ничего не рассказал о себе." }}</p>
+            <p>
+                {{ profile.bio|default:"Пользователь пока ничего не рассказал о себе." }}
+            </p>
         </div>
     </div>
-
     <div class="profile-main-column">
         <h3 class="section-title">Посты</h3>
         {% for post in user_posts %}
-            <div class="card post">{{ post.content|linebreaksbr }}</div>
+            <div class="card post">
+                {{ post.content|linebreaksbr }}
+            </div>
         {% empty %}
-            <div class="card empty-feed">Пока нет постов</div>
+            <div class="card empty-feed">
+                Пока нет постов
+            </div>
         {% endfor %}
     </div>
-    </div>
-    {% endblock %}
-
 </div>
-<div id="lightbox-overlay" class="lightbox-overlay" onclick="closeLightbox()">
-    <img id="lightbox-image" src="" alt="Фото">
+{% endblock %}
+</div>
+<div
+    id="lightbox-overlay"
+    class="lightbox-overlay"
+    onclick="closeLightbox()">
+<img id="lightbox-image" src="" alt="Фото">
 </div>
 <script>
 function copyProfileLink() {
-    const url = document.querySelector('.share-btn').dataset.profileUrl;
-    const toast = document.getElementById('profile-copy-toast');
-
+    const button = document.querySelector(".share-btn");
+    const toast = document.getElementById("profile-copy-toast");
+    if (!button) return;
+    const url = button.dataset.profileUrl;
+    function showToast() {
+        if (!toast) return;
+        toast.classList.add("show");
+        clearTimeout(copyProfileLink.timer);
+        copyProfileLink.timer = setTimeout(function () {
+            toast.classList.remove("show");
+        }, 1800);
+    }
     if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(url).then(() => {
-            if (toast) {
-                toast.classList.add('show');
-                clearTimeout(copyProfileLink.timer);
-                copyProfileLink.timer = setTimeout(() => toast.classList.remove('show'), 1800);
-            }
-        });
+        navigator.clipboard.writeText(url)
+            .then(showToast)
+            .catch(function () {});
         return;
     }
-
-    const helper = document.createElement('textarea');
-    helper.value = url;
-    helper.setAttribute('readonly', '');
-    helper.style.position = 'fixed';
-    helper.style.left = '-9999px';
-    document.body.appendChild(helper);
-    helper.select();
-    document.execCommand('copy');
-    document.body.removeChild(helper);
-
-    if (toast) {
-        toast.classList.add('show');
-        clearTimeout(copyProfileLink.timer);
-        copyProfileLink.timer = setTimeout(() => toast.classList.remove('show'), 1800);
-    }
+    const textarea = document.createElement("textarea");
+    textarea.value = url;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "fixed";
+    textarea.style.left = "-9999px";
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+        document.execCommand("copy");
+    } catch (error) {}
+    document.body.removeChild(textarea);
+    showToast();
 }
 function openLightbox(src) {
-    const overlay = document.getElementById('lightbox-overlay');
-    const img = document.getElementById('lightbox-image');
-    img.src = src;
-    overlay.classList.add('show');
+    const overlay = document.getElementById("lightbox-overlay");
+    const image = document.getElementById("lightbox-image");
+    if (!overlay || !image) return;
+    image.src = src;
+    overlay.classList.add("show");
 }
-
 function closeLightbox() {
-    document.getElementById('lightbox-overlay').classList.remove('show');
+    const overlay = document.getElementById("lightbox-overlay");
+    if (overlay) {
+        overlay.classList.remove("show");
+    }
 }
 </script>
-
 <style>
-    .profile-page { display: flex; flex-direction: column; gap: 16px; }
-    .profile-cover { height: 120px; border-radius: 18px 18px 0 0; overflow: hidden; background: linear-gradient(135deg, #777, #aaa); }
-    .profile-cover-image { width: 100%; height: 100%; background-size: cover; background-repeat: no-repeat; }
-    .profile-card { margin-top: -25px; position: relative; padding: 24px 24px 20px; border: 1px solid var(--border); box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04); }
-    .profile-top { display: flex; align-items: center; gap: 20px; }
-    .profile-avatar { width: 110px; height: 110px; border-radius: 50%; object-fit: cover; border: 5px solid var(--panel); margin-top: -60px; flex-shrink: 0; box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08); }
-    .empty-avatar { display: flex; align-items: center; justify-content: center; background: var(--sidebar-active-bg); font-size: 36px; font-weight: 700; color: var(--muted); }
-    .profile-info { flex: 1; min-width: 0; }
-    .name-row { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
-    .profile-info h1 { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 24px; }
-    .profile-buttons { display: flex; gap: 10px; flex-shrink: 0; }
-    .profile-btn { padding: 9px 16px; border-radius: 10px; background: var(--sidebar-active-bg); border: 1px solid var(--border); color: var(--text); text-decoration: none; font-weight: 600; font-size: 13.5px; cursor: pointer; white-space: nowrap; font-family: inherit; transition: opacity 0.15s ease; }
-    .profile-btn:hover { opacity: 0.75; }
-    .profile-meta { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
-    .meta-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        padding: 5px 12px;
-        border-radius: 20px;
-        background: var(--sidebar-active-bg);
-        border: 1px solid var(--border);
-        color: var(--text);
-        font-size: 13px;
-        font-weight: 600;
+.profile-page {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.profile-cover {
+    height: 120px;
+    border-radius: 18px 18px 0 0;
+    overflow: hidden;
+    background: linear-gradient(135deg, #777, #aaa);
+}
+.profile-cover-image {
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-repeat: no-repeat;
+}
+.profile-card {
+    margin-top: -25px;
+    position: relative;
+    padding: 24px;
+    border: 1px solid var(--border);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, .04);
+}
+.profile-top {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+.profile-avatar {
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 5px solid var(--panel);
+    margin-top: -60px;
+    flex-shrink: 0;
+    box-shadow: 0 6px 16px rgba(15, 23, 42, .08);
+}
+.empty-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--sidebar-active-bg);
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--muted);
+}
+.profile-info {
+    flex: 1;
+    min-width: 0;
+}
+.name-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+.profile-info h1 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font-size: 24px;
+}
+.verified-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+.profile-buttons {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+.inline-form {
+    display: inline;
+    margin: 0;
+}
+.profile-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 38px;
+    padding: 9px 16px;
+    border-radius: 10px;
+    background: var(--sidebar-active-bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    text-decoration: none;
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity .15s ease, background .15s ease;
+}
+.profile-btn:hover {
+    opacity: .75;
+}
+.profile-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+}
+.meta-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    background: var(--sidebar-active-bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 600;
+}
+.status-badge {
+    color: var(--muted);
+    font-weight: 500;
+}
+.stats {
+    display: flex;
+    gap: 48px;
+    margin-top: 20px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+}
+.stats a,
+.stats > div {
+    text-align: left;
+    text-decoration: none;
+    color: inherit;
+}
+.stats b {
+    display: block;
+    font-size: 16px;
+}
+.stats span {
+    color: var(--muted);
+    font-size: 12.5px;
+}
+.profile-menu {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+}
+.profile-menu a {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 12px 10px;
+    border-radius: 10px;
+    text-decoration: none;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 600;
+}
+.profile-menu a.active {
+    background: var(--sidebar-active-bg);
+    font-weight: 700;
+}
+.profile-columns {
+    display: grid;
+    grid-template-columns: minmax(220px, 280px) 1fr;
+    gap: 20px;
+    align-items: start;
+}
+.profile-left-column,
+.profile-main-column {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+}
+.profile-about-card p {
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.6;
+}
+.section-title {
+    margin: 0 0 8px;
+    font-size: 15px;
+}
+.empty-feed {
+    color: var(--muted);
+}
+.post.card {
+    font-size: 14.5px;
+    line-height: 1.5;
+}
+.profile-side-card {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    position: sticky;
+    top: 92px;
+    width: 100%;
+    border: 1px solid var(--border);
+}
+.profile-side-card__header h3 {
+    margin: 0;
+    font-size: 15px;
+}
+.profile-side-list,
+.profile-side-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.profile-side-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+}
+.profile-side-item span {
+    color: var(--muted);
+}
+.profile-side-item strong {
+    color: var(--text);
+    text-align: right;
+}
+.profile-side-section h4 {
+    margin: 2px 0 4px;
+    font-size: 14px;
+}
+.share-btn {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: var(--sidebar-active-bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+.copy-toast {
+    min-height: 18px;
+    color: var(--muted);
+    font-size: 13px;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: .18s ease;
+}
+.copy-toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+.lightbox-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+    padding: 24px;
+    background: rgba(0, 0, 0, .85);
+}
+.lightbox-overlay.show {
+    display: flex;
+}
+.lightbox-overlay img {
+    max-width: 90%;
+    max-height: 90%;
+    border-radius: 12px;
+    object-fit: contain;
+}
+@media (max-width: 700px) {
+    .profile-top {
+        flex-direction: column;
+        align-items: flex-start;
     }
-    .status-badge { color: var(--muted); font-weight: 500; }
-    .stats { display: flex; gap: 48px; margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--border); }
-    .stats div, .stats a { text-align: left; }
-    .stats b { display: block; font-size: 16px; }
-    .stats span { color: var(--muted); font-size: 12.5px; }
-    .profile-menu { display: flex; gap: 8px; width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04); }
-    .profile-menu a { flex: 1; display: flex; justify-content: center; align-items: center; padding: 12px 10px; text-decoration: none; color: var(--text); font-size: 14px; font-weight: 600; border-radius: 10px; transition: background 0.15s ease, color 0.15s ease; }
-    .profile-menu .active { background: var(--sidebar-active-bg); color: var(--text); font-weight: 700; }
-    .profile-columns { display: grid; grid-template-columns: minmax(220px, 280px) 1fr; gap: 20px; align-items: start; width: 100%; }
-    .profile-left-column, .profile-main-column { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-    .profile-about-card p { color: var(--muted); font-size: 14px; line-height: 1.6; }
-    .section-title { margin: 0 0 8px; font-size: 15px; }
-    .empty-feed { color: var(--muted); }
-    .post.card { font-size: 14.5px; line-height: 1.5; }
-    .profile-side-card { display: flex; flex-direction: column; gap: 14px; border: 1px solid var(--border); box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04); position: sticky; top: 92px; align-self: start; width: 100%; }
-    .profile-side-card__header h3 { font-size: 15px; margin: 0; }
-    .profile-side-list, .profile-side-section { display: flex; flex-direction: column; gap: 8px; }
-    .profile-side-item { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
-    .profile-side-item.compact { padding: 8px 0; }
-    .profile-side-item span { color: var(--muted); }
-    .profile-side-item strong { font-weight: 700; color: var(--text); text-align: right; }
-    .profile-side-section h4 { font-size: 14px; margin: 2px 0 4px; }
-    .share-btn { display: inline-flex; justify-content: center; align-items: center; padding: 10px 12px; border-radius: 10px; background: var(--sidebar-active-bg); border: 1px solid var(--border); color: var(--text); text-decoration: none; font-weight: 600; font-size: 13.5px; margin-top: 4px; cursor: pointer; }
-    .copy-toast { opacity: 0; transform: translateY(4px); transition: all 0.18s ease; color: var(--muted); font-size: 13px; min-height: 18px; }
-    .copy-toast.show { opacity: 1; transform: translateY(0); color: var(--text); }
-    .profile-section-card { display: flex; flex-direction: column; gap: 12px; }
-    .section-header { display: flex; justify-content: space-between; align-items: center; }
-    .empty-state { color: var(--muted); font-size: 14px; }
-    .friend-list { display: flex; flex-direction: column; gap: 10px; }
-    .friend-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; text-decoration: none; color: inherit; }
-    .friend-item:hover { background: var(--sidebar-active-bg); }
-    .friend-item img, .friend-avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; background: var(--sidebar-active-bg); display: flex; align-items: center; justify-content: center; color: var(--muted); font-weight: 700; }
-    .friend-name { font-weight: 600; }
-    .friend-meta { color: var(--muted); font-size: 13px; }
-    .photo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
-    .photo-card { overflow: hidden; border-radius: 12px; border: 1px solid var(--border); background: var(--sidebar-active-bg); }
-    .photo-card img, .photo-card video { width: 100%; height: 140px; object-fit: cover; display: block; }
-
-    @media (max-width: 700px) {
-        .profile-top { flex-direction: column; align-items: flex-start; }
-        .name-row { flex-direction: column; align-items: flex-start; }
-        .profile-columns { grid-template-columns: 1fr; }
-        .stats { gap: 20px; flex-wrap: wrap; }
-        .profile-menu { grid-template-columns: 1fr; }
+    .name-row {
+        flex-direction: column;
+        align-items: flex-start;
+        width: 100%;
     }
-    .lightbox-overlay {
-        display: none;
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.85);
-        z-index: 100;
-        justify-content: center;
-        align-items: center;
-        padding: 24px;
+    .profile-buttons {
+        width: 100%;
+        flex-wrap: wrap;
     }
-    .lightbox-overlay.show { display: flex; }
-    .lightbox-overlay img { max-width: 90%; max-height: 90%; border-radius: 12px; object-fit: contain; }
+    .profile-btn {
+        flex: 1;
+        min-width: 130px;
+    }
+    .profile-columns {
+        grid-template-columns: 1fr;
+    }
+    .stats {
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+    .profile-menu {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
 </style>
 
 {% endblock %}
