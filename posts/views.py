@@ -15,9 +15,12 @@ def feed(request):
     if request.method == 'POST':
         content = request.POST.get('content', '').strip()
         files = request.FILES.getlist('images')
+        layout = request.POST.get('layout', 'carousel')
+        if layout not in ('carousel', 'grid'):
+            layout = 'carousel'
 
         if content or files:
-            post = Post.objects.create(author=request.user, content=content)
+            post = Post.objects.create(author=request.user, content=content, layout=layout)
             for i, f in enumerate(files):
                 ext = os.path.splitext(f.name)[1].lower()
                 if ext in VIDEO_EXTENSIONS:
@@ -36,18 +39,18 @@ def feed(request):
                     'author_avatar': post.author.profile.avatar.url if post.author.profile.avatar else None,
                     'content': post.content,
                     'media_items': media_items,
+                    'layout': post.layout,
                     'created_at': post.created_at.strftime('%d.%m.%Y, %H:%M'),
                 })
         return redirect('feed')
-
     liked_post_ids = set(Like.objects.filter(user=request.user).values_list('post_id', flat=True))
-
+ 
     # AJAX-запрос на подгрузку следующей страницы (infinite scroll)
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest' and request.GET.get('page'):
         page_number = request.GET.get('page')
         paginator = Paginator(Post.objects.all(), POSTS_PER_PAGE)
         page_obj = paginator.get_page(page_number)
-
+ 
         html_list = [
             render_to_string('posts/_post_card.html', {
                 'post': p,
@@ -57,11 +60,11 @@ def feed(request):
             for p in page_obj
         ]
         return JsonResponse({'html': html_list, 'has_next': page_obj.has_next()})
-
+ 
     # Обычный первый рендер страницы
     paginator = Paginator(Post.objects.all(), POSTS_PER_PAGE)
     page_obj = paginator.get_page(1)
-
+ 
     stats = {
         'posts_count': Post.objects.filter(author=request.user).count(),
         'friends_count': 0,
@@ -73,6 +76,7 @@ def feed(request):
         'stats': stats,
         'has_next': page_obj.has_next(),
     })
+ 
 
 @login_required
 def toggle_like(request, post_id):

@@ -4,8 +4,14 @@ from users.models import validate_image_size
 
 
 class Post(models.Model):
+    LAYOUT_CHOICES = [
+        ('carousel', 'Carousel'),
+        ('grid', 'Grid'),
+    ]
+
     author = models.ForeignKey(User, on_delete=models.CASCADE)
     content = models.TextField(blank=True)
+    layout = models.CharField(max_length=10, choices=LAYOUT_CHOICES, default='carousel')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

@@ -4,9 +4,9 @@
 
 {% block extra_head %}
 <style>
-    .carousel-track::-webkit-scrollbar { display: none; }
-
-Я не понял куда и как вставит, перепиши полностью пожалуйста и добавь что надо
+    .post-carousel { position:relative; margin-top:10px; }
+    .carousel-track { display:flex; overflow-x:auto; scroll-snap-type:x mandatory; border-radius:12px; }
+    .carousel-track::-webkit-scrollbar { display:none; }
     .carousel-img,
     video.carousel-img {
         scroll-snap-align: start;
@@ -20,6 +20,44 @@
         display: block;
         cursor: pointer;
     }
+    .carousel-dots { display:flex; justify-content:center; gap:6px; margin-top:8px; }
+    .carousel-dot { width:6px; height:6px; border-radius:50%; background:var(--border); }
+    .carousel-dot.active { background:var(--accent); }
+
+    .post-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 4px;
+        margin-top: 10px;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    .grid-media {
+        width: 100%;
+        aspect-ratio: 1;
+        object-fit: cover;
+        display: block;
+        cursor: pointer;
+    }
+
+    .layout-toggle-btn {
+        background: none;
+        border: 1px solid var(--border);
+        color: var(--muted);
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .layout-toggle-btn.active {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+    }
+
     #lightboxTrack::-webkit-scrollbar { display: none; }
     .lightbox-arrow {
         display: none;
@@ -40,6 +78,57 @@
     .lightbox-arrow:hover { background: rgba(255,255,255,0.2); }
     @media (min-width: 761px) {
         .lightbox-arrow { display: flex; }
+    }
+    .preview-thumb {
+        position: relative;
+        width: 72px;
+        height: 72px;
+        border-radius: 10px;
+        overflow: hidden;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        flex-shrink: 0;
+    }
+    .preview-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+    .preview-thumb .video-placeholder {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        padding: 4px;
+    }
+    .preview-thumb .video-placeholder span {
+        font-size: 9px;
+        color: var(--muted);
+        text-align: center;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        width: 100%;
+    }
+    .preview-remove-btn {
+        position: absolute;
+        top: 3px;
+        right: 3px;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: rgba(0,0,0,0.6);
+        border: none;
+        color: #fff;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
     }
 </style>
 {% endblock %}
@@ -75,7 +164,19 @@
                     multiple
                     style="display:none;">
                 <span id="image-filename" style="font-size:13px; color:var(--muted);"></span>
+
+                <div style="display:flex; gap:6px; margin-left:auto;">
+                    <button type="button" class="layout-toggle-btn active" data-layout="carousel" title="Карусель">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M8 6v12M16 6v12"/></svg>
+                    </button>
+                    <button type="button" class="layout-toggle-btn" data-layout="grid" title="Сетка">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>
+                    </button>
+                </div>
             </div>
+
+            <div id="preview-container" style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;"></div>
+
             <br>
             <button type="submit" class="btn-primary" id="new-post-submit">Опубликовать</button>
         </form>
@@ -172,18 +273,29 @@
     const trashIcon = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/></svg>';
     const closeIcon = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6l12 12M18 6L6 18"/></svg>';
     const sendIcon = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h16M14 6l6 6-6 6"/></svg>';
+    const videoPlaceholderIcon = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="14" height="14" rx="2"/><path d="M16 9l6-3v12l-6-3"/></svg>';
 
-    function buildCarousel(mediaItems) {
+    function buildMedia(mediaItems, layout) {
         if (!mediaItems || mediaItems.length === 0) return '';
+
+        if (layout === 'grid' && mediaItems.length > 1) {
+            const cells = mediaItems.map(item =>
+                item.type === 'video'
+                    ? `<video src="${item.url}" class="grid-media" controls playsinline></video>`
+                    : `<img src="${item.url}" class="grid-media">`
+            ).join('');
+            return `<div class="post-grid">${cells}</div>`;
+        }
+
         const items = mediaItems.map(item =>
             item.type === 'video'
                 ? `<video src="${item.url}" class="carousel-img" controls playsinline></video>`
                 : `<img src="${item.url}" class="carousel-img">`
         ).join('');
         const dots = mediaItems.length > 1
-            ? `<div class="carousel-dots" style="display:flex; justify-content:center; gap:6px; margin-top:8px;">${mediaItems.map((_, i) => `<span class="carousel-dot" style="width:6px; height:6px; border-radius:50%; background:${i === 0 ? 'var(--accent)' : 'var(--border)'};"></span>`).join('')}</div>`
+            ? `<div class="carousel-dots">${mediaItems.map((_, i) => `<span class="carousel-dot${i === 0 ? ' active' : ''}"></span>`).join('')}</div>`
             : '';
-        return `<div class="post-carousel" style="position:relative; margin-top:10px;"><div class="carousel-track" style="display:flex; overflow-x:auto; scroll-snap-type:x mandatory; border-radius:12px; scrollbar-width:none;">${items}</div>${dots}</div>`;
+        return `<div class="post-carousel"><div class="carousel-track">${items}</div>${dots}</div>`;
     }
 
     function initCarousel(carousel) {
@@ -192,9 +304,7 @@
         if (dots.length === 0) return;
         track.addEventListener('scroll', function() {
             const index = Math.round(track.scrollLeft / track.clientWidth);
-            dots.forEach((dot, i) => {
-                dot.style.background = i === index ? 'var(--accent)' : 'var(--border)';
-            });
+            dots.forEach((dot, i) => dot.classList.toggle('active', i === index));
         });
     }
 
@@ -247,24 +357,76 @@
         }
     });
 
-    // ---------- Публикация нового поста ----------
-    document.getElementById('image-upload').addEventListener('change', function() {
-        const count = this.files.length;
-        document.getElementById('image-filename').textContent = count > 0
-            ? (count === 1 ? this.files[0].name : `Выбрано файлов: ${count}`)
-            : '';
+    // ---------- Выбор вида отображения (карусель/сетка) ----------
+    let currentLayout = 'carousel';
+    document.querySelectorAll('.layout-toggle-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            currentLayout = this.dataset.layout;
+            document.querySelectorAll('.layout-toggle-btn').forEach(b => b.classList.toggle('active', b === this));
+        });
+    });
+
+    // ---------- Публикация нового поста: выбор файлов, превью, удаление ----------
+    let selectedFiles = [];
+
+    const imageUploadInput = document.getElementById('image-upload');
+    const previewContainer = document.getElementById('preview-container');
+    const filenameLabel = document.getElementById('image-filename');
+
+    function updateFilenameLabel() {
+        const count = selectedFiles.length;
+        filenameLabel.textContent = count > 0 ? `Выбрано файлов: ${count}` : '';
+    }
+
+    function renderPreviews() {
+        previewContainer.innerHTML = '';
+        selectedFiles.forEach((file, index) => {
+            const thumb = document.createElement('div');
+            thumb.className = 'preview-thumb';
+
+            if (file.type.startsWith('video/')) {
+                thumb.innerHTML = `
+                    <div class="video-placeholder">
+                        ${videoPlaceholderIcon}
+                        <span>${file.name}</span>
+                    </div>
+                `;
+            } else {
+                const url = URL.createObjectURL(file);
+                thumb.innerHTML = `<img src="${url}">`;
+            }
+
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'preview-remove-btn';
+            removeBtn.innerHTML = closeIcon;
+            removeBtn.addEventListener('click', function() {
+                selectedFiles.splice(index, 1);
+                renderPreviews();
+                updateFilenameLabel();
+            });
+
+            thumb.appendChild(removeBtn);
+            previewContainer.appendChild(thumb);
+        });
+    }
+
+    imageUploadInput.addEventListener('change', function() {
+        Array.from(this.files).forEach(file => selectedFiles.push(file));
+        this.value = '';
+        renderPreviews();
+        updateFilenameLabel();
     });
 
     document.getElementById('new-post-form').addEventListener('submit', function(e) {
         e.preventDefault();
         const contentEl = document.getElementById('new-post-content');
-        const imageEl = document.getElementById('image-upload');
         const submitBtn = document.getElementById('new-post-submit');
 
-        if (!contentEl.value.trim() && imageEl.files.length === 0) return;
+        if (!contentEl.value.trim() && selectedFiles.length === 0) return;
 
         const MAX_VIDEO_SIZE = 3000 * 1024 * 1024;
-        for (const file of imageEl.files) {
+        for (const file of selectedFiles) {
             if (file.type.startsWith('video/') && file.size > MAX_VIDEO_SIZE) {
                 alert(`Файл "${file.name}" превышает лимит в 3 ГБ`);
                 return;
@@ -273,12 +435,13 @@
 
         const formData = new FormData();
         formData.append('content', contentEl.value.trim());
-        for (const file of imageEl.files) {
+        formData.append('layout', currentLayout);
+        for (const file of selectedFiles) {
             formData.append('images', file);
         }
 
         submitBtn.disabled = true;
-        submitBtn.textContent = "Загрузка...";
+        submitBtn.textContent = 'Загрузка...';
 
         fetch("{% url 'feed' %}", {
             method: 'POST',
@@ -286,10 +449,6 @@
             body: formData,
         })
         .then(res => res.json())
-
-        submitBtn.disabled = false;
-        submitBtn.textContent = "Опубликовать";
-        
         .then(data => {
             document.getElementById('empty-feed')?.remove();
 
@@ -316,7 +475,7 @@
                         style="background:none; border:none; color:var(--muted); cursor:pointer; display:flex; align-items:center;">${trashIcon}</button>
                 </div>
                 ${data.content ? `<div class="post-content" style="margin-top:10px;">${data.content}</div>` : ''}
-                ${buildCarousel(data.media_items)}
+                ${buildMedia(data.media_items, data.layout)}
                 <div class="post-actions" style="margin-top:10px;">
                     <button type="button" class="like-btn" data-post-id="${data.id}" data-liked="false"
                         style="background:none; border:none; cursor:pointer; display:flex; align-items:center; gap:6px; color:var(--muted);">
@@ -340,11 +499,15 @@
             if (newCarousel) initCarousel(newCarousel);
 
             contentEl.value = '';
-            imageEl.value = '';
-            document.getElementById('image-filename').textContent = '';
+            selectedFiles = [];
+            renderPreviews();
+            updateFilenameLabel();
         })
         .catch(err => console.error('Post creation error:', err))
-        .finally(() => { submitBtn.disabled = false; });
+        .finally(() => {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Опубликовать';
+        });
     });
 
     // ---------- Лайки / удаление / комментарии / лайтбокс (делегирование событий) ----------
@@ -391,14 +554,14 @@
     });
 
     document.getElementById('posts-list').addEventListener('click', function(e) {
-        const carouselImg = e.target.closest('.carousel-img');
-        if (carouselImg && carouselImg.tagName === 'IMG') {
-            const track = carouselImg.closest('.carousel-track');
-            const items = Array.from(track.children).map(el => ({
+        const mediaItem = e.target.closest('.carousel-img, .grid-media');
+        if (mediaItem && mediaItem.tagName === 'IMG') {
+            const container = mediaItem.closest('.carousel-track, .post-grid');
+            const items = Array.from(container.children).map(el => ({
                 url: el.src,
                 type: el.tagName === 'VIDEO' ? 'video' : 'image',
             }));
-            const index = Array.from(track.children).indexOf(carouselImg);
+            const index = Array.from(container.children).indexOf(mediaItem);
             openLightbox(items, index);
             return;
         }

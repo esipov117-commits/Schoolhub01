@@ -34,24 +34,36 @@
     {% endif %}
 
     {% if post.images.all %}
-    <div class="post-carousel" style="position:relative; margin-top:10px;">
-        <div class="carousel-track" style="display:flex; overflow-x:auto; scroll-snap-type:x mandatory; border-radius:12px; scrollbar-width:none;">
-        {% for media in post.images.all %}
-            {% if media.media_type == 'video' %}
-            <video src="{{ media.video.url }}" class="carousel-img" controls playsinline></video>
-            {% else %}
-            <img src="{{ media.image.url }}" class="carousel-img">
-            {% endif %}
-        {% endfor %}
-        </div>
-        {% if post.images.count > 1 %}
-        <div class="carousel-dots" style="display:flex; justify-content:center; gap:6px; margin-top:8px;">
+        {% if post.layout == 'grid' and post.images.count > 1 %}
+        <div class="post-grid">
             {% for media in post.images.all %}
-            <span class="carousel-dot" style="width:6px; height:6px; border-radius:50%; background:{% if forloop.first %}var(--accent){% else %}var(--border){% endif %};"></span>
+                {% if media.media_type == 'video' %}
+                <video src="{{ media.video.url }}" class="grid-media" controls playsinline></video>
+                {% else %}
+                <img src="{{ media.image.url }}" class="grid-media">
+                {% endif %}
             {% endfor %}
         </div>
+        {% else %}
+        <div class="post-carousel">
+            <div class="carousel-track">
+            {% for media in post.images.all %}
+                {% if media.media_type == 'video' %}
+                <video src="{{ media.video.url }}" class="carousel-img" controls playsinline></video>
+                {% else %}
+                <img src="{{ media.image.url }}" class="carousel-img">
+                {% endif %}
+            {% endfor %}
+            </div>
+            {% if post.images.count > 1 %}
+            <div class="carousel-dots">
+                {% for media in post.images.all %}
+                <span class="carousel-dot{% if forloop.first %} active{% endif %}"></span>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
         {% endif %}
-    </div>
     {% endif %}
 
     <div class="post-actions" style="margin-top:10px;">
