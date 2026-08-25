@@ -8,6 +8,16 @@
 {% block extra_head %}{% endblock %}
 
 <style>
+    .custom-button {
+        display: inline-block;
+        font-size: 18px;
+        padding: 15px 20px;
+        background-color: #fff;
+        color: #000000;
+        text-decoration: none;
+        border: none;
+    }
+
 :root {
     --bg: #f7f7f8;
     --panel: #ffffff;
@@ -863,35 +873,26 @@ button.btn-primary:hover {
         </svg>
     </button>
 
-    <div class="topbar-brand">
-        <h1>SchoolHub</h1>
+<div class="topbar-brand">
+<!-- Ссылка-кнопка с вашим главным логотипом/текстом -->
+<a href="/" class="custom-button"><b>SchoolHub</b></a>
+    
+<!-- Проверка авторизации и верификации пользователя -->
+{% if user.is_authenticated and user.profile.is_verified %}
+    <svg class="auth-mark" viewBox="0 0 24 24" aria-label="Verified">
+        <circle cx="12" cy="12" r="10" fill="#3b82f6"/>
+        <path
+            d="M8.5 12.5l2.5 2.5 4.5-5"
+            stroke="white"
+            stroke-width="2"
+            fill="none"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+        />
+    </svg>
+{% endif %} 
+</div>
 
-        {% if user.is_authenticated and user.profile.is_verified %}
-        <svg class="auth-mark" viewBox="0 0 24 24" aria-label="Verified">
-            <circle cx="12" cy="12" r="10" fill="#3b82f6"/>
-            <path
-                d="M8.5 12.5l2.5 2.5 4.5-5"
-                stroke="white"
-                stroke-width="2"
-                fill="none"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-            />
-        </svg>
-        {% elif user.is_authenticated and user.profile.is_donor %}
-        <svg class="auth-mark" viewBox="0 0 24 24" aria-label="Donor">
-            <circle cx="12" cy="12" r="10" fill="#D4AF37"/>
-            <path
-                d="M8.5 12.5l2.5 2.5 4.5-5"
-                stroke="white"
-                stroke-width="2"
-                fill="none"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-            />
-        </svg>
-        {% endif %}
-    </div>
 
     <form
         method="GET"
