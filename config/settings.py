@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'planner',
     'tasks',
     'settings',
+    'stories'
 ]
  
 MIDDLEWARE = [

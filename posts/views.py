@@ -4,7 +4,10 @@ from django.template.loader import render_to_string
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
+from django.utils import timezone
 from .models import Post, PostImage, Like, Comment
+from events.models import Event
+from stories.models import Story
 
 VIDEO_EXTENSIONS = {'.mp4', '.mov', '.webm', '.avi', '.mkv'}
 POSTS_PER_PAGE = 10
@@ -64,7 +67,17 @@ def feed(request):
     # Обычный первый рендер страницы
     paginator = Paginator(Post.objects.all(), POSTS_PER_PAGE)
     page_obj = paginator.get_page(1)
- 
+
+    # Активные истории, сгруппированные по автору (для ленты в stories)
+    cutoff = timezone.now() - timezone.timedelta(hours=24)
+    grouped = {}
+    for story in Story.objects.filter(created_at__gte=cutoff).select_related('author').order_by('author', '-created_at'):
+        grouped.setdefault(story.author, []).append(story)
+    grouped.pop(request.user, None)
+    other_stories = list(grouped.items())
+
+    upcoming_events = Event.objects.filter(date__gte=timezone.now()).order_by('date')[:3]
+
     stats = {
         'posts_count': Post.objects.filter(author=request.user).count(),
         'friends_count': 0,
@@ -75,6 +88,8 @@ def feed(request):
         'liked_post_ids': liked_post_ids,
         'stats': stats,
         'has_next': page_obj.has_next(),
+        'other_stories': other_stories,
+        'upcoming_events': upcoming_events,
     })
  
 

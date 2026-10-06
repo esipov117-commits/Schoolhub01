@@ -1,13 +1,328 @@
 {% extends "base.html" %}
-{% block nav_feed %}active{% endblock %}
-{% block nav_feed_mobile %}active{% endblock %}
+{% load static %}
+
 {% block title %}Лента — SchoolHub{% endblock %}
 
 {% block extra_head %}
 <style>
-    .post-carousel { position:relative; margin-top:10px; }
-    .carousel-track { display:flex; overflow-x:auto; scroll-snap-type:x mandatory; border-radius:12px; }
-    .carousel-track::-webkit-scrollbar { display:none; }
+    /* ===== Истории ===== */
+    .stories-card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 16px 12px;
+        margin-bottom: 16px;
+    }
+
+    .stories-bar {
+        display: flex;
+        gap: 16px;
+        overflow-x: auto;
+        scrollbar-width: none;
+        padding-bottom: 2px;
+    }
+    .stories-bar::-webkit-scrollbar { display: none; }
+
+    .story-item {
+        flex: 0 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        user-select: none;
+        background: none;
+        border: none;
+        padding: 0;
+        font-family: inherit;
+    }
+
+    .story-avatar {
+        width: 68px;
+        height: 68px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        box-sizing: border-box;
+        transition: transform 0.15s ease;
+    }
+    .story-item:active .story-avatar { transform: scale(0.95); }
+
+    .story-avatar.has-story {
+        background: linear-gradient(135deg, #2563eb, #7c3aed, #db2777);
+        padding: 3px;
+    }
+
+    .story-avatar img,
+    .story-avatar .story-avatar-placeholder {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+        background: var(--sidebar-active-bg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--muted);
+        font-weight: 700;
+        font-size: 22px;
+    }
+    .story-avatar.has-story img,
+    .story-avatar.has-story .story-avatar-placeholder {
+        border: 2.5px solid var(--panel);
+    }
+
+    .story-add-avatar {
+        background: var(--sidebar-active-bg);
+        border: 2px dashed var(--accent);
+        color: var(--accent);
+        justify-content: center;
+    }
+    .story-add-avatar svg { width: 26px; height: 26px; }
+
+    .story-label {
+        font-size: 11px;
+        color: var(--text);
+        max-width: 76px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        text-align: center;
+    }
+
+    /* ===== Просмотрщик историй ===== */
+    .story-viewer {
+        position: fixed;
+        inset: 0;
+        background: rgba(12, 12, 14, 0.98);
+        z-index: 9999;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+    .story-viewer.open { display: flex; }
+
+    .story-viewer-media {
+        max-width: 420px;
+        width: 100%;
+        height: 100%;
+        max-height: 92vh;
+        position: relative;
+        background: #000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+    }
+    @media (max-width: 480px) {
+        .story-viewer-media { max-height: 100vh; }
+    }
+    @media (min-width: 481px) {
+        .story-viewer-media { border-radius: 14px; overflow: hidden; }
+    }
+
+    .viewer-header {
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        padding: 12px;
+        background: linear-gradient(to bottom, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0) 100%);
+        z-index: 15;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .story-progress-bar {
+        display: flex;
+        gap: 4px;
+        width: 100%;
+    }
+    .story-progress-bar .seg {
+        flex: 1;
+        height: 2px;
+        border-radius: 1px;
+        background: rgba(255, 255, 255, 0.35);
+        overflow: hidden;
+    }
+    .story-progress-bar .seg .fill {
+        height: 100%;
+        width: 0;
+        background: #fff;
+    }
+    .story-progress-bar .seg.done .fill { width: 100%; }
+    .story-progress-bar .seg.active .fill {
+        width: 100%;
+        transition: width 5s linear;
+    }
+
+    .viewer-author-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+    }
+    .viewer-header-actions {
+        margin-left: auto;
+        display: flex;
+        gap: 8px;
+        flex-shrink: 0;
+    }
+    .viewer-icon-btn {
+        background: rgba(255, 255, 255, 0.12);
+        border: none;
+        border-radius: 50%;
+        color: rgba(255, 255, 255, 0.85);
+        cursor: pointer;
+        padding: 7px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: background 0.15s ease, color 0.15s ease;
+    }
+    .viewer-icon-btn:hover {
+        background: rgba(255, 255, 255, 0.28);
+        color: #fff;
+    }
+    .viewer-icon-btn svg { width: 17px; height: 17px; }
+    #storyDeleteBtn { display: none; }
+    #storyDeleteBtn:hover { background: rgba(224, 36, 94, 0.85); color: #fff; }
+    .viewer-author-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        background: #333;
+    }
+    #viewer-author {
+        color: #fff;
+        font-size: 13px;
+        font-weight: 600;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+    }
+
+    .viewer-actual-media {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        background: #000;
+    }
+
+    .viewer-caption-text {
+        position: absolute;
+        bottom: 0; left: 0; right: 0;
+        padding: 28px 16px;
+        background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0) 100%);
+        color: #fff;
+        font-size: 14px;
+        text-align: center;
+        z-index: 12;
+        pointer-events: none;
+    }
+
+    .story-tap-left,
+    .story-tap-right {
+        position: absolute;
+        top: 60px; bottom: 0;
+        z-index: 10;
+    }
+    .story-tap-left { left: 0; width: 30%; }
+    .story-tap-right { right: 0; width: 70%; }
+
+    .story-close {
+        position: absolute;
+        top: 20px; right: 20px;
+        background: none;
+        border: none;
+        color: rgba(255, 255, 255, 0.75);
+        cursor: pointer;
+        z-index: 10000;
+        padding: 6px;
+        transition: color 0.2s;
+    }
+    .story-close:hover { color: #fff; }
+    .story-close svg { width: 24px; height: 24px; }
+
+    /* ===== Посты ===== */
+    .feed-main .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 14px 16px 16px;
+        margin-bottom: 16px;
+    }
+
+    .post-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+
+    .post-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        overflow: hidden;
+        flex-shrink: 0;
+        background: var(--sidebar-active-bg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--muted);
+    }
+    .post-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+    .post-avatar svg { width: 24px; height: 24px; }
+
+    .post-meta { min-width: 0; flex: 1; }
+    .post-username {
+        font-weight: 600;
+        font-size: 14px;
+        color: var(--text);
+        text-decoration: none;
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .post-date {
+        font-size: 11px;
+        color: var(--muted);
+    }
+
+    .post-menu-btn {
+        background: none;
+        border: none;
+        color: var(--muted);
+        cursor: pointer;
+        padding: 6px;
+        display: flex;
+        align-items: center;
+        border-radius: 50%;
+    }
+    .post-menu-btn:hover { background: var(--bg); }
+    .post-menu-btn svg { width: 18px; height: 18px; }
+
+    .post-media { margin-bottom: 4px; }
+
+    .post-carousel { position: relative; }
+    .carousel-track {
+        display: flex;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        border-radius: 14px;
+        scrollbar-width: none;
+    }
+    .carousel-track::-webkit-scrollbar { display: none; }
+
     .carousel-img,
     video.carousel-img {
         scroll-snap-align: start;
@@ -17,20 +332,30 @@
         max-height: 75vh;
         object-fit: contain;
         background: #000;
-        border-radius: 12px;
+        border-radius: 14px;
         display: block;
         cursor: pointer;
     }
-    .carousel-dots { display:flex; justify-content:center; gap:6px; margin-top:8px; }
-    .carousel-dot { width:6px; height:6px; border-radius:50%; background:var(--border); }
-    .carousel-dot.active { background:var(--accent); }
+
+    .carousel-dots {
+        display: flex;
+        justify-content: center;
+        gap: 6px;
+        margin-top: 8px;
+    }
+    .carousel-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--border);
+    }
+    .carousel-dot.active { background: var(--accent); }
 
     .post-grid {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
         gap: 4px;
-        margin-top: 10px;
-        border-radius: 12px;
+        border-radius: 14px;
         overflow: hidden;
     }
     .grid-media {
@@ -39,90 +364,279 @@
         object-fit: cover;
         display: block;
         cursor: pointer;
+        background: #000;
     }
 
-    .layout-toggle-btn {
+    .post-actions {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-top: 10px;
+    }
+    .post-actions button {
         background: none;
-        border: 1px solid var(--border);
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--text);
+        padding: 4px;
+        font-family: inherit;
+        font-size: 13px;
+    }
+    .post-actions button svg { width: 22px; height: 22px; }
+    .post-actions .like-btn.liked { color: #e0245e; }
+
+    .post-likes {
+        font-size: 13.5px;
+        font-weight: 600;
+        margin-top: 6px;
+    }
+
+    .post-caption {
+        font-size: 14px;
+        line-height: 1.5;
+        margin-top: 4px;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+    .post-caption b { font-weight: 600; }
+
+    .comments-block {
+        display: none;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid var(--border);
+    }
+    .comments-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+    .comment {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 8px;
+        font-size: 13.5px;
+        word-break: break-word;
+    }
+    .comment b { font-weight: 600; }
+    .comment-delete-btn {
+        background: none;
+        border: none;
         color: var(--muted);
-        width: 32px;
-        height: 32px;
-        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        flex-shrink: 0;
+        padding: 0;
+    }
+    .comment-delete-btn svg { width: 13px; height: 13px; }
+
+    .add-comment-form {
+        display: flex;
+        gap: 8px;
+    }
+    .add-comment-form input {
+        flex: 1;
+        min-height: 0;
+        margin: 0;
+    }
+    .add-comment-form button {
+        background: none;
+        border: none;
+        color: var(--accent);
+        cursor: pointer;
+        padding: 0 4px;
+        display: flex;
+        align-items: center;
+    }
+    .add-comment-form button svg { width: 18px; height: 18px; }
+
+    .feed-empty {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 48px 20px;
+        text-align: center;
+        color: var(--muted);
+        font-size: 15px;
+        margin-bottom: 16px;
+    }
+
+    /* ===== FAB — создание поста ===== */
+    .fab-new-post {
+        position: fixed;
+        right: 24px;
+        bottom: 24px;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: var(--accent);
+        color: #fff;
+        border: none;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
+        box-shadow: 0 10px 25px rgba(37, 99, 235, 0.4);
+        z-index: 950;
+        transition: transform 0.15s ease, background 0.15s ease;
     }
-    .layout-toggle-btn.active {
-        background: var(--accent);
-        border-color: var(--accent);
-        color: #fff;
+    .fab-new-post:hover {
+        background: var(--accent-hover);
+        transform: scale(1.06);
+    }
+    .fab-new-post:active { transform: scale(0.95); }
+    .fab-new-post svg { width: 26px; height: 26px; }
+    @media (max-width: 760px) {
+        .fab-new-post {
+            right: 18px;
+            bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+        }
     }
 
-    #lightboxTrack::-webkit-scrollbar { display: none; }
-    .lightbox-arrow {
-        display: none;
-        position: absolute;
+    /* ===== Модальные окна ===== */
+    dialog.app-modal {
+        position: fixed;
         top: 50%;
-        transform: translateY(-50%);
-        background: rgba(255,255,255,0.1);
+        left: 50%;
+        transform: translate(-50%, -50%);
+        margin: 0;
         border: none;
-        color: #fff;
-        width: 44px;
-        height: 44px;
-        border-radius: 50%;
+        padding: 0;
+        background: var(--panel);
+        color: var(--text);
+        border-radius: 18px;
+        width: min(500px, calc(100vw - 24px));
+        max-height: calc(100vh - 48px);
+        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35);
+        overflow: hidden;
+    }
+    dialog.app-modal::backdrop {
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(2px);
+    }
+
+    .modal-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border);
+        flex-shrink: 0;
+    }
+    .modal-title {
+        font-size: 15px;
+        font-weight: 700;
+    }
+    .modal-head-btn {
+        background: none;
+        border: none;
+        color: var(--text);
         cursor: pointer;
+        padding: 4px;
+        display: flex;
+        align-items: center;
+        border-radius: 8px;
+        font-family: inherit;
+        font-size: 14px;
+    }
+    .modal-head-btn:hover { background: var(--bg); }
+    .modal-head-btn svg { width: 20px; height: 20px; }
+    .modal-head-btn.primary {
+        color: var(--accent);
+        font-weight: 700;
+    }
+    .modal-head-btn.primary:disabled {
+        color: var(--muted);
+        cursor: default;
+        background: none;
+    }
+
+    .modal-body {
+        padding: 16px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        max-height: calc(100vh - 160px);
+    }
+
+    .modal-foot {
+        padding: 14px 16px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        flex-shrink: 0;
+    }
+
+    .btn-ghost {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        color: var(--text);
+        border-radius: 10px;
+        padding: 9px 16px;
+        font-family: inherit;
+        font-size: 14px;
+        cursor: pointer;
+    }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+    .picker-area {
+        border: 2px dashed var(--border);
+        border-radius: 14px;
+        background: var(--bg);
+        min-height: 200px;
+        display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
-        z-index: 2001;
+        gap: 10px;
+        cursor: pointer;
+        color: var(--muted);
+        padding: 20px;
+        text-align: center;
+        transition: border-color 0.15s ease;
     }
-    .lightbox-arrow:hover { background: rgba(255,255,255,0.2); }
-    @media (min-width: 761px) {
-        .lightbox-arrow { display: flex; }
+    .picker-area:hover { border-color: var(--accent); }
+    .picker-area svg { width: 42px; height: 42px; color: var(--accent); }
+    .picker-area .picker-hint { font-size: 14px; color: var(--text); }
+    .picker-area .picker-sub { font-size: 12.5px; }
+
+    .preview-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
     }
-    .preview-thumb {
+    .preview-cell {
         position: relative;
-        width: 72px;
-        height: 72px;
+        aspect-ratio: 1;
         border-radius: 10px;
         overflow: hidden;
         background: var(--bg);
         border: 1px solid var(--border);
-        flex-shrink: 0;
     }
-    .preview-thumb img {
+    .preview-cell img,
+    .preview-cell video {
         width: 100%;
         height: 100%;
         object-fit: cover;
         display: block;
     }
-    .preview-thumb .video-placeholder {
-        width: 100%;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 4px;
-        padding: 4px;
-    }
-    .preview-thumb .video-placeholder span {
-        font-size: 9px;
-        color: var(--muted);
-        text-align: center;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        width: 100%;
-    }
     .preview-remove-btn {
         position: absolute;
-        top: 3px;
-        right: 3px;
-        width: 18px;
-        height: 18px;
+        top: 4px;
+        right: 4px;
+        width: 20px;
+        height: 20px;
         border-radius: 50%;
-        background: rgba(0,0,0,0.6);
+        background: rgba(0, 0, 0, 0.65);
         border: none;
         color: #fff;
         cursor: pointer;
@@ -130,586 +644,396 @@
         align-items: center;
         justify-content: center;
         padding: 0;
+        z-index: 2;
+    }
+    .preview-remove-btn svg { width: 12px; height: 12px; }
+
+    .picker-more-btn {
+        align-self: flex-start;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        color: var(--text);
+        border-radius: 10px;
+        padding: 8px 14px;
+        font-family: inherit;
+        font-size: 13.5px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .picker-more-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .picker-more-btn svg { width: 16px; height: 16px; }
+
+    .segmented {
+        display: flex;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 4px;
+        gap: 4px;
+    }
+    .segmented button {
+        flex: 1;
+        border: none;
+        background: none;
+        color: var(--muted);
+        border-radius: 9px;
+        padding: 9px 10px;
+        font-family: inherit;
+        font-size: 13.5px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: background 0.15s ease, color 0.15s ease;
+    }
+    .segmented button svg { width: 16px; height: 16px; }
+    .segmented button.active {
+        background: var(--panel);
+        color: var(--text);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+    }
+
+    .field-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--muted);
+        margin-bottom: -8px;
+    }
+
+    .modal-error {
+        color: #e0245e;
+        font-size: 13px;
+        display: none;
+    }
+
+    /* ===== Лайтбокс ===== */
+    #lightboxOverlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0, 0, 0, 0.92);
+        z-index: 10001;
+        align-items: center;
+        justify-content: center;
+    }
+    #lightboxClose,
+    #lightboxPrev,
+    #lightboxNext {
+        background: none;
+        border: none;
+        color: #fff;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    #lightboxClose {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.1);
+        z-index: 10002;
+    }
+    .lightbox-arrow {
+        display: none;
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(255, 255, 255, 0.1);
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        z-index: 10002;
+    }
+    @media (min-width: 761px) {
+        .lightbox-arrow { display: flex; }
+    }
+    #lightboxTrack {
+        display: flex;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        width: 100%;
+        height: 100%;
+        scrollbar-width: none;
+    }
+    #lightboxTrack::-webkit-scrollbar { display: none; }
+
+    /* ===== Подтверждение удаления ===== */
+    #confirmOverlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0, 0, 0, 0.45);
+        z-index: 10003;
+        align-items: center;
+        justify-content: center;
+    }
+    #confirmOverlay > div {
+        background: var(--panel);
+        padding: 24px;
+        border-radius: 18px;
+        width: 320px;
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
     }
 </style>
 {% endblock %}
 
 {% block content %}
-    <h2 style="margin-bottom: 16px;">Лента</h2>
+<div class="feed-main">
+    <!-- Истории -->
+    <section class="stories-card">
+        <div class="stories-bar" id="storiesBar">
+            <button class="story-item" id="addStoryBtn" type="button" title="Добавить историю">
+                <span class="story-avatar story-add-avatar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                         stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                </span>
+                <span class="story-label">Моя история</span>
+            </button>
 
-    <div class="card">
-        <form id="new-post-form" enctype="multipart/form-data">
-            <textarea id="new-post-content" name="content" placeholder="Что нового?"></textarea>
-            <br><br>
-            <div style="display:flex; align-items:center; gap:10px;">
-                <label for="image-upload" style="
-                    cursor:pointer;
-                    display:inline-flex;
-                    align-items:center;
-                    justify-content:center;
-                    width:36px;
-                    height:36px;
-                    border-radius:50%;
-                    background:var(--bg);
-                    border:1px solid var(--border);
-                    color:var(--muted);
-                    flex-shrink:0;
-                ">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-                </label>
-                <input
-                    type="file"
-                    id="image-upload"
-                    name="images"
-                    accept="image/*,video/*"
-                    multiple
-                    style="display:none;">
-                <span id="image-filename" style="font-size:13px; color:var(--muted);"></span>
+            {% for author, stories in other_stories %}
+            <button class="story-item" type="button" data-author-id="{{ author.id }}"
+                    data-author-name="{{ author.username }}"
+                    data-author-avatar="{% if author.profile.avatar %}{{ author.profile.avatar.url }}{% endif %}">
+                <span class="story-avatar has-story">
+                    {% if author.profile.avatar %}
+                    <img src="{{ author.profile.avatar.url }}" alt="{{ author.username }}">
+                    {% else %}
+                    <span class="story-avatar-placeholder">{{ author.username|first|upper }}</span>
+                    {% endif %}
+                </span>
+                <span class="story-label">{{ author.username }}</span>
+            </button>
+            {% empty %}
+            <span class="story-label" style="color: var(--muted); max-width: none; align-self: center;">
+                Пока нет историй
+            </span>
+            {% endfor %}
+        </div>
+    </section>
 
-                <div style="display:flex; gap:6px; margin-left:auto;">
-                    <button type="button" class="layout-toggle-btn active" data-layout="carousel" title="Карусель">
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M8 6v12M16 6v12"/></svg>
+    <!-- Посты -->
+    <div id="feedPosts">
+    {% for post in posts %}
+    {% include "posts/_post_card.html" %}
+    {% empty %}
+    <div class="feed-empty">В ленте пока нет публикаций. Создайте первую!</div>
+    {% endfor %}
+    </div>
+
+    {% if posts and has_next %}
+    <div id="feedLoading" style="display:none; padding: 20px; text-align:center; color:var(--muted);">Загрузка…</div>
+    {% endif %}
+</div>
+
+<!-- FAB: создание поста -->
+<button class="fab-new-post" id="openPostModal" type="button" title="Создать публикацию">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+         stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+    </svg>
+</button>
+
+<!-- Модалка: создание истории -->
+<dialog class="app-modal" id="storyCreateModal">
+    <div class="modal-head">
+        <span class="modal-title">Новая история</span>
+        <button class="modal-head-btn" type="button" data-close-story>Отмена</button>
+    </div>
+    <div class="modal-body">
+        <label class="picker-area" id="storyPickerArea">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="3"></rect>
+                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                <path d="M21 15l-5-5L5 21"></path>
+            </svg>
+            <span class="picker-hint">Выберите фото или видео</span>
+            <span class="picker-sub">История исчезнет через 24 часа</span>
+        </label>
+        <div class="preview-grid" id="storyPreview" style="display:none;"></div>
+        <div class="modal-error" id="storyError"></div>
+    </div>
+    <div class="modal-foot">
+        <button class="btn-ghost" type="button" data-close-story>Отмена</button>
+        <button class="modal-head-btn primary" type="button" id="storySubmitBtn" disabled>Опубликовать</button>
+    </div>
+    <input type="file" id="storyFileInput" accept="image/*,video/*" hidden>
+</dialog>
+
+<!-- Модалка: создание поста -->
+<dialog class="app-modal" id="postCreateModal">
+    <div class="modal-head">
+        <button class="modal-head-btn" type="button" id="postModalBack" style="visibility:hidden;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 12H5"></path>
+                <path d="M12 19l-7-7 7-7"></path>
+            </svg>
+        </button>
+        <span class="modal-title">Новая публикация</span>
+        <button class="modal-head-btn primary" type="button" id="postSubmitBtn" disabled>Далее</button>
+    </div>
+    <div class="modal-body">
+        <label class="picker-area" id="postPickerArea">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="3"></rect>
+                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                <path d="M21 15l-5-5L5 21"></path>
+            </svg>
+            <span class="picker-hint">Перетащите фото сюда</span>
+            <span class="picker-sub">или нажмите, чтобы выбрать с устройства</span>
+        </label>
+        <button class="picker-more-btn" type="button" id="addMoreMediaBtn" style="display:none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Добавить ещё
+        </button>
+        <div class="preview-grid" id="postPreview" style="display:none;"></div>
+
+        <div class="segmented" id="postViewMode" style="display:none;">
+            <button type="button" class="active" data-mode="carousel">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                    <path d="M9 3v18"></path>
+                    <path d="M15 3v18"></path>
+                </svg>
+                Карусель
+            </button>
+            <button type="button" data-mode="grid">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                </svg>
+                Сетка
+            </button>
+        </div>
+
+        <div class="field-label" id="captionLabel" style="display:none;">Подпись</div>
+        <textarea id="postCaption" rows="3" style="display:none; resize:vertical; font-family:inherit;"
+                  placeholder="Напишите подпись…"></textarea>
+        <div class="modal-error" id="postError"></div>
+    </div>
+    <input type="file" id="postFileInput" accept="image/*,video/*" multiple hidden>
+</dialog>
+
+<!-- Просмотрщик историй -->
+<div class="story-viewer" id="storyViewer">
+    <div class="story-viewer-media">
+        <div class="viewer-header">
+            <div class="story-progress-bar" id="storyProgress"></div>
+            <div class="viewer-author-info">
+                <img class="viewer-author-avatar" id="viewer-avatar" src="" alt="">
+                <span id="viewer-author"></span>
+                <div class="viewer-header-actions">
+                    <button class="viewer-icon-btn" id="storySoundBtn" type="button" title="Выключить звук"
+                            style="display:none;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                             stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M11 5L6 9H3v6h3l5 4V5z"></path>
+                            <path d="M15.5 8.5a5 5 0 0 1 0 7"></path>
+                            <path d="M18.5 5.5a9 9 0 0 1 0 13"></path>
+                        </svg>
                     </button>
-                    <button type="button" class="layout-toggle-btn" data-layout="grid" title="Сетка">
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>
+                    <button class="viewer-icon-btn" id="storyDeleteBtn" type="button" title="Удалить историю">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                             stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 7h16"></path>
+                            <path d="M9 7V4h6v3"></path>
+                            <path d="M6 7l1 13h10l1-13"></path>
+                        </svg>
                     </button>
                 </div>
-            </div>
-
-            <div id="preview-container" style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;"></div>
-
-            <br>
-            <button type="submit" class="btn-primary" id="new-post-submit">Опубликовать</button>
-        </form>
-    </div>
-
-    <div id="posts-list">
-        {% for post in posts %}
-            {% include 'posts/_post_card.html' %}
-        {% empty %}
-        <div class="card" id="empty-feed">Пока постов нет. Напишите первый!</div>
-        {% endfor %}
-    </div>
-
-    <div id="scrollSentinel" style="height:1px;"></div>
-    <div id="loadingIndicator" style="display:none; text-align:center; padding:20px; color:var(--muted); font-size:14px;">
-        Загрузка...
-    </div>
-
-    <!-- Модалка подтверждения удаления -->
-    <div id="confirmOverlay" style="
-        display:none;
-        position:fixed;
-        top:0; left:0; right:0; bottom:0;
-        background:rgba(0,0,0,0.45);
-        z-index:1000;
-        align-items:center;
-        justify-content:center;
-    ">
-        <div style="
-            background:var(--panel);
-            padding:24px;
-            border-radius:18px;
-            width:320px;
-            box-shadow:0 15px 40px rgba(0,0,0,.25);
-        ">
-            <h3 style="margin-top:0; margin-bottom:8px;">Удалить пост?</h3>
-            <p style="color:var(--muted); font-size:14px; margin-bottom:20px;">
-                Это действие нельзя отменить.
-            </p>
-            <div style="display:flex; gap:10px; justify-content:flex-end;">
-                <button type="button" id="confirmCancelBtn" style="
-                    background:var(--bg); border:1px solid var(--border); color:var(--text);
-                    padding:9px 16px; border-radius:10px; cursor:pointer; font-family:inherit; font-size:14px;">
-                    Отмена
-                </button>
-                <button type="button" id="confirmDeleteBtn" style="
-                    background:#e0245e; border:none; color:#fff;
-                    padding:9px 16px; border-radius:10px; cursor:pointer; font-family:inherit; font-size:14px; font-weight:700;">
-                    Удалить
-                </button>
             </div>
         </div>
+        <div class="story-tap-left" id="storyPrevZone"></div>
+        <div class="story-tap-right" id="storyNextZone"></div>
+        <div class="viewer-caption-text" id="viewer-caption" style="display:none;"></div>
     </div>
+    <button class="story-close" id="storyViewerClose" type="button" title="Закрыть">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+    </button>
+</div>
 
-    <!-- Лайтбокс -->
-    <div id="lightboxOverlay" style="
-        display:none;
-        position:fixed;
-        top:0; left:0; right:0; bottom:0;
-        background:rgba(0,0,0,0.92);
-        z-index:2000;
-        align-items:center;
-        justify-content:center;
-    ">
-        <button id="lightboxClose" style="
-            position:absolute; top:20px; right:20px;
-            background:rgba(255,255,255,0.1); border:none; color:#fff;
-            width:40px; height:40px; border-radius:50%; cursor:pointer;
-            display:flex; align-items:center; justify-content:center; z-index:2001;
-        ">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
-        </button>
-        <button id="lightboxPrev" class="lightbox-arrow" style="left:20px;">
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
-        </button>
-        <button id="lightboxNext" class="lightbox-arrow" style="right:20px;">
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-        </button>
-        <div id="lightboxTrack" style="display:flex; overflow-x:auto; scroll-snap-type:x mandatory; width:100%; height:100%; scrollbar-width:none;"></div>
+<!-- Лайтбокс -->
+<div id="lightboxOverlay">
+    <button id="lightboxClose" title="Закрыть">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+    </button>
+    <button id="lightboxPrev" class="lightbox-arrow" style="left: 20px;" title="Назад">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M15 18l-6-6 6-6"></path>
+        </svg>
+    </button>
+    <div id="lightboxTrack"></div>
+    <button id="lightboxNext" class="lightbox-arrow" style="right: 20px;" title="Вперёд">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 18l6-6-6-6"></path>
+        </svg>
+    </button>
+</div>
+
+<!-- Подтверждение удаления -->
+<div id="confirmOverlay">
+    <div>
+        <p id="confirmText" style="margin: 0 0 16px; font-weight: 600;">Удалить публикацию?</p>
+        <p style="margin: 0 0 20px; font-size: 14px; color: var(--muted);">Это действие нельзя отменить.</p>
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <button class="btn-ghost" id="confirmCancel" type="button">Отмена</button>
+            <button id="confirmDelete" type="button"
+                    style="background: #e0245e; color: #fff; border: none; border-radius: 10px;
+                           padding: 9px 16px; font-family: inherit; font-size: 14px; cursor: pointer;">
+                Удалить
+            </button>
+        </div>
     </div>
+</div>
 
-    <script>
-    function getCookie(name) {
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; ${name}=`);
-        if (parts.length === 2) return parts.pop().split(';').shift();
+<script>
+window.FEED_CONFIG = {
+    meId: {{ user.id|default:"null" }},
+    profileBase: "{% url 'profile_user' 'PLACEHOLDER' %}".replace('PLACEHOLDER', ''),
+    hasMore: {% if has_next %}true{% else %}false{% endif %},
+    urls: {
+        feed: "{% url 'feed' %}",
+        like: "{% url 'toggle_like' 0 %}",
+        delete: "{% url 'delete_post' 0 %}",
+        comment: "{% url 'add_comment' 0 %}",
+        commentDelete: "{% url 'delete_comment' 0 %}",
+        uploadStory: "{% url 'upload_story' %}",
+        deleteStory: "{% url 'delete_story' 0 %}",
+        activeStories: "{% url 'api_active_stories' %}"
     }
-    const csrftoken = getCookie('csrftoken');
-    const currentUsername = "{{ user.username }}";
-
-    const heartOutline = '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s-.4-.3-1-.8C6.7 16.9 3 13.5 3 9.6 3 6.9 5.1 5 7.7 5c1.5 0 3 .7 3.9 1.9C12.5 5.7 14 5 15.5 5 18.1 5 20.2 6.9 20.2 9.6c0 3.9-3.7 7.3-8 10.6-.6.5-1 .8-1 .8z"/></svg>';
-    const heartFilled = '<svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor"><path d="M12 21s-.4-.3-1-.8C6.7 16.9 3 13.5 3 9.6 3 6.9 5.1 5 7.7 5c1.5 0 3 .7 3.9 1.9C12.5 5.7 14 5 15.5 5 18.1 5 20.2 6.9 20.2 9.6c0 3.9-3.7 7.3-8 10.6-.6.5-1 .8-1 .8z"/></svg>';
-    const commentIcon = '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5.5h16v10H9l-4 3.5v-3.5H4z"/></svg>';
-    const trashIcon = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/></svg>';
-    const closeIcon = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6l12 12M18 6L6 18"/></svg>';
-    const sendIcon = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h16M14 6l6 6-6 6"/></svg>';
-    const videoPlaceholderIcon = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="14" height="14" rx="2"/><path d="M16 9l6-3v12l-6-3"/></svg>';
-
-    function buildMedia(mediaItems, layout) {
-        if (!mediaItems || mediaItems.length === 0) return '';
-
-        if (layout === 'grid' && mediaItems.length > 1) {
-            const cells = mediaItems.map(item =>
-                item.type === 'video'
-                    ? `<video src="${item.url}" class="grid-media" controls playsinline></video>`
-                    : `<img src="${item.url}" class="grid-media">`
-            ).join('');
-            return `<div class="post-grid">${cells}</div>`;
-        }
-
-        const items = mediaItems.map(item =>
-            item.type === 'video'
-                ? `<video src="${item.url}" class="carousel-img" controls playsinline></video>`
-                : `<img src="${item.url}" class="carousel-img">`
-        ).join('');
-        const dots = mediaItems.length > 1
-            ? `<div class="carousel-dots">${mediaItems.map((_, i) => `<span class="carousel-dot${i === 0 ? ' active' : ''}"></span>`).join('')}</div>`
-            : '';
-        return `<div class="post-carousel"><div class="carousel-track">${items}</div>${dots}</div>`;
-    }
-
-    function initCarousel(carousel) {
-        const track = carousel.querySelector('.carousel-track');
-        const dots = carousel.querySelectorAll('.carousel-dot');
-        if (dots.length === 0) return;
-        track.addEventListener('scroll', function() {
-            const index = Math.round(track.scrollLeft / track.clientWidth);
-            dots.forEach((dot, i) => dot.classList.toggle('active', i === index));
-        });
-    }
-
-    document.querySelectorAll('.post-carousel').forEach(initCarousel);
-
-    // ---------- Лайтбокс ----------
-    const lightboxOverlay = document.getElementById('lightboxOverlay');
-    const lightboxTrack = document.getElementById('lightboxTrack');
-
-    function openLightbox(items, startIndex) {
-        lightboxTrack.innerHTML = items.map(item => `
-            <div style="flex:0 0 100%; scroll-snap-align:start; display:flex; align-items:center; justify-content:center; height:100%;">
-                ${item.type === 'video'
-                    ? `<video src="${item.url}" controls playsinline style="max-width:92%; max-height:92vh; object-fit:contain; border-radius:8px;"></video>`
-                    : `<img src="${item.url}" style="max-width:92%; max-height:92vh; object-fit:contain; border-radius:8px;">`}
-            </div>
-        `).join('');
-        lightboxOverlay.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-
-        requestAnimationFrame(() => {
-            lightboxTrack.scrollLeft = startIndex * lightboxTrack.clientWidth;
-        });
-    }
-
-    function closeLightbox() {
-        lightboxOverlay.style.display = 'none';
-        lightboxTrack.innerHTML = '';
-        document.body.style.overflow = '';
-    }
-
-    document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
-
-    document.getElementById('lightboxPrev').addEventListener('click', function() {
-        lightboxTrack.scrollBy({ left: -lightboxTrack.clientWidth, behavior: 'smooth' });
-    });
-    document.getElementById('lightboxNext').addEventListener('click', function() {
-        lightboxTrack.scrollBy({ left: lightboxTrack.clientWidth, behavior: 'smooth' });
-    });
-
-    lightboxTrack.addEventListener('click', function(e) {
-        if (e.target === lightboxTrack || e.target.tagName === 'DIV') {
-            closeLightbox();
-        }
-    });
-
-    document.addEventListener('keydown', function(e) {
-        if (lightboxOverlay.style.display === 'flex' && e.key === 'Escape') {
-            closeLightbox();
-        }
-    });
-
-    // ---------- Выбор вида отображения (карусель/сетка) ----------
-    let currentLayout = 'carousel';
-    document.querySelectorAll('.layout-toggle-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            currentLayout = this.dataset.layout;
-            document.querySelectorAll('.layout-toggle-btn').forEach(b => b.classList.toggle('active', b === this));
-        });
-    });
-
-    // ---------- Публикация нового поста: выбор файлов, превью, удаление ----------
-    let selectedFiles = [];
-
-    const imageUploadInput = document.getElementById('image-upload');
-    const previewContainer = document.getElementById('preview-container');
-    const filenameLabel = document.getElementById('image-filename');
-
-    function updateFilenameLabel() {
-        const count = selectedFiles.length;
-        filenameLabel.textContent = count > 0 ? `Выбрано файлов: ${count}` : '';
-    }
-
-    function renderPreviews() {
-        previewContainer.innerHTML = '';
-        selectedFiles.forEach((file, index) => {
-            const thumb = document.createElement('div');
-            thumb.className = 'preview-thumb';
-
-            if (file.type.startsWith('video/')) {
-                thumb.innerHTML = `
-                    <div class="video-placeholder">
-                        ${videoPlaceholderIcon}
-                        <span>${file.name}</span>
-                    </div>
-                `;
-            } else {
-                const url = URL.createObjectURL(file);
-                thumb.innerHTML = `<img src="${url}">`;
-            }
-
-            const removeBtn = document.createElement('button');
-            removeBtn.type = 'button';
-            removeBtn.className = 'preview-remove-btn';
-            removeBtn.innerHTML = closeIcon;
-            removeBtn.addEventListener('click', function() {
-                selectedFiles.splice(index, 1);
-                renderPreviews();
-                updateFilenameLabel();
-            });
-
-            thumb.appendChild(removeBtn);
-            previewContainer.appendChild(thumb);
-        });
-    }
-
-    imageUploadInput.addEventListener('change', function() {
-        Array.from(this.files).forEach(file => selectedFiles.push(file));
-        this.value = '';
-        renderPreviews();
-        updateFilenameLabel();
-    });
-
-    document.getElementById('new-post-form').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const contentEl = document.getElementById('new-post-content');
-        const submitBtn = document.getElementById('new-post-submit');
-
-        if (!contentEl.value.trim() && selectedFiles.length === 0) return;
-
-        const MAX_VIDEO_SIZE = 3000 * 1024 * 1024;
-        for (const file of selectedFiles) {
-            if (file.type.startsWith('video/') && file.size > MAX_VIDEO_SIZE) {
-                alert(`Файл "${file.name}" превышает лимит в 3 ГБ`);
-                return;
-            }
-        }
-
-        const formData = new FormData();
-        formData.append('content', contentEl.value.trim());
-        formData.append('layout', currentLayout);
-        for (const file of selectedFiles) {
-            formData.append('images', file);
-        }
-
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Загрузка...';
-
-        fetch("{% url 'feed' %}", {
-            method: 'POST',
-            headers: { 'X-CSRFToken': csrftoken, 'X-Requested-With': 'XMLHttpRequest' },
-            body: formData,
-        })
-        .then(res => res.json())
-        .then(data => {
-            document.getElementById('empty-feed')?.remove();
-
-            const card = document.createElement('div');
-            card.className = 'card';
-            card.id = `post-${data.id}`;
-            card.dataset.postId = data.id;
-            card.innerHTML = `
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <a href="/profile/${data.author}/">
-                            ${data.author_avatar
-                                ? `<img src="${data.author_avatar}" class="avatar avatar-small">`
-                                : `<div class="avatar avatar-small"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.7 0 4.9-2.2 4.9-4.9S14.7 2.2 12 2.2 7.1 4.4 7.1 7.1 9.3 12 12 12zm0 2.4c-3.3 0-9.8 1.6-9.8 4.9v2.4h19.6v-2.4c0-3.3-6.5-4.9-9.8-4.9z"/></svg></div>`}
-                        </a>
-                        <div>
-                            <a href="/profile/${data.author}/" style="text-decoration:none; color:inherit;">
-                                <span class="post-author">${data.author}</span>
-                            </a>
-                            <span style="color:var(--muted); font-size:13px; margin-left:6px;">${data.created_at}</span>
-                        </div>
-                    </div>
-                    <button type="button" class="delete-post-btn" data-post-id="${data.id}"
-                        style="background:none; border:none; color:var(--muted); cursor:pointer; display:flex; align-items:center;">${trashIcon}</button>
-                </div>
-                ${data.content ? `<div class="post-content" style="margin-top:10px;">${data.content}</div>` : ''}
-                ${buildMedia(data.media_items, data.layout)}
-                <div class="post-actions" style="margin-top:10px;">
-                    <button type="button" class="like-btn" data-post-id="${data.id}" data-liked="false"
-                        style="background:none; border:none; cursor:pointer; display:flex; align-items:center; gap:6px; color:var(--muted);">
-                        <span class="like-icon" style="display:flex;">${heartOutline}</span> <span class="likes-count" style="font-size:14px;">0</span>
-                    </button>
-                    <button type="button" class="toggle-comments-btn" data-post-id="${data.id}"
-                        style="background:none; border:none; cursor:pointer; display:flex; align-items:center; gap:6px; color:var(--muted);">
-                        ${commentIcon} <span class="comments-count" style="font-size:14px;">0</span>
-                    </button>
-                </div>
-                <div class="comments-block" id="comments-${data.id}" style="display:none; margin-top:12px; padding-top:12px; border-top:1px solid var(--border);">
-                    <div class="comments-list" style="display:flex; flex-direction:column; gap:8px; margin-bottom:10px;"></div>
-                    <form class="add-comment-form" data-post-id="${data.id}" style="display:flex; gap:8px;">
-                        <input type="text" name="text" placeholder="Написать комментарий..." maxlength="500" style="flex:1; margin:0;">
-                        <button type="submit" class="btn-primary" style="padding:8px 12px; display:flex; align-items:center; justify-content:center;">${sendIcon}</button>
-                    </form>
-                </div>
-            `;
-            document.getElementById('posts-list').prepend(card);
-            const newCarousel = card.querySelector('.post-carousel');
-            if (newCarousel) initCarousel(newCarousel);
-
-            contentEl.value = '';
-            selectedFiles = [];
-            renderPreviews();
-            updateFilenameLabel();
-        })
-        .catch(err => console.error('Post creation error:', err))
-        .finally(() => {
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Опубликовать';
-        });
-    });
-
-    // ---------- Лайки / удаление / комментарии / лайтбокс (делегирование событий) ----------
-    let pendingDeletePostId = null;
-
-    function openConfirmModal(postId) {
-        pendingDeletePostId = postId;
-        document.getElementById('confirmOverlay').style.display = 'flex';
-    }
-    function closeConfirmModal() {
-        pendingDeletePostId = null;
-        document.getElementById('confirmOverlay').style.display = 'none';
-    }
-    document.getElementById('confirmCancelBtn').addEventListener('click', closeConfirmModal);
-    document.getElementById('confirmOverlay').addEventListener('click', function(e) {
-        if (e.target === this) closeConfirmModal();
-    });
-    document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
-        if (!pendingDeletePostId) return;
-        const postId = pendingDeletePostId;
-        closeConfirmModal();
-
-        fetch(`/feed/${postId}/delete/`, {
-            method: 'POST',
-            headers: { 'X-CSRFToken': csrftoken },
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.deleted) {
-                document.getElementById(`post-${postId}`).remove();
-                if (!document.querySelector('#posts-list .card:not(#empty-feed)')) {
-                    const list = document.getElementById('posts-list');
-                    const empty = document.createElement('div');
-                    empty.className = 'card';
-                    empty.id = 'empty-feed';
-                    empty.textContent = 'Пока постов нет. Напишите первый!';
-                    list.appendChild(empty);
-                }
-            } else {
-                alert(data.error || 'Не удалось удалить пост');
-            }
-        })
-        .catch(err => console.error('Delete error:', err));
-    });
-
-    document.getElementById('posts-list').addEventListener('click', function(e) {
-        const mediaItem = e.target.closest('.carousel-img, .grid-media');
-        if (mediaItem && mediaItem.tagName === 'IMG') {
-            const container = mediaItem.closest('.carousel-track, .post-grid');
-            const items = Array.from(container.children).map(el => ({
-                url: el.src,
-                type: el.tagName === 'VIDEO' ? 'video' : 'image',
-            }));
-            const index = Array.from(container.children).indexOf(mediaItem);
-            openLightbox(items, index);
-            return;
-        }
-
-        const likeBtn = e.target.closest('.like-btn');
-        if (likeBtn) {
-            const postId = likeBtn.dataset.postId;
-            fetch(`/feed/${postId}/like/`, {
-                method: 'POST',
-                headers: { 'X-CSRFToken': csrftoken },
-            })
-            .then(res => {
-                if (!res.ok) throw new Error('Server error: ' + res.status);
-                return res.json();
-            })
-            .then(data => {
-                likeBtn.dataset.liked = data.liked;
-                likeBtn.style.color = data.liked ? '#e0245e' : 'var(--muted)';
-                likeBtn.querySelector('.likes-count').textContent = data.likes_count;
-                likeBtn.querySelector('.like-icon').innerHTML = data.liked ? heartFilled : heartOutline;
-            })
-            .catch(err => console.error('Like error:', err));
-            return;
-        }
-
-        const deleteBtn = e.target.closest('.delete-post-btn');
-        if (deleteBtn) {
-            openConfirmModal(deleteBtn.dataset.postId);
-            return;
-        }
-
-        const toggleCommentsBtn = e.target.closest('.toggle-comments-btn');
-        if (toggleCommentsBtn) {
-            const postId = toggleCommentsBtn.dataset.postId;
-            const block = document.getElementById(`comments-${postId}`);
-            block.style.display = block.style.display === 'none' ? 'block' : 'none';
-            return;
-        }
-
-        const deleteCommentBtn = e.target.closest('.delete-comment-btn');
-        if (deleteCommentBtn) {
-            const commentId = deleteCommentBtn.dataset.commentId;
-            const postId = deleteCommentBtn.dataset.postId;
-            fetch(`/comment/${commentId}/delete/`, {
-                method: 'POST',
-                headers: { 'X-CSRFToken': csrftoken },
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.deleted) {
-                    document.getElementById(`comment-${commentId}`).remove();
-                    const countEl = document.querySelector(`.toggle-comments-btn[data-post-id="${postId}"] .comments-count`);
-                    if (countEl) countEl.textContent = data.comments_count;
-                } else {
-                    alert(data.error || 'Не удалось удалить комментарий');
-                }
-            })
-            .catch(err => console.error('Delete comment error:', err));
-        }
-    });
-
-    document.getElementById('posts-list').addEventListener('submit', function(e) {
-        const form = e.target.closest('.add-comment-form');
-        if (!form) return;
-        e.preventDefault();
-
-        const postId = form.dataset.postId;
-        const input = form.querySelector('input[name="text"]');
-        const text = input.value.trim();
-        if (!text) return;
-
-        fetch(`/feed/${postId}/comment/`, {
-            method: 'POST',
-            headers: { 'X-CSRFToken': csrftoken, 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: `text=${encodeURIComponent(text)}`,
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.error) { alert(data.error); return; }
-
-            const commentEl = document.createElement('div');
-            commentEl.className = 'comment';
-            commentEl.id = `comment-${data.id}`;
-            commentEl.style.cssText = 'display:flex; justify-content:space-between; align-items:flex-start; gap:8px;';
-            commentEl.innerHTML = `
-                <div style="font-size:13.5px;">
-                    <span style="font-weight:700;">${data.author}</span>
-                    <span style="margin-left:6px;">${data.text}</span>
-                </div>
-                <button type="button" class="delete-comment-btn" data-comment-id="${data.id}" data-post-id="${postId}"
-                    style="background:none; border:none; color:var(--muted); cursor:pointer; display:flex; align-items:center; flex-shrink:0;">${closeIcon}</button>
-            `;
-            form.parentElement.querySelector('.comments-list').appendChild(commentEl);
-
-            const countEl = document.querySelector(`.toggle-comments-btn[data-post-id="${postId}"] .comments-count`);
-            if (countEl) countEl.textContent = data.comments_count;
-
-            input.value = '';
-        })
-        .catch(err => console.error('Add comment error:', err));
-    });
-
-    // ---------- Infinite scroll ----------
-    let currentPage = 1;
-    let hasNextPage = {{ has_next|yesno:"true,false" }};
-    let isLoadingMore = false;
-
-    const sentinel = document.getElementById('scrollSentinel');
-    const loadingIndicator = document.getElementById('loadingIndicator');
-
-    const scrollObserver = new IntersectionObserver(function(entries) {
-        if (entries[0].isIntersecting && hasNextPage && !isLoadingMore) {
-            loadNextPage();
-        }
-    }, { rootMargin: '200px' });
-
-    scrollObserver.observe(sentinel);
-
-    function loadNextPage() {
-        isLoadingMore = true;
-        loadingIndicator.style.display = 'block';
-
-        fetch(`{% url 'feed' %}?page=${currentPage + 1}`, {
-            headers: { 'X-Requested-With': 'XMLHttpRequest' },
-        })
-        .then(res => res.json())
-        .then(data => {
-            const list = document.getElementById('posts-list');
-            data.html.forEach(cardHtml => {
-                const wrapper = document.createElement('div');
-                wrapper.innerHTML = cardHtml.trim();
-                const cardEl = wrapper.firstElementChild;
-                list.appendChild(cardEl);
-                const carousel = cardEl.querySelector('.post-carousel');
-                if (carousel) initCarousel(carousel);
-            });
-
-            currentPage += 1;
-            hasNextPage = data.has_next;
-            isLoadingMore = false;
-            loadingIndicator.style.display = 'none';
-        })
-        .catch(err => {
-            console.error('Infinite scroll error:', err);
-            isLoadingMore = false;
-            loadingIndicator.style.display = 'none';
-        });
-    }
-    </script>
+};
+</script>
+<script src="{% static 'js/feed.js' %}"></script>
 {% endblock %}
