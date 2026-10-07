@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title id="page-title">Вход | SchoolHub</title>
+    <title id="page-title">Вход — SchoolHub</title>
     <style>
         :root {
-            --bg: #f4f5f7;
+            --bg: #f2f2f7;
             --panel: #ffffff;
-            --text: #1c1c1f;
-            --muted: #6b7280;
-            --border: rgba(28, 28, 31, 0.08);
-            --accent: #111827;
+            --text: #1c1c1e;
+            --muted: #8e8e93;
+            --border: rgba(60, 60, 67, 0.12);
+            --accent: #007aff;
         }
         * {
             box-sizing: border-box;
@@ -149,7 +149,7 @@
             transition: background 0.15s ease;
         }
         button[type="submit"]:hover {
-            background: #2b2f38;
+            background: #0071e3;
         }
         .error {
             color: #b91c1c;
@@ -172,6 +172,17 @@
         }
         .footer a:hover {
             text-decoration: underline;
+        }
+        .i {
+            width: 1.1em;
+            height: 1.1em;
+            flex-shrink: 0;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            vertical-align: -0.18em;
         }
         .copyright {
             margin-top: 24px;
@@ -243,7 +254,7 @@
         </div>
         {% if can_back %}
         <div class="footer">
-            <a href="/accounts/login/" data-i18n="back">← Назад к аккаунту</a>
+            <a href="/accounts/login/"><svg class="i" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg> <span data-i18n="back">Назад к аккаунту</span></a>
         </div>
         {% endif %}
         {% endif %}
@@ -258,7 +269,7 @@
             subtitle: "Войдите в аккаунт",
             subtitle_ret: "Введите пароль, чтобы войти",
             other_account: "Войти в другой аккаунт",
-            back: "← Назад к аккаунту",
+            back: "Назад к аккаунту",
             submit: "Войти",
             no_account: "Нет аккаунта?",
             create: "Создать",
@@ -272,7 +283,7 @@
             subtitle: "Log in to your account",
             subtitle_ret: "Enter your password to continue",
             other_account: "Log in to another account",
-            back: "← Back to account",
+            back: "Back to account",
             submit: "Sign in",
             no_account: "Don't have an account?",
             create: "Create one",

@@ -1,8 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Новое событие{% endblock %}
-{% block nav_home %}active{% endblock %}
-{% block nav_home_mobile %}active{% endblock %}
+{% block title %}Новое событие — SchoolHub{% endblock %}
 
 {% block content %}
 <div class="card event-form-card">
@@ -34,7 +32,7 @@
         <div class="field-group">
             <label class="field-label" for="id_image">Фото / афиша</label>
             <label class="upload-btn">
-                🖼 Загрузить фото
+                <svg class="i"><use href="#i-image"></use></svg> Загрузить фото
                 <input type="file" id="id_image" name="image" accept="image/*" style="display:none;" onchange="previewEventImage(this)">
             </label>
             <div id="imagePreviewBox" style="margin-top:10px; display:none;">

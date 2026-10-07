@@ -1,6 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}Редактировать профиль{% endblock %}
-{% block nav_profile %}active{% endblock %}
+{% block title %}Редактировать профиль — SchoolHub{% endblock %}
 {% block grid_columns %}240px 1fr{% endblock %}
 {% block rightbar %}{% endblock %}
 
@@ -147,7 +146,7 @@
             </div>
 
             <label class="upload-btn">
-                🖼 Загрузить баннер
+                <svg class="i"><use href="#i-image"></use></svg> Загрузить баннер
                 <input type="file" name="banner" accept="image/*" style="display:none;" id="bannerInput">
             </label>
 
@@ -175,7 +174,7 @@
                     {% endif %}
                 </div>
                 <label class="upload-btn">
-                    📷 Сменить фото
+                    <svg class="i"><use href="#i-camera"></use></svg> Сменить фото
                     <input type="file" name="avatar" accept="image/*" style="display:none;" id="avatarInput">
                 </label>
             </div>

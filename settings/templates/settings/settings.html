@@ -11,7 +11,7 @@
         {% csrf_token %}
         <div class="setting-row">
             <div>
-                <strong>🌙 Тёмная тема</strong>
+                <strong><svg class="i"><use href="#i-moon"></use></svg> Тёмная тема</strong>
                 <p>Использовать тёмное оформление сайта.</p>
             </div>
             <label class="toggle">
@@ -86,10 +86,13 @@
     transition: .2s;
 }
 .toggle input:checked + .toggle-slider {
-    background: var(--accent);
+    background: #34c759;
 }
 .toggle input:checked + .toggle-slider::before {
     transform: translateX(20px);
+}
+.toggle-slider::before {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 </style>
 

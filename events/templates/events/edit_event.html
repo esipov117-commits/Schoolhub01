@@ -1,8 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Редактировать событие{% endblock %}
-{% block nav_home %}active{% endblock %}
-{% block nav_home_mobile %}active{% endblock %}
+{% block title %}Редактировать событие — SchoolHub{% endblock %}
 
 {% block content %}
 <div class="card event-form-card">
@@ -39,7 +37,7 @@
                      style="max-width:100%; border-radius:12px; display:block;">
             </div>
             <label class="upload-btn">
-                🖼 {% if event.image %}Заменить фото{% else %}Загрузить фото{% endif %}
+                <svg class="i"><use href="#i-image"></use></svg> {% if event.image %}Заменить фото{% else %}Загрузить фото{% endif %}
                 <input type="file" id="id_image" name="image" accept="image/*" style="display:none;" onchange="previewEventImage(this)">
             </label>
         </div>

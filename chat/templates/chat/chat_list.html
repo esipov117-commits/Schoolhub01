@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Сообщения | SchoolHub{% endblock %}
+{% block title %}Чат — SchoolHub{% endblock %}
 
 {% block extra_head %}
 <style>
@@ -90,7 +90,7 @@
 {% block content %}
 <div class="card">
     <div class="card-header">
-        <div class="card-title">💬 Сообщения</div>
+        <div class="card-title"><svg class="i"><use href="#i-chat"></use></svg> Новый чат</div>
     </div>
     <form method="post" action="{% url 'chat' %}" class="chat-new-form">
         {% csrf_token %}
@@ -139,7 +139,7 @@
     </div>
     {% else %}
     <div style="text-align:center; padding:28px; color:var(--muted);">
-        Чатов пока нет — начните новый выше 👆
+        Чатов пока нет — начните новый выше <svg class="i"><use href="#i-arrow-up"></use></svg>
     </div>
     {% endif %}
 </div>

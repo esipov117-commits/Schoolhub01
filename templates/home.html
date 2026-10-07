@@ -12,7 +12,7 @@
 
 <div class="card">
     <h2 style="font-size:28px; margin-bottom:6px;">
-        Добрый день, {{ user.profile.display_name|default:user.username }} 👋
+        Добрый день, {{ user.profile.display_name|default:user.username }} 
     </h2>
     <p style="color:var(--muted); font-size:15px;">
         Сегодня отличный день, чтобы сделать всё запланированное.
@@ -23,7 +23,7 @@
 
 <div class="card">
     <div class="card-header">
-        <div class="card-title">📝 Сегодня</div>
+        <div class="card-title"><svg class="i"><use href="#i-note"></use></svg> Сегодня</div>
         <button
             class="card-link"
             onclick="openTaskModal()"
@@ -57,15 +57,15 @@
                 </label>
             </form>
 
-            <a href="{% url 'tasks:delete_task' task.id %}" style="color:red; text-decoration:none;">
-                🗑
+            <a href="{% url 'tasks:delete_task' task.id %}" style="color:red; text-decoration:none;" aria-label="Удалить задачу">
+                <svg class="i"><use href="#i-trash"></use></svg>
             </a>
         </div>
         {% endfor %}
     </div>
     {% else %}
     <div style="text-align:center; padding:25px; color:var(--muted);">
-        Пока задач нет 😊
+        Пока задач нет <svg class="i"><use href="#i-smile"></use></svg>
     </div>
     {% endif %}
 </div>
@@ -74,7 +74,7 @@
 
 <div class="card mobile-events">
     <div class="card-header">
-        <div class="card-title">📅 Ближайшие события</div>
+        <div class="card-title"><svg class="i"><use href="#i-calendar"></use></svg> Ближайшие события</div>
         <a href="{% url 'events_list' %}" class="card-link">Все</a>
     </div>
 
@@ -109,7 +109,7 @@
                 justify-content:center;
                 flex-shrink:0;
                 font-size:22px;
-            ">📅</div>
+            "><svg class="i" style="width:22px; height:22px; color:var(--muted);"><use href="#i-calendar"></use></svg></div>
             {% endif %}
 
             <div style="min-width:0;">
@@ -125,7 +125,7 @@
     </div>
     {% else %}
     <div style="text-align:center; padding:25px; color:var(--muted);">
-        Событий пока нет 📭
+        Событий пока нет <svg class="i"><use href="#i-inbox"></use></svg>
     </div>
     {% endif %}
 </div>
@@ -175,7 +175,7 @@ function closeTaskModal(){
 {% block sidebar_extra %}
 <div class="card">
     <div class="card-header">
-        <div class="card-title">📅 Ближайшие события</div>
+        <div class="card-title"><svg class="i"><use href="#i-calendar"></use></svg> Ближайшие события</div>
         <a href="{% url 'events_list' %}" class="card-link">Все</a>
     </div>
 
@@ -207,7 +207,7 @@ function closeTaskModal(){
                 justify-content:center;
                 flex-shrink:0;
                 font-size:18px;
-            ">📅</div>
+            "><svg class="i" style="width:18px; height:18px; color:var(--muted);"><use href="#i-calendar"></use></svg></div>
             {% endif %}
 
             <div style="min-width:0;">
@@ -223,7 +223,7 @@ function closeTaskModal(){
     </div>
     {% else %}
     <div style="text-align:center; padding:16px; color:var(--muted); font-size:13.5px;">
-        Событий пока нет 📭
+        Событий пока нет <svg class="i"><use href="#i-inbox"></use></svg>
     </div>
     {% endif %}
 </div>

@@ -1,8 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}События{% endblock %}
-{% block nav_home %}active{% endblock %}
-{% block nav_home_mobile %}active{% endblock %}
+{% block title %}События — SchoolHub{% endblock %}
 
 {% block content %}
 <div class="card">
@@ -20,16 +18,16 @@
         <div class="event-card-top">
             <div>
                 <div class="event-title">{{ event.title }}</div>
-                <div class="event-date">🗓 {{ event.date|date:"d M, H:i" }}</div>
+                <div class="event-date"><svg class="i"><use href="#i-calendar"></use></svg> {{ event.date|date:"d M, H:i" }}</div>
             </div>
 
             {% if user.profile.is_organizer %}
             <div class="event-actions">
-                <a href="{% url 'edit_event' event.id %}" class="event-btn" title="Редактировать">✏️</a>
+                <a href="{% url 'edit_event' event.id %}" class="event-btn" title="Редактировать" aria-label="Редактировать"><svg class="i"><use href="#i-edit"></use></svg></a>
                 <form method="POST" action="{% url 'delete_event' event.id %}"
                       onsubmit="return confirm('Удалить событие «{{ event.title|escapejs }}»?');">
                     {% csrf_token %}
-                    <button type="submit" class="event-btn event-btn-danger" title="Удалить">🗑</button>
+                    <button type="submit" class="event-btn event-btn-danger" title="Удалить" aria-label="Удалить"><svg class="i"><use href="#i-trash"></use></svg></button>
                 </form>
             </div>
             {% endif %}
@@ -40,7 +38,7 @@
         {% endif %}
 
         {% if event.location %}
-            <div class="event-location">📍 {{ event.location }}</div>
+            <div class="event-location"><svg class="i"><use href="#i-pin"></use></svg> {{ event.location }}</div>
         {% endif %}
         {% if event.description %}
             <p class="event-description">{{ event.description }}</p>

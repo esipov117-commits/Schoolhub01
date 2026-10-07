@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ list_title }} — {{ target_user.username }}{% endblock %}
+{% block title %}{{ list_title }}: {{ target_user.username }} — SchoolHub{% endblock %}
 
 {% block content %}
 <h2 style="margin-bottom: 16px;">{{ list_title }}: {{ target_user.username }}</h2>
@@ -18,7 +18,7 @@
     <form method="POST" action="{% url 'toggle_follow' u.username %}" style="margin:0;">
         {% csrf_token %}
         <button type="submit" class="profile-btn" style="background:var(--sidebar-active-bg); border:1px solid var(--border); padding:8px 14px; border-radius:10px; cursor:pointer; font-family:inherit; font-size:13.5px; font-weight:600; color:var(--text);">
-            {% if u.id in following_ids %}✅ Подписан{% else %}➕ Подписаться{% endif %}
+            {% if u.id in following_ids %}<svg class="i"><use href="#i-user-check"></use></svg> Подписан{% else %}<svg class="i"><use href="#i-user-plus"></use></svg> Подписаться{% endif %}
         </button>
     </form>
     {% endif %}

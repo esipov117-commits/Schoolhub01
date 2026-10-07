@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ other.username }} | SchoolHub{% endblock %}
+{% block title %}Чат с {{ other.username }} — SchoolHub{% endblock %}
 {% block grid_columns %}240px 1fr{% endblock %}
 {% block rightbar %}{% endblock %}
 
@@ -151,7 +151,7 @@
             </div>
             {% endfor %}
         {% else %}
-            <div class="chat-empty">Напишите первое сообщение 👋</div>
+            <div class="chat-empty">Напишите первое сообщение <svg class="i"><use href="#i-hand"></use></svg></div>
         {% endif %}
     </div>
 
