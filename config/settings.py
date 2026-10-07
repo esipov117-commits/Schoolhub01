@@ -39,6 +39,30 @@ CSRF_TRUSTED_ORIGINS = config(
     default='',
     cast=lambda v: [s.strip() for s in v.split(',') if s.strip()]
 )
+
+if not CSRF_TRUSTED_ORIGINS:
+    # Без этого за HTTPS-прокси (nginx, cloudflare и т.п.) Django принимает
+    # Origin https://домен за чужой и отвечает 403 на ЛЮБОЙ POST
+    # (создание поста, истории, лайк, комментарий), хотя GET-страницы открываются.
+    for _host in ALLOWED_HOSTS:
+        if _host == '*':
+            continue
+        if _host.startswith('.'):
+            CSRF_TRUSTED_ORIGINS += ['https://*' + _host, 'http://*' + _host]
+        elif (
+            _host == 'localhost'
+            or _host.startswith(('127.', '[', '::'))
+            or _host.replace('.', '').isdigit()
+        ):
+            continue
+        else:
+            CSRF_TRUSTED_ORIGINS += ['https://' + _host, 'http://' + _host]
+
+# Прокси терминирует TLS и отдаёт Django обычный http:// — без этого заголовка
+# Django не знает настоящую схему (ломает CSRF и зацикливает SECURE_SSL_REDIRECT).
+TRUST_PROXY = config('TRUST_PROXY', default=True, cast=bool)
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https') if TRUST_PROXY else None
+USE_X_FORWARDED_HOST = config('USE_X_FORWARDED_HOST', default=False, cast=bool)
  
  
 # Application definition
@@ -153,12 +177,17 @@ MEDIA_ROOT = BASE_DIR / 'media'
  
 # Безопасность для продакшена (HTTPS).
 # В DEBUG-режиме (локальная разработка по http://127.0.0.1) не применяется.
+# Если сайт пока доступен только по http — поставь в .env:
+#   SECURE_SSL_REDIRECT=False
+#   COOKIE_SECURE=False
+COOKIE_SECURE = config('COOKIE_SECURE', default=not DEBUG, cast=bool)
+SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=not DEBUG, cast=bool)
 if not DEBUG:
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
-    SECURE_SSL_REDIRECT = True
-    SECURE_HSTS_SECONDS = 31536000
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SESSION_COOKIE_SECURE = COOKIE_SECURE
+    CSRF_COOKIE_SECURE = COOKIE_SECURE
+    if SECURE_SSL_REDIRECT:
+        SECURE_HSTS_SECONDS = 31536000
+        SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 
 STORAGES = {
     "default": {

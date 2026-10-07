@@ -22,6 +22,8 @@ def feed(request):
         if layout not in ('carousel', 'grid'):
             layout = 'carousel'
 
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
         if content or files:
             post = Post.objects.create(author=request.user, content=content, layout=layout)
             for i, f in enumerate(files):
@@ -31,20 +33,24 @@ def feed(request):
                 else:
                     PostImage.objects.create(post=post, image=f, media_type='image', order=i)
 
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            if is_ajax:
                 media_items = [
                     {'url': pi.url, 'type': pi.media_type}
                     for pi in post.images.all()
                 ]
+                author_profile = getattr(post.author, 'profile', None)
                 return JsonResponse({
                     'id': post.id,
                     'author': post.author.username,
-                    'author_avatar': post.author.profile.avatar.url if post.author.profile.avatar else None,
+                    'author_avatar': author_profile.avatar.url
+                    if author_profile and author_profile.avatar else None,
                     'content': post.content,
                     'media_items': media_items,
                     'layout': post.layout,
                     'created_at': post.created_at.strftime('%d.%m.%Y, %H:%M'),
                 })
+        elif is_ajax:
+            return JsonResponse({'error': 'Добавьте текст или выберите фото'}, status=400)
         return redirect('feed')
     liked_post_ids = set(Like.objects.filter(user=request.user).values_list('post_id', flat=True))
  

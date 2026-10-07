@@ -18,7 +18,8 @@ media/
 
 # Static
 staticfiles/
-static/
+# static/ не игнорируем: исходники js/css обязаны быть в git,
+# иначе на сервере после git pull их нет и /static/js/*.js -> 404
 
 # Environment
 .env

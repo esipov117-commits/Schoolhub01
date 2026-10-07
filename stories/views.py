@@ -30,7 +30,15 @@ def upload_story(request):
             # Если JS не сработал, возвращаем на feed с ошибкой (или просто редиректим)
             return redirect('feed')
 
-        media_type = 'video' if file.content_type.startswith('video') else 'photo'
+        # Мобильные файловые менеджеры часто отдают пустой/неверный content_type,
+        # поэтому тип определяем и по расширению.
+        video_exts = ('.mp4', '.mov', '.m4v', '.webm', '.avi', '.mkv', '.3gp')
+        ext = os.path.splitext(file.name)[1].lower()
+        media_type = (
+            'video'
+            if (file.content_type or '').startswith('video') or ext in video_exts
+            else 'photo'
+        )
 
         story = Story.objects.create(
             author=request.user,
