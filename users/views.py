@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from django.contrib.auth import login as auth_login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.utils import timezone
@@ -7,6 +8,48 @@ from tasks.models import TodoTask
 from .models import Profile, Follow
 from posts.models import Post
 from events.models import Event
+
+REMEMBERED_USER_COOKIE = 'sh_remembered_user'
+
+
+def _get_remembered_user(request):
+    username = request.COOKIES.get(REMEMBERED_USER_COOKIE, '')
+    if not username:
+        return None
+    return User.objects.filter(username=username).first()
+
+
+def login_view(request):
+    if request.user.is_authenticated:
+        return redirect('home')
+
+    other = request.GET.get('other') == '1' or request.POST.get('other') == '1'
+    remembered = None if other else _get_remembered_user(request)
+
+    if request.method == 'POST':
+        form = AuthenticationForm(request, request.POST)
+        if form.is_valid():
+            auth_login(request, form.get_user())
+            response = redirect('home')
+            response.set_cookie(
+                REMEMBERED_USER_COOKIE,
+                form.get_user().username,
+                max_age=365 * 24 * 60 * 60,
+                samesite='Lax',
+            )
+            return response
+    else:
+        form = AuthenticationForm(request)
+
+    context = {
+        'form': form,
+        'can_back': other and _get_remembered_user(request) is not None,
+    }
+    if remembered:
+        profile_obj, _ = Profile.objects.get_or_create(user=remembered)
+        context['remembered'] = remembered
+        context['remembered_profile'] = profile_obj
+    return render(request, 'registration/login.html', context)
 
 
 def _build_profile_context(request, target_user):
@@ -45,6 +88,8 @@ def register(request):
 
 def home(request):
     if not request.user.is_authenticated:
+        if request.COOKIES.get(REMEMBERED_USER_COOKIE):
+            return redirect('login')
         return render(request, 'welcome.html')
 
     Profile.objects.get_or_create(user=request.user)

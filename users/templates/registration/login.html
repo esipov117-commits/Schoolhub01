@@ -94,6 +94,13 @@
             height: 36px;
             color: #9ca3af;
         }
+        .avatar-img {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            object-fit: cover;
+            display: block;
+        }
         .login-title {
             text-align: center;
             margin: 0;
@@ -184,6 +191,33 @@
         </div>
     </div>
     <div class="login-card">
+        {% if remembered %}
+        <div class="avatar-placeholder">
+            {% if remembered_profile.avatar %}
+                <img src="{{ remembered_profile.avatar.url }}" alt="" class="avatar-img">
+            {% else %}
+            <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 12c2.7 0 4.9-2.2 4.9-4.9S14.7 2.2 12 2.2 7.1 4.4 7.1 7.1 9.3 12 12 12zm0 2.4c-3.3 0-9.8 1.6-9.8 4.9v2.4h19.6v-2.4c0-3.3-6.5-4.9-9.8-4.9z"/>
+            </svg>
+            {% endif %}
+        </div>
+        <h1 class="login-title">{{ remembered.username }}</h1>
+        <p class="subtitle" data-i18n="subtitle_ret">Введите пароль, чтобы войти</p>
+        <form method="post" id="login-form">
+            {% csrf_token %}
+            <input type="hidden" name="username" value="{{ remembered.username }}">
+            {% if form.non_field_errors %}
+                <div class="error">{{ form.non_field_errors }}</div>
+            {% endif %}
+            <div class="field">
+                {{ form.password }}
+            </div>
+            <button type="submit" data-i18n="submit">Войти</button>
+        </form>
+        <div class="footer">
+            <a href="?other=1" data-i18n="other_account">Войти в другой аккаунт</a>
+        </div>
+        {% else %}
         <div class="avatar-placeholder">
             <svg viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 12c2.7 0 4.9-2.2 4.9-4.9S14.7 2.2 12 2.2 7.1 4.4 7.1 7.1 9.3 12 12 12zm0 2.4c-3.3 0-9.8 1.6-9.8 4.9v2.4h19.6v-2.4c0-3.3-6.5-4.9-9.8-4.9z"/>
@@ -207,6 +241,12 @@
         <div class="footer">
             <span data-i18n="no_account">Нет аккаунта?</span> <a href="/register/" data-i18n="create">Создать</a>
         </div>
+        {% if can_back %}
+        <div class="footer">
+            <a href="/accounts/login/" data-i18n="back">← Назад к аккаунту</a>
+        </div>
+        {% endif %}
+        {% endif %}
     </div>
     <div class="copyright" data-i18n="copyright">© 2025 SchoolHub. Все права защищены.</div>
 </div>
@@ -216,6 +256,9 @@
         ru: {
             title: "Вход",
             subtitle: "Войдите в аккаунт",
+            subtitle_ret: "Введите пароль, чтобы войти",
+            other_account: "Войти в другой аккаунт",
+            back: "← Назад к аккаунту",
             submit: "Войти",
             no_account: "Нет аккаунта?",
             create: "Создать",
@@ -227,6 +270,9 @@
         en: {
             title: "Sign in",
             subtitle: "Log in to your account",
+            subtitle_ret: "Enter your password to continue",
+            other_account: "Log in to another account",
+            back: "← Back to account",
             submit: "Sign in",
             no_account: "Don't have an account?",
             create: "Create one",
