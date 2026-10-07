@@ -27,18 +27,14 @@ CHAT_MASTER_KEY = config('CHAT_MASTER_KEY', default='')
  
 # По умолчанию DEBUG=False — безопаснее. Локально явно ставь DEBUG=True в .env
 DEBUG = config('DEBUG', default=False, cast=bool)
- 
-ALLOWED_HOSTS = config(
-    'ALLOWED_HOSTS',
-    default='127.0.0.1,localhost',
-    cast=lambda v: [s.strip() for s in v.split(',') if s.strip()]
-)
- 
-CSRF_TRUSTED_ORIGINS = config(
-    'CSRF_TRUSTED_ORIGINS',
-    default='',
-    cast=lambda v: [s.strip() for s in v.split(',') if s.strip()]
-)
+
+ALLOWED_HOSTS = ['129.101.113.88', 'localhost', '127.0.0.1']
+
+CSRF_TRUSTED_ORIGINS = [
+    'http://129.101.113.88',
+]
+
+
 
 if not CSRF_TRUSTED_ORIGINS:
     # Без этого за HTTPS-прокси (nginx, cloudflare и т.п.) Django принимает
