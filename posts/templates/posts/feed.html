@@ -187,7 +187,15 @@
         color: #fff;
     }
     .viewer-icon-btn svg { width: 17px; height: 17px; }
-    #storyDeleteBtn { display: none; }
+    #storySoundBtn,
+    #storyDeleteBtn {
+        position: absolute;
+        bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+        z-index: 20;
+        background: rgba(0, 0, 0, 0.45);
+    }
+    #storySoundBtn { left: 14px; }
+    #storyDeleteBtn { right: 14px; display: none; }
     #storyDeleteBtn:hover { background: rgba(224, 36, 94, 0.85); color: #fff; }
     .viewer-author-avatar {
         width: 32px;
@@ -214,7 +222,7 @@
     .viewer-caption-text {
         position: absolute;
         bottom: 0; left: 0; right: 0;
-        padding: 28px 16px;
+        padding: 48px 16px;
         background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0) 100%);
         color: #fff;
         font-size: 14px;
@@ -944,30 +952,28 @@
             <div class="viewer-author-info">
                 <img class="viewer-author-avatar" id="viewer-avatar" src="" alt="">
                 <span id="viewer-author"></span>
-                <div class="viewer-header-actions">
-                    <button class="viewer-icon-btn" id="storySoundBtn" type="button" title="Выключить звук"
-                            style="display:none;">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-                             stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M11 5L6 9H3v6h3l5 4V5z"></path>
-                            <path d="M15.5 8.5a5 5 0 0 1 0 7"></path>
-                            <path d="M18.5 5.5a9 9 0 0 1 0 13"></path>
-                        </svg>
-                    </button>
-                    <button class="viewer-icon-btn" id="storyDeleteBtn" type="button" title="Удалить историю">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-                             stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M4 7h16"></path>
-                            <path d="M9 7V4h6v3"></path>
-                            <path d="M6 7l1 13h10l1-13"></path>
-                        </svg>
-                    </button>
-                </div>
             </div>
         </div>
         <div class="story-tap-left" id="storyPrevZone"></div>
         <div class="story-tap-right" id="storyNextZone"></div>
         <div class="viewer-caption-text" id="viewer-caption" style="display:none;"></div>
+        <button class="viewer-icon-btn" id="storySoundBtn" type="button" title="Выключить звук"
+                style="display:none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 5L6 9H3v6h3l5 4V5z"></path>
+                <path d="M15.5 8.5a5 5 0 0 1 0 7"></path>
+                <path d="M18.5 5.5a9 9 0 0 1 0 13"></path>
+            </svg>
+        </button>
+        <button class="viewer-icon-btn" id="storyDeleteBtn" type="button" title="Удалить историю">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 7h16"></path>
+                <path d="M9 7V4h6v3"></path>
+                <path d="M6 7l1 13h10l1-13"></path>
+            </svg>
+        </button>
     </div>
     <button class="story-close" id="storyViewerClose" type="button" title="Закрыть">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -1027,6 +1033,7 @@ window.FEED_CONFIG = {
         feed: "{% url 'feed' %}",
         like: "{% url 'toggle_like' 0 %}",
         delete: "{% url 'delete_post' 0 %}",
+        edit: "{% url 'edit_post' 0 %}",
         comment: "{% url 'add_comment' 0 %}",
         commentDelete: "{% url 'delete_comment' 0 %}",
         uploadStory: "{% url 'upload_story' %}",

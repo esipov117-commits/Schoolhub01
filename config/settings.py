@@ -19,6 +19,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
  
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config('SECRET_KEY')
+
+# Мастер-ключ для шифрования сообщений чата (Fernet, base64 от 32 байт).
+# Если не задан — выводится из SECRET_KEY (для разработки).
+# Для продакшена сгенерируй отдельный: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+CHAT_MASTER_KEY = config('CHAT_MASTER_KEY', default='')
  
 # По умолчанию DEBUG=False — безопаснее. Локально явно ставь DEBUG=True в .env
 DEBUG = config('DEBUG', default=False, cast=bool)

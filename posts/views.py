@@ -119,6 +119,21 @@ def delete_post(request, post_id):
 
 
 @login_required
+def edit_post(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+    if post.author != request.user:
+        return JsonResponse({'ok': False, 'error': 'Not your post'}, status=403)
+    if request.method != 'POST':
+        return JsonResponse({'ok': False, 'error': 'POST required'}, status=405)
+
+    content = request.POST.get('content', '').strip()
+    post.content = content
+    post.edited_at = timezone.now()
+    post.save(update_fields=['content', 'edited_at'])
+    return JsonResponse({'ok': True, 'content': post.content})
+
+
+@login_required
 def add_comment(request, post_id):
     post = get_object_or_404(Post, id=post_id)
     text = request.POST.get('text', '').strip()

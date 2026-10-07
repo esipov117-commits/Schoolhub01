@@ -14,18 +14,28 @@
                 <a href="{% url 'profile_user' post.author.username %}" style="text-decoration:none; color:inherit;">
                     <span class="post-author">{{ post.author.username }}</span>
                 </a>
-                <span style="color:var(--muted); font-size:13px; margin-left:6px;">{{ post.created_at }}</span>
+                <span style="color:var(--muted); font-size:13px; margin-left:6px;">{{ post.created_at }}<span class="post-edited" {% if not post.edited_at %}style="display:none;"{% endif %}> · изменено</span></span>
             </div>
         </div>
 
         {% if post.author == user %}
-        <button
-            type="button"
-            class="delete-post-btn"
-            data-post-id="{{ post.id }}"
-            style="background:none; border:none; color:var(--muted); cursor:pointer; display:flex; align-items:center;">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/></svg>
-        </button>
+        <div style="display:flex; align-items:center; gap:2px;">
+            <button
+                type="button"
+                class="edit-post-btn"
+                data-post-id="{{ post.id }}"
+                title="Редактировать"
+                style="background:none; border:none; color:var(--muted); cursor:pointer; display:flex; align-items:center; padding:4px;">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            </button>
+            <button
+                type="button"
+                class="delete-post-btn"
+                data-post-id="{{ post.id }}"
+                style="background:none; border:none; color:var(--muted); cursor:pointer; display:flex; align-items:center; padding:4px;">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/></svg>
+            </button>
+        </div>
         {% endif %}
     </div>
 

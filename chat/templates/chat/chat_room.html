@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+
+{% block title %}{{ other.username }} | SchoolHub{% endblock %}
+{% block grid_columns %}240px 1fr{% endblock %}
+{% block rightbar %}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .chat-room {
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 140px);
+        min-height: 420px;
+        overflow: hidden;
+    }
+    .chat-head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid var(--border);
+    }
+    .chat-back {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text);
+        text-decoration: none;
+        flex-shrink: 0;
+    }
+    .chat-back:hover { background: var(--bg); }
+    .chat-back svg { width: 20px; height: 20px; }
+    .chat-head-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--bg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--muted);
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+    .chat-head-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .chat-head-avatar svg { width: 22px; height: 22px; }
+    .chat-head-name { font-weight: 700; font-size: 15.5px; }
+
+    .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px 4px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .msg {
+        max-width: 72%;
+        padding: 9px 13px;
+        border-radius: 16px;
+        background: var(--bg);
+        align-self: flex-start;
+        word-wrap: break-word;
+    }
+    .msg.mine {
+        background: var(--accent);
+        color: #fff;
+        align-self: flex-end;
+        border-bottom-right-radius: 6px;
+    }
+    .msg:not(.mine) { border-bottom-left-radius: 6px; }
+    .msg-text { font-size: 14.5px; line-height: 1.45; white-space: pre-wrap; }
+    .msg-time { font-size: 11px; opacity: .65; margin-top: 3px; text-align: right; }
+    .chat-empty { text-align: center; color: var(--muted); font-size: 14px; margin: auto; }
+
+    .chat-form {
+        display: flex;
+        gap: 10px;
+        padding-top: 14px;
+        border-top: 1px solid var(--border);
+    }
+    .chat-form input {
+        flex: 1;
+        padding: 12px 15px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: var(--bg);
+        color: var(--text);
+        font-size: 14.5px;
+        outline: none;
+    }
+    .chat-form input:focus { border-color: var(--muted); background: var(--panel); }
+    .chat-form button {
+        width: 46px;
+        height: 46px;
+        border: none;
+        border-radius: 50%;
+        background: var(--accent);
+        color: #fff;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    .chat-form button:hover { background: var(--accent-hover); }
+    .chat-form button svg { width: 20px; height: 20px; }
+
+    /* Мобильный: оставляем место под нижнюю панель разделов (.bottom-nav),
+       иначе она перекрывает поле ввода сообщения */
+    @media (max-width: 760px) {
+        .chat-room {
+            height: calc(100vh - 58px - 16px - 88px - env(safe-area-inset-bottom, 0px));
+            height: calc(100dvh - 58px - 16px - 88px - env(safe-area-inset-bottom, 0px));
+            min-height: 300px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card chat-room">
+    <div class="chat-head">
+        <a class="chat-back" href="{% url 'chat' %}" aria-label="Назад">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m15 18-6-6 6-6"/>
+            </svg>
+        </a>
+        <div class="chat-head-avatar">
+            {% if other_avatar %}
+                <img src="{{ other_avatar }}" alt="{{ other.username }}">
+            {% else %}
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="12" cy="8" r="4"/>
+                    <path d="M4 20c0-4 4-6 8-6s8 2 8 6"/>
+                </svg>
+            {% endif %}
+        </div>
+        <div class="chat-head-name">{{ other.username }}</div>
+    </div>
+
+    <div class="chat-messages" id="chatMessages">
+        {% if messages %}
+            {% for item in messages %}
+            <div class="msg{% if item.m.sender_id == user.pk %} mine{% endif %}" data-id="{{ item.m.pk }}">
+                <div class="msg-text">{{ item.text }}</div>
+                <div class="msg-time">{{ item.m.created_at|date:"H:i" }}</div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="chat-empty">Напишите первое сообщение 👋</div>
+        {% endif %}
+    </div>
+
+    <form class="chat-form" id="chatForm">
+        {% csrf_token %}
+        <input type="text" id="chatInput" placeholder="Сообщение…" autocomplete="off" maxlength="2000">
+        <button type="submit" aria-label="Отправить">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m22 2-7 20-4-9-9-4Z"/>
+                <path d="M22 2 11 13"/>
+            </svg>
+        </button>
+    </form>
+</div>
+
+<script>
+(function () {
+    const chatId = {{ chat.pk }};
+    let lastId = {{ last_id }};
+    const messagesEl = document.getElementById('chatMessages');
+    const form = document.getElementById('chatForm');
+    const input = document.getElementById('chatInput');
+
+    function getCsrf() {
+        const cookie = document.cookie.match('(?:^|; )csrftoken=([^;]*)');
+        if (cookie) return decodeURIComponent(cookie[1]);
+        const field = form.querySelector('[name="csrfmiddlewaretoken"]');
+        return field ? field.value : '';
+    }
+
+    function toBottom() {
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function appendMessage(m) {
+        const empty = messagesEl.querySelector('.chat-empty');
+        if (empty) empty.remove();
+
+        const div = document.createElement('div');
+        div.className = 'msg' + (m.is_mine ? ' mine' : '');
+        div.dataset.id = m.id;
+
+        const text = document.createElement('div');
+        text.className = 'msg-text';
+        text.textContent = m.text;
+
+        const time = document.createElement('div');
+        time.className = 'msg-time';
+        time.textContent = m.created_at;
+
+        div.appendChild(text);
+        div.appendChild(time);
+        messagesEl.appendChild(div);
+
+        if (m.id > lastId) lastId = m.id;
+        toBottom();
+    }
+
+    async function poll() {
+        try {
+            const r = await fetch('/chat/' + chatId + '/poll/?after=' + lastId, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            if (!r.ok) return;
+            const data = await r.json();
+            data.messages.forEach(appendMessage);
+        } catch (e) { /* нет сети — пропускаем цикл */ }
+    }
+
+    form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const text = input.value.trim();
+        if (!text) return;
+        input.value = '';
+
+        try {
+            const fd = new FormData();
+            fd.append('body', text);
+            const r = await fetch('/chat/' + chatId + '/send/', {
+                method: 'POST',
+                body: fd,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': getCsrf()
+                }
+            });
+            if (r.ok) {
+                const data = await r.json();
+                appendMessage({ id: data.id, is_mine: true, text: data.text, created_at: data.created_at });
+            } else {
+                input.value = text;
+            }
+        } catch (e) {
+            input.value = text;
+        }
+    });
+
+    toBottom();
+    setInterval(poll, 3000);
+})();
+</script>
+{% endblock %}
