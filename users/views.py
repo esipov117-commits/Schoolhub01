@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import login as auth_login
@@ -35,6 +36,8 @@ def login_view(request):
                 REMEMBERED_USER_COOKIE,
                 form.get_user().username,
                 max_age=365 * 24 * 60 * 60,
+                httponly=True,
+                secure=not settings.DEBUG,
                 samesite='Lax',
             )
             return response
@@ -75,7 +78,7 @@ def _build_profile_context(request, target_user):
 
 def register(request):
     if request.method == 'POST':
-        form = UserCreationForm(request.POST, request.FILES)
+        form = UserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
             Profile.objects.create(user=user)
