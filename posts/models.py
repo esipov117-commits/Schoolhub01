@@ -42,7 +42,9 @@ class PostImage(models.Model):
 
     @property
     def url(self):
-        return self.video.url if self.media_type == 'video' else self.image.url
+        if self.media_type == 'video':
+            return self.video.url if self.video else ''
+        return self.image.url if self.image else ''
 
 
 class Like(models.Model):
