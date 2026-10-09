@@ -163,8 +163,8 @@ def edit_profile(request):
     profile_obj, created = Profile.objects.get_or_create(user=request.user)
 
     if request.method == 'POST':
-        profile_obj.display_name = request.POST.get('display_name')
-        profile_obj.group_name = request.POST.get('group_name')
+        profile_obj.display_name = request.POST.get('display_name') or profile_obj.display_name
+        profile_obj.group_name = request.POST.get('group_name') or profile_obj.group_name
         profile_obj.status = request.POST.get('status', '')
         profile_obj.bio = request.POST.get('bio', '')
 
@@ -175,7 +175,11 @@ def edit_profile(request):
         banner = request.FILES.get('banner')
         if banner:
             profile_obj.banner = banner
-        profile_obj.banner_position = request.POST.get('banner_position', profile_obj.banner_position or 50)
+        try:
+            banner_position = int(request.POST.get('banner_position', profile_obj.banner_position or 50))
+        except (TypeError, ValueError):
+            banner_position = profile_obj.banner_position or 50
+        profile_obj.banner_position = max(0, min(100, banner_position))
 
         profile_obj.save()
         return redirect('profile')
