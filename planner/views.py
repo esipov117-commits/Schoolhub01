@@ -1,8 +1,10 @@
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from .models import CalendarEvent
 from .forms import CalendarEventForm
 
 
+@login_required
 def calendar_view(request):
 
     events = CalendarEvent.objects.filter(
