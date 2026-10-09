@@ -188,6 +188,20 @@ def edit_profile(request):
 
 
 @login_required
+def settings_page(request):
+    profile_obj, _ = Profile.objects.get_or_create(user=request.user)
+
+    if request.method == "POST":
+        profile_obj.dark_mode = request.POST.get("dark_mode") == "on"
+        profile_obj.save(update_fields=["dark_mode"])
+        return redirect("settings")
+
+    return render(request, "users/settings.html", {
+        "profile": profile_obj,
+    })
+
+
+@login_required
 def toggle_theme(request):
     profile_obj, _ = Profile.objects.get_or_create(user=request.user)
     profile_obj.dark_mode = not profile_obj.dark_mode
