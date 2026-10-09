@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
-from users.models import validate_image_size
+from users.models import validate_image_size, validate_video_size
 
 
 class Post(models.Model):
@@ -30,7 +30,7 @@ class PostImage(models.Model):
 
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='images')
     image = models.ImageField(upload_to='posts/', blank=True, null=True, validators=[validate_image_size])
-    video = models.FileField(upload_to='posts/videos/', blank=True, null=True)
+    video = models.FileField(upload_to='posts/videos/', blank=True, null=True, validators=[validate_video_size])
     media_type = models.CharField(max_length=10, choices=MEDIA_TYPE_CHOICES, default='image')
     order = models.PositiveSmallIntegerField(default=0)
 

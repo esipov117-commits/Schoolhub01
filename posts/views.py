@@ -1,4 +1,5 @@
 import os
+from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.template.loader import render_to_string
 from django.shortcuts import render, redirect, get_object_or_404
@@ -26,12 +27,20 @@ def feed(request):
 
         if content or files:
             post = Post.objects.create(author=request.user, content=content, layout=layout)
-            for i, f in enumerate(files):
-                ext = os.path.splitext(f.name)[1].lower()
-                if ext in VIDEO_EXTENSIONS:
-                    PostImage.objects.create(post=post, video=f, media_type='video', order=i)
-                else:
-                    PostImage.objects.create(post=post, image=f, media_type='image', order=i)
+            try:
+                for i, f in enumerate(files):
+                    ext = os.path.splitext(f.name)[1].lower()
+                    if ext in VIDEO_EXTENSIONS:
+                        media = PostImage(post=post, video=f, media_type='video', order=i)
+                    else:
+                        media = PostImage(post=post, image=f, media_type='image', order=i)
+                    media.full_clean()
+                    media.save()
+            except ValidationError as e:
+                post.delete()
+                if is_ajax:
+                    return JsonResponse({'error': '; '.join(e.messages)}, status=400)
+                return redirect('feed')
 
             if is_ajax:
                 media_items = [
