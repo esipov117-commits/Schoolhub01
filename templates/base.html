@@ -3,7 +3,7 @@
 <html lang="ru" {% if user.profile.dark_mode %}data-theme="dark"{% endif %}>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>{% block title %}SchoolHub{% endblock %}</title>
 {% block extra_head %}{% endblock %}
 
@@ -51,6 +51,13 @@
     padding: 0;
 }
 
+html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    touch-action: manipulation;
+    overscroll-behavior-y: none;
+}
+
 html,
 body {
     overflow-x: hidden;
@@ -62,6 +69,8 @@ body {
     color: var(--text);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
 }
 
 a {
@@ -942,8 +951,26 @@ button.btn-primary:active {
 
     .bottom-nav a.active {
         color: var(--accent);
-        background: color-mix(in srgb, var(--accent) 12%, transparent);
         font-weight: 700;
+    }
+
+    .bottom-nav-indicator {
+        position: absolute;
+        top: 7px;
+        bottom: 7px;
+        left: 0;
+        width: 0;
+        border-radius: 18px;
+        background: color-mix(in srgb, var(--accent) 12%, transparent);
+        transition:
+            left .38s cubic-bezier(.34, 1.4, .5, 1),
+            width .38s cubic-bezier(.34, 1.4, .5, 1);
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    .bottom-nav a {
+        z-index: 1;
     }
 
     .bottom-nav a.active svg {
@@ -962,8 +989,11 @@ button.btn-primary:active {
             0 2px 8px rgba(0,0,0,.2);
     }
 
-    [data-theme="dark"] .bottom-nav a.active {
+    [data-theme="dark"] .bottom-nav-indicator {
         background: rgba(10, 132, 255, .16);
+    }
+
+    [data-theme="dark"] .bottom-nav a.active {
         color: #0a84ff;
     }
 
@@ -997,6 +1027,62 @@ button.btn-primary:active {
         left: 8px;
         right: 8px;
         bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+    }
+}
+
+/* =========================
+   ПЕРЕКЛЮЧЕНИЕ РАЗДЕЛОВ (АНИМАЦИИ)
+========================= */
+
+@keyframes navIconEnter {
+    0%   { opacity: 0; transform: translateY(10px) scale(0.65); }
+    55%  { opacity: 1; transform: translateY(-2px) scale(1.12); }
+    75%  { transform: translateY(0) scale(0.96); }
+    100% { opacity: 1; transform: none; }
+}
+
+@keyframes navIconPop {
+    0%   { transform: scale(1); }
+    35%  { transform: scale(1.3); }
+    70%  { transform: scale(0.9); }
+    100% { transform: scale(1); }
+}
+
+/* Анимация только у иконки активного (выбранного) раздела */
+.sidebar a.active svg,
+.bottom-nav a.active svg {
+    animation: navIconEnter .55s cubic-bezier(.22, 1, .36, 1) backwards;
+}
+
+/* Активная иконка чуть крупнее */
+.sidebar a svg {
+    transition: transform .28s cubic-bezier(.34, 1.56, .64, 1);
+}
+
+.sidebar a.active svg {
+    transform: scale(1.12);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sidebar a.active svg,
+    .bottom-nav a.active svg {
+        animation: none !important;
+    }
+
+    .bottom-nav-indicator {
+        transition: none !important;
+    }
+}
+
+/* =========================
+   APP-LIKE (БЕЗ ЗУМА)
+========================= */
+
+@media (max-width: 760px) {
+    input,
+    textarea,
+    select {
+        font-size: 16px !important;
     }
 }
 </style>
@@ -1557,6 +1643,88 @@ document.addEventListener("DOMContentLoaded", function () {
     render([]);
     refresh();
     setInterval(refresh, 8000);
+})();
+</script>
+
+<script>
+(function () {
+    function block(e) { e.preventDefault(); }
+    document.addEventListener('gesturestart', block, { passive: false });
+    document.addEventListener('gesturechange', block, { passive: false });
+    document.addEventListener('gestureend', block, { passive: false });
+})();
+</script>
+
+<script>
+(function () {
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    var bottomNav = document.querySelector('.bottom-nav');
+    var indicator = null;
+    var activeLink = null;
+
+    if (bottomNav) {
+        activeLink = bottomNav.querySelector('a.active') || bottomNav.querySelector('a');
+
+        indicator = document.createElement('span');
+        indicator.className = 'bottom-nav-indicator';
+        bottomNav.insertBefore(indicator, bottomNav.firstChild);
+
+        function place(el, animate) {
+            if (!el) return;
+            if (!animate) indicator.style.transition = 'none';
+            indicator.style.left = el.offsetLeft + 'px';
+            indicator.style.width = el.offsetWidth + 'px';
+            if (!animate) {
+                void indicator.offsetWidth;
+                indicator.style.transition = '';
+            }
+        }
+
+        if (window.requestAnimationFrame) {
+            window.requestAnimationFrame(function () { place(activeLink, false); });
+        } else {
+            place(activeLink, false);
+        }
+
+        window.addEventListener('resize', function () { place(activeLink, false); });
+    }
+
+    if (reduce) return;
+
+    var navLinks = document.querySelectorAll('.sidebar a, .bottom-nav a');
+
+    navLinks.forEach(function (link) {
+        link.addEventListener('click', function (event) {
+            if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+            if (event.button !== 0) return;
+
+            var href = link.getAttribute('href');
+            if (!href || href.charAt(0) === '#' || link.target === '_blank') return;
+
+            event.preventDefault();
+
+            var icon = link.querySelector('svg');
+            if (icon) {
+                icon.style.animation = 'none';
+                void icon.offsetWidth;
+                icon.style.animation = 'navIconPop .38s cubic-bezier(.34, 1.56, .64, 1)';
+            }
+
+            if (indicator && bottomNav.contains(link)) {
+                activeLink = link;
+                place(link, true);
+                bottomNav.querySelectorAll('a').forEach(function (a) {
+                    a.classList.remove('active');
+                });
+                link.classList.add('active');
+            }
+
+            setTimeout(function () {
+                window.location.href = href;
+            }, 300);
+        });
+    });
 })();
 </script>
 
