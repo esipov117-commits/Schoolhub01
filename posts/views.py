@@ -1,7 +1,8 @@
 import os
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
-from django.db.models import Count
+from django.db.models import Count, IntegerField, OuterRef, Subquery
+from django.db.models.functions import Coalesce
 from django.template.loader import render_to_string
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
@@ -14,6 +15,40 @@ from users.models import downscale_image
 
 VIDEO_EXTENSIONS = {'.mp4', '.mov', '.webm', '.avi', '.mkv'}
 POSTS_PER_PAGE = 10
+
+
+def _post_queryset():
+    """Лента постов с готовыми счётчиками лайков/комментариев.
+
+    Раньше здесь было два Count(..., distinct=True) по двум разным связям —
+    это порождает декартово произведение (лайки × комментарии) и на постах
+    с активностью запрос начинал «подвисать». Считаем счётчики отдельными
+    подзапросами: одна строка на пост, без размножения JOIN'ов.
+    """
+    likes_sq = (
+        Like.objects.filter(post=OuterRef('pk'))
+        .order_by()
+        .values('post')
+        .annotate(c=Count('pk'))
+        .values('c')
+    )
+    comments_sq = (
+        Comment.objects.filter(post=OuterRef('pk'))
+        .order_by()
+        .values('post')
+        .annotate(c=Count('pk'))
+        .values('c')
+    )
+    return (
+        Post.objects
+        .select_related('author__profile')
+        .prefetch_related('images', 'comments__author__profile')
+        .annotate(
+            likes_count=Coalesce(Subquery(likes_sq, output_field=IntegerField()), 0),
+            comments_total=Coalesce(Subquery(comments_sq, output_field=IntegerField()), 0),
+        )
+        .order_by('-created_at')
+    )
 
 
 @login_required
@@ -65,16 +100,7 @@ def feed(request):
             return JsonResponse({'error': 'Добавьте текст или выберите фото'}, status=400)
         return redirect('feed')
     liked_post_ids = set(Like.objects.filter(user=request.user).values_list('post_id', flat=True))
-    posts_qs = (
-        Post.objects
-        .select_related('author__profile')
-        .prefetch_related('images', 'comments__author__profile')
-        .annotate(
-            likes_count=Count('likes', distinct=True),
-            comments_total=Count('comments', distinct=True),
-        )
-        .order_by('-created_at')
-    )
+    posts_qs = _post_queryset()
 
     # AJAX-запрос на подгрузку следующей страницы (infinite scroll)
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest' and request.GET.get('page'):
@@ -99,7 +125,12 @@ def feed(request):
     # Активные истории, сгруппированные по автору (для ленты в stories)
     cutoff = timezone.now() - timezone.timedelta(hours=24)
     grouped = {}
-    for story in Story.objects.filter(created_at__gte=cutoff).select_related('author').order_by('author', '-created_at'):
+    for story in (
+        Story.objects
+        .filter(created_at__gte=cutoff)
+        .select_related('author__profile')
+        .order_by('author', '-created_at')
+    ):
         grouped.setdefault(story.author, []).append(story)
     grouped.pop(request.user, None)
 

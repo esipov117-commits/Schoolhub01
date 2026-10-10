@@ -206,6 +206,17 @@
                 Пока нет постов
             </div>
         {% endfor %}
+        {% if page_obj and page_obj.paginator.num_pages > 1 %}
+        <div class="profile-pagination">
+            {% if page_obj.has_previous %}
+                <a class="profile-btn" href="?page={{ page_obj.previous_page_number }}">Назад</a>
+            {% endif %}
+            <span class="pagination-info">Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+                <a class="profile-btn" href="?page={{ page_obj.next_page_number }}">Вперёд</a>
+            {% endif %}
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
@@ -464,6 +475,17 @@ function closeLightbox() {
 .post.card {
     font-size: 14.5px;
     line-height: 1.5;
+}
+.profile-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 4px;
+}
+.pagination-info {
+    color: var(--muted);
+    font-size: 13px;
 }
 .profile-side-card {
     display: flex;

@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.paginator import Paginator
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import login as auth_login
@@ -7,10 +8,14 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from tasks.models import TodoTask
 from .models import Profile, Follow, downscale_image
-from posts.models import Post
+from posts.models import Post, PostImage
 from events.models import Event
 
 REMEMBERED_USER_COOKIE = 'sh_remembered_user'
+
+PROFILE_POSTS_PER_PAGE = 10
+PHOTOS_PER_PAGE = 24
+PEOPLE_PER_PAGE = 60
 
 
 def _get_remembered_user(request):
@@ -57,22 +62,18 @@ def login_view(request):
 
 def _build_profile_context(request, target_user):
     profile_obj, _ = Profile.objects.get_or_create(user=target_user)
-    user_posts = Post.objects.filter(author=target_user)
     is_own_profile = (target_user == request.user)
-    posts_count = user_posts.count()
-    followers_count = target_user.followers.count()
-    following_count = target_user.following.count()
-    is_following = Follow.objects.filter(follower=request.user, following=target_user).exists()
-
     return {
         'profile': profile_obj,
-        'user_posts': user_posts,
         'profile_user': target_user,
         'is_own_profile': is_own_profile,
-        'posts_count': posts_count,
-        'followers_count': followers_count,
-        'following_count': following_count,
-        'is_following': is_following,
+        'posts_count': Post.objects.filter(author=target_user).count(),
+        'followers_count': target_user.followers.count(),
+        'following_count': target_user.following.count(),
+        'is_following': (
+            not is_own_profile
+            and Follow.objects.filter(follower=request.user, following=target_user).exists()
+        ),
     }
 
 
@@ -98,7 +99,6 @@ def home(request):
     Profile.objects.get_or_create(user=request.user)
 
     tasks = TodoTask.objects.filter(user=request.user)
-    recent_posts = Post.objects.all()[:3]
     upcoming_events = Event.objects.filter(date__gte=timezone.now()).order_by('date')[:3]
 
     stats = {
@@ -109,7 +109,6 @@ def home(request):
 
     return render(request, 'home.html', {
         'tasks': tasks,
-        'recent_posts': recent_posts,
         'upcoming_events': upcoming_events,
         'stats': stats,
     })
@@ -123,6 +122,15 @@ def profile(request, username=None):
         target_user = request.user
 
     context = _build_profile_context(request, target_user)
+    posts_qs = (
+        Post.objects
+        .filter(author=target_user)
+        .only('id', 'content', 'created_at', 'edited_at')
+        .order_by('-created_at')
+    )
+    page_obj = Paginator(posts_qs, PROFILE_POSTS_PER_PAGE).get_page(request.GET.get('page'))
+    context['user_posts'] = page_obj.object_list
+    context['page_obj'] = page_obj
     context['active_section'] = 'wall'
     return render(request, 'users/profile.html', context)
 
@@ -135,10 +143,7 @@ def profile_friends(request, username):
     follower_ids = set(Follow.objects.filter(follower=target_user).values_list('following_id', flat=True))
     following_ids = set(Follow.objects.filter(following=target_user).values_list('follower_id', flat=True))
     friend_ids = follower_ids & following_ids
-    friends = User.objects.filter(id__in=friend_ids).order_by('username')
-
-    for friend in friends:
-        Profile.objects.get_or_create(user=friend)
+    friends = User.objects.filter(id__in=friend_ids).select_related('profile').order_by('username')
 
     context['active_section'] = 'friends'
     context['friends'] = friends
@@ -150,14 +155,18 @@ def profile_photos(request, username):
     target_user = get_object_or_404(User, username=username)
     context = _build_profile_context(request, target_user)
 
-    photos = []
-    for post in Post.objects.filter(author=target_user).prefetch_related('images'):
-        for image in post.images.all():
-            photos.append(image)
+    photos_qs = (
+        PostImage.objects
+        .filter(post__author=target_user)
+        .select_related('post')
+        .order_by('-post__created_at', 'order', 'id')
+    )
+    page_obj = Paginator(photos_qs, PHOTOS_PER_PAGE).get_page(request.GET.get('page'))
 
     context['active_section'] = 'photos'
-    context['photos'] = photos
-    context['photos_count'] = len(photos)
+    context['photos'] = page_obj.object_list
+    context['photos_count'] = photos_qs.count()
+    context['page_obj'] = page_obj
     return render(request, 'users/photos.html', context)
 
 
@@ -226,11 +235,19 @@ def toggle_follow(request, username):
 def search_users(request):
     query = request.GET.get('q', '').strip()
     if query:
-        results = User.objects.filter(username__icontains=query).exclude(id=request.user.id)
+        results = (
+            User.objects
+            .filter(username__icontains=query)
+            .exclude(id=request.user.id)
+            .select_related('profile')
+            .order_by('username')[:PEOPLE_PER_PAGE]
+        )
     else:
         results = User.objects.none()
 
-    following_ids = Follow.objects.filter(follower=request.user).values_list('following_id', flat=True)
+    following_ids = set(
+        Follow.objects.filter(follower=request.user).values_list('following_id', flat=True)
+    )
 
     return render(request, 'users/search.html', {
         'query': query,
@@ -242,8 +259,15 @@ def search_users(request):
 @login_required
 def followers_list(request, username):
     target_user = get_object_or_404(User, username=username)
-    followers = User.objects.filter(following__following=target_user)
-    following_ids = Follow.objects.filter(follower=request.user).values_list('following_id', flat=True)
+    followers = (
+        User.objects
+        .filter(following__following=target_user)
+        .select_related('profile')
+        .order_by('username')[:PEOPLE_PER_PAGE]
+    )
+    following_ids = set(
+        Follow.objects.filter(follower=request.user).values_list('following_id', flat=True)
+    )
 
     return render(request, 'users/follow_list.html', {
         'target_user': target_user,
@@ -256,8 +280,15 @@ def followers_list(request, username):
 @login_required
 def following_list(request, username):
     target_user = get_object_or_404(User, username=username)
-    following = User.objects.filter(followers__follower=target_user)
-    following_ids = Follow.objects.filter(follower=request.user).values_list('following_id', flat=True)
+    following = (
+        User.objects
+        .filter(followers__follower=target_user)
+        .select_related('profile')
+        .order_by('username')[:PEOPLE_PER_PAGE]
+    )
+    following_ids = set(
+        Follow.objects.filter(follower=request.user).values_list('following_id', flat=True)
+    )
 
     return render(request, 'users/follow_list.html', {
         'target_user': target_user,

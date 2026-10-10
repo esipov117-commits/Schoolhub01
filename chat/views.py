@@ -7,6 +7,11 @@ from django.views.decorators.http import require_POST
 
 from .models import Chat, Message
 
+# Сколько последних сообщений подгружаем в комнату. Раньше грузилась вся
+# переписка и каждое сообщение расшифровывалось (Fernet), из-за чего в долгих
+# диалогах страница «висла». 200 сообщений хватает с запасом.
+CHAT_MESSAGE_WINDOW = 200
+
 
 def _get_chat(request, chat_id):
     return get_object_or_404(Chat, pk=chat_id, participants=request.user)
@@ -43,7 +48,7 @@ def _dialogs_qs(request):
     )
 
 
-def _bulk_dialogs(request, chats):
+def _bulk_dialogs(request, chats, include_last_text=True):
     """Собирает список диалогов, не делая запросов на каждый чат."""
     chats = list(chats)
     if not chats:
@@ -68,7 +73,7 @@ def _bulk_dialogs(request, chats):
             'chat': chat,
             'other': other,
             'last': msg,
-            'last_text': msg.text_for(request.user) if msg else '',
+            'last_text': msg.text_for(request.user) if (msg and include_last_text) else '',
             'unread': chat.unread,
             'avatar': _avatar_url(other) if other else None,
         })
@@ -92,7 +97,12 @@ def chat_room(request, chat_id):
     if request.method == 'POST':
         return send_message(request, chat_id)
 
-    messages = list(chat.messages.select_related('sender').order_by('created_at'))
+    messages = list(
+        chat.messages
+        .select_related('sender')
+        .order_by('-created_at', '-pk')[:CHAT_MESSAGE_WINDOW]
+    )
+    messages.reverse()
 
     # Помечаем прочитанными одним batch-запросом вместо N сохранений.
     to_mark = [
@@ -163,28 +173,34 @@ def poll_messages(request, chat_id):
 
 @login_required
 def unread_api(request):
-    """Непрочитанные сообщения для колокольчика уведомлений."""
-    dialogs = _bulk_dialogs(request, _dialogs_qs(request))
+    """Непрочитанные сообщения для колокольчика уведомлений.
+
+    Эндпоинт опрашивается каждые несколько секунд, поэтому здесь важно
+    обойтись минимумом запросов: один batch-запрос за последними непрочитанными
+    сообщениями вместо запроса на каждый чат.
+    """
+    dialogs = _bulk_dialogs(request, _dialogs_qs(request), include_last_text=False)
+    relevant = [d for d in dialogs if d['unread'] and d['other']]
+    if not relevant:
+        return JsonResponse({'count': 0, 'items': []})
+
+    chat_ids = [d['chat'].pk for d in relevant]
+    last_unread_map = {}
+    unread_messages = (
+        Message.objects
+        .filter(chat_id__in=chat_ids)
+        .exclude(sender=request.user)
+        .exclude(read_by__contains=[str(request.user.pk)])
+        .select_related('sender')
+        .order_by('chat_id', '-created_at', '-pk')
+    )
+    for m in unread_messages:
+        last_unread_map.setdefault(m.chat_id, m)
+
     items = []
     total = 0
-    for d in dialogs:
-        if not d['unread'] or not d['other']:
-            continue
-        last = d['last']
-        if (
-            last is not None
-            and last.sender_id != request.user.pk
-            and str(request.user.pk) not in last.read_by
-        ):
-            last_unread = last
-        else:
-            last_unread = (
-                d['chat'].messages
-                .exclude(sender=request.user)
-                .exclude(read_by__contains=[str(request.user.pk)])
-                .order_by('-created_at')
-                .first()
-            )
+    for d in relevant:
+        last_unread = last_unread_map.get(d['chat'].pk)
         total += d['unread']
         items.append({
             'chat_id': d['chat'].pk,
