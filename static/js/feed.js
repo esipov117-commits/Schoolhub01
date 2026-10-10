@@ -82,6 +82,25 @@
             ', ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
     }
 
+    function fullDate(iso) {
+        return fmtDate(iso);
+    }
+
+    function timeAgo(iso) {
+        var d = new Date(iso);
+        if (isNaN(d)) return '';
+        var sec = Math.floor((Date.now() - d.getTime()) / 1000);
+        if (sec < 60) return 'только что';
+        var min = Math.floor(sec / 60);
+        if (min < 60) return min + ' мин.';
+        var hr = Math.floor(min / 60);
+        if (hr < 24) return hr + ' ч.';
+        var days = Math.floor(hr / 24);
+        if (days < 7) return days + ' дн.';
+        var pad = function (n) { return n < 10 ? '0' + n : '' + n; };
+        return pad(d.getDate()) + '.' + pad(d.getMonth() + 1) + '.' + d.getFullYear();
+    }
+
     var LIKE_FILLED = '<svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor"><path d="M12 21s-.4-.3-1-.8C6.7 16.9 3 13.5 3 9.6 3 6.9 5.1 5 7.7 5c1.5 0 3 .7 3.9 1.9C12.5 5.7 14 5 15.5 5 18.1 5 20.2 6.9 20.2 9.6c0 3.9-3.7 7.3-8 10.6-.6.5-1 .8-1 .8z"/></svg>';
     var LIKE_OUTLINE = '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s-.4-.3-1-.8C6.7 16.9 3 13.5 3 9.6 3 6.9 5.1 5 7.7 5c1.5 0 3 .7 3.9 1.9C12.5 5.7 14 5 15.5 5 18.1 5 20.2 6.9 20.2 9.6c0 3.9-3.7 7.3-8 10.6-.6.5-1 .8-1 .8z"/></svg>';
     var TRASH_SVG = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6l12 12M18 6L6 18"/></svg>';
@@ -263,12 +282,8 @@
         if (block) block.classList.add('expanded');
     });
 
-    /* Поделиться постом (копирование ссылки) */
-    document.addEventListener('click', function (e) {
-        var btn = e.target.closest && e.target.closest('.share-post-btn');
-        if (!btn) return;
-        var id = btn.getAttribute('data-post-id');
-        var url = location.origin + location.pathname + '#post-' + id;
+    /* Поделиться постом: нативный Web Share API, иначе — копирование ссылки */
+    function copyShareUrl(url) {
         if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(url)
                 .then(function () { toast('Ссылка на публикацию скопирована'); })
@@ -276,6 +291,21 @@
         } else {
             toast(url);
         }
+    }
+
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest && e.target.closest('.share-post-btn');
+        if (!btn) return;
+        var id = btn.getAttribute('data-post-id');
+        var url = location.origin + location.pathname + '#post-' + id;
+        if (navigator.share) {
+            navigator.share({ title: 'SchoolHub', text: 'Публикация в SchoolHub', url: url })
+                .catch(function (err) {
+                    if (!err || err.name !== 'AbortError') copyShareUrl(url);
+                });
+            return;
+        }
+        copyShareUrl(url);
     });
 
     /* Двойной клик по посту — лайк (как в Threads) */
@@ -428,10 +458,20 @@
             var wrap = track.closest('.post-carousel');
             if (!wrap) return;
             var dots = wrap.querySelectorAll('.carousel-dot');
-            if (!dots.length) return;
+            dots.forEach(function (dot, idx) {
+                dot.style.cursor = 'pointer';
+                dot.addEventListener('click', function () {
+                    track.scrollTo({ left: idx * track.clientWidth, behavior: 'smooth' });
+                });
+            });
             track.addEventListener('scroll', function () {
                 var i = Math.round(track.scrollLeft / Math.max(track.clientWidth, 1));
                 dots.forEach(function (d, idx) { d.classList.toggle('active', idx === i); });
+                track.querySelectorAll('video').forEach(function (v) {
+                    if (Math.abs(v.offsetLeft - i * track.clientWidth) > 4) {
+                        try { v.pause(); } catch (err) {}
+                    }
+                });
             }, { passive: true });
         });
     }
@@ -443,14 +483,20 @@
     var loadingPosts = false;
     var noMorePosts = !(CFG.hasMore === true || CFG.hasMore === undefined);
 
+    var feedSkeleton = feedLoading ? feedLoading.querySelector('.feed-skeleton') : null;
+
+    function setFeedLoading(on) {
+        if (feedSkeleton) feedSkeleton.style.display = on ? 'block' : 'none';
+    }
+
     function loadMorePosts() {
         if (loadingPosts || noMorePosts || !feedPosts) return;
         loadingPosts = true;
-        if (feedLoading) feedLoading.style.display = 'block';
+        setFeedLoading(true);
         getJSON(CFG.urls.feed + '?page=' + nextPage)
             .then(function (d) {
                 loadingPosts = false;
-                if (feedLoading) feedLoading.style.display = 'none';
+                setFeedLoading(false);
                 if (!d || !Array.isArray(d.html)) { noMorePosts = true; return; }
                 var frag = document.createElement('div');
                 frag.innerHTML = d.html.join('');
@@ -459,7 +505,7 @@
                 noMorePosts = !d.has_next;
                 bindAll(feedPosts);
             })
-            .catch(function () { loadingPosts = false; if (feedLoading) feedLoading.style.display = 'none'; });
+            .catch(function () { loadingPosts = false; setFeedLoading(false); });
     }
 
     if (feedLoading && 'IntersectionObserver' in window) {
@@ -472,6 +518,14 @@
     var lightbox = document.getElementById('lightboxOverlay');
     var lightboxTrack = document.getElementById('lightboxTrack');
     var lightboxIndex = 0;
+    var lightboxItems = [];
+
+    function updateLightboxCounter() {
+        var el = document.getElementById('lightboxCounter');
+        if (!el || !lightboxItems.length) return;
+        var i = Math.round(lightboxTrack.scrollLeft / Math.max(lightboxTrack.clientWidth, 1));
+        el.textContent = lightboxItems.length > 1 ? ((i + 1) + ' / ' + lightboxItems.length) : '';
+    }
 
     function mediaListFromCard(card) {
         var nodes = card.querySelectorAll('.carousel-track img, .carousel-track video, .grid-media');
@@ -510,12 +564,14 @@
 
     function openLightbox(items, startIndex) {
         if (!lightbox || !items.length) return;
+        lightboxItems = items;
         renderLightbox(items);
         lightbox.style.display = 'flex';
         document.body.style.overflow = 'hidden';
         lightboxIndex = startIndex || 0;
         requestAnimationFrame(function () {
             lightboxTrack.scrollLeft = lightboxIndex * lightboxTrack.clientWidth;
+            updateLightboxCounter();
         });
     }
 
@@ -525,6 +581,7 @@
         lightboxTrack.querySelectorAll('video').forEach(function (v) { v.pause(); });
         lightbox.style.display = 'none';
         lightboxTrack.innerHTML = '';
+        lightboxItems = [];
         document.body.style.overflow = '';
     }
 
@@ -536,6 +593,11 @@
         });
         document.getElementById('lightboxNext').addEventListener('click', function () {
             lightboxTrack.scrollBy({ left: lightboxTrack.clientWidth, behavior: 'smooth' });
+        });
+        lightboxTrack.addEventListener('scroll', updateLightboxCounter, { passive: true });
+        lightboxTrack.addEventListener('dblclick', function (e) {
+            var img = e.target.closest && e.target.closest('img');
+            if (img) img.classList.toggle('lightbox-zoom');
         });
     }
 
@@ -791,6 +853,7 @@
         stopViewerTimer();
         this.index = i;
         var item = this.group.items[i];
+        markStoryViewed(this.group, item);
         var isVideo = item.type === 'video';
         this.clearMedia();
         this.renderProgress(!isVideo);
@@ -913,7 +976,7 @@
                 btn.setAttribute('data-author-name', g.author_name);
                 btn.setAttribute('data-author-avatar', g.author_avatar || '');
                 var av = document.createElement('span');
-                av.className = 'story-avatar has-story';
+                av.className = 'story-avatar ' + ((!isMe && g.viewed) ? 'viewed' : 'has-story');
                 if (g.author_avatar) {
                     var img = document.createElement('img');
                     img.src = g.author_avatar;
@@ -939,6 +1002,34 @@
             }
             bindStoryBubbles(bar);
         }).catch(function () {});
+    }
+
+    /* ====================== Отметка «просмотрено» ====================== */
+    function updateStoryBubble(group) {
+        if (!group) return;
+        var allViewed = group.items.every(function (it) { return it.viewed; });
+        group.viewed = allViewed;
+        var btn = document.querySelector('.story-item[data-author-id="' + group.author_id + '"]');
+        if (!btn) return;
+        var av = btn.querySelector('.story-avatar');
+        if (!av) return;
+        av.classList.toggle('viewed', allViewed);
+        av.classList.toggle('has-story', !allViewed);
+    }
+
+    function markStoryViewed(group, item) {
+        if (!group || !item) return;
+        if (String(group.author_id) === String(CFG.meId)) return;
+        var changed = false;
+        if (!item.viewed) {
+            item.viewed = true;
+            changed = true;
+            if (CFG.urls.viewStory) {
+                postForm(CFG.urls.viewStory.replace('/0/', '/' + item.id + '/'), new FormData())
+                    .catch(function () {});
+            }
+        }
+        if (changed) updateStoryBubble(group);
     }
 
     /* ====================== Создание поста (FAB) ====================== */
@@ -1032,6 +1123,13 @@
 
     if (postModal) {
         document.getElementById('openPostModal').addEventListener('click', function () {
+            resetPostModal();
+            postModal.showModal();
+        });
+
+        document.addEventListener('click', function (e) {
+            var btn = e.target.closest && e.target.closest('.feed-empty-btn');
+            if (!btn) return;
             resetPostModal();
             postModal.showModal();
         });
@@ -1154,8 +1252,8 @@
                       avatarHtml(d.author, d.author_avatar) + '</span></a>' +
             '      <div><a href="' + profileUrl + '" style="text-decoration:none; color:inherit;">' +
             '        <span class="post-author">' + esc(d.author) + '</span></a>' +
-            '        <span style="color:var(--muted); font-size:13px; margin-left:6px;">' +
-                      esc(d.created_at) + '<span class="post-edited" style="display:none;"> · изменено</span></span></div>' +
+            '        <span class="post-time" title="' + esc(fullDate(d.created_at)) + '">' +
+                      esc(timeAgo(d.created_at)) + '<span class="post-edited" style="display:none;"> · изменено</span></span></div>' +
             '    </div>' +
             '    <div style="display:flex; align-items:center; gap:2px;">' +
             '      <button type="button" class="edit-post-btn" data-post-id="' + d.id +
@@ -1208,8 +1306,12 @@
     }
 
     document.addEventListener('keydown', function (e) {
+        if (lightbox && lightbox.style.display === 'flex') {
+            if (e.key === 'Escape') { closeLightbox(); return; }
+            if (e.key === 'ArrowRight') { lightboxTrack.scrollBy({ left: lightboxTrack.clientWidth, behavior: 'smooth' }); return; }
+            if (e.key === 'ArrowLeft') { lightboxTrack.scrollBy({ left: -lightboxTrack.clientWidth, behavior: 'smooth' }); return; }
+        }
         if (e.key !== 'Escape') return;
-        if (lightbox && lightbox.style.display === 'flex') { closeLightbox(); return; }
         if (storyViewer && storyViewer.root.classList.contains('open')) storyViewer.close();
     });
 

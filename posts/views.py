@@ -9,7 +9,7 @@ from django.http import JsonResponse
 from django.utils import timezone
 from .models import Post, PostImage, Like, Comment
 from events.models import Event
-from stories.models import Story
+from stories.models import Story, StoryView
 from users.models import downscale_image
 
 VIDEO_EXTENSIONS = {'.mp4', '.mov', '.webm', '.avi', '.mkv'}
@@ -59,7 +59,7 @@ def feed(request):
                     'content': post.content,
                     'media_items': media_items,
                     'layout': post.layout,
-                    'created_at': post.created_at.strftime('%d.%m.%Y, %H:%M'),
+                    'created_at': post.created_at.isoformat(),
                 })
         elif is_ajax:
             return JsonResponse({'error': 'Добавьте текст или выберите фото'}, status=400)
@@ -102,7 +102,16 @@ def feed(request):
     for story in Story.objects.filter(created_at__gte=cutoff).select_related('author').order_by('author', '-created_at'):
         grouped.setdefault(story.author, []).append(story)
     grouped.pop(request.user, None)
-    other_stories = list(grouped.items())
+
+    viewed_story_ids = set(
+        StoryView.objects
+        .filter(user=request.user, story__created_at__gte=cutoff)
+        .values_list('story_id', flat=True)
+    )
+    other_stories = [
+        (author, author_stories, all(s.id in viewed_story_ids for s in author_stories))
+        for author, author_stories in grouped.items()
+    ]
 
     upcoming_events = Event.objects.filter(date__gte=timezone.now()).order_by('date')[:3]
 

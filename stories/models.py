@@ -39,3 +39,28 @@ class Story(models.Model):
     @property
     def is_expired(self):
         return timezone.now() >= self.expires_at
+
+
+class StoryView(models.Model):
+    story = models.ForeignKey(
+        Story,
+        on_delete=models.CASCADE,
+        related_name='views',
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='story_views',
+    )
+    viewed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['story', 'user'],
+                name='uniq_story_view_user',
+            ),
+        ]
+        indexes = [
+            models.Index(fields=['user', 'story']),
+        ]

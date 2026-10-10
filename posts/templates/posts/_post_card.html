@@ -15,7 +15,7 @@
                 <a href="{% url 'profile_user' post.author.username %}" style="text-decoration:none; color:inherit;">
                     <span class="post-author">{{ post.author.username }}</span>
                 </a>
-                <span style="color:var(--muted); font-size:13px; margin-left:6px;">{{ post.created_at }}<span class="post-edited" {% if not post.edited_at %}style="display:none;"{% endif %}> · изменено</span></span>
+                <span class="post-time" title="{{ post.created_at|fulldate }}">{{ post.created_at|timeago }}<span class="post-edited" {% if not post.edited_at %}style="display:none;"{% endif %}> · изменено</span></span>
             </div>
         </div>
 

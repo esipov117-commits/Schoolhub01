@@ -33,6 +33,13 @@ def comments_text(value):
 
 
 @register.filter
+def fulldate(value):
+    if not value:
+        return ''
+    return value.strftime('%d.%m.%Y, %H:%M')
+
+
+@register.filter
 def timeago(value):
     if not value:
         return ''

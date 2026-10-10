@@ -2,9 +2,10 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.utils import timezone
+from django.views.decorators.http import require_POST
 import os
 
-from .models import Story
+from .models import Story, StoryView
 from users.models import downscale_image
 
 
@@ -74,9 +75,19 @@ def upload_story(request):
 def api_active_stories(request):
     """JSON-список активных историй для JS-просмотрщика."""
     cutoff = timezone.now() - timezone.timedelta(hours=24)
-    stories = Story.objects.filter(
-        created_at__gte=cutoff
-    ).select_related('author').order_by('author', 'created_at')
+    stories = list(
+        Story.objects.filter(created_at__gte=cutoff)
+        .select_related('author', 'author__profile')
+        .order_by('author', 'created_at')
+    )
+
+    viewed_ids = set()
+    if stories:
+        viewed_ids = set(
+            StoryView.objects
+            .filter(user=request.user, story_id__in=[s.id for s in stories])
+            .values_list('story_id', flat=True)
+        )
 
     grouped = {}
     for s in stories:
@@ -90,15 +101,30 @@ def api_active_stories(request):
                     if s.author.profile.avatar else None
                 ),
                 'items': [],
+                'viewed': True,
             }
+        is_viewed = s.id in viewed_ids
+        if not is_viewed:
+            grouped[uid]['viewed'] = False
         grouped[uid]['items'].append({
             'id': s.id,
             'type': s.media_type,
             'url': s.image.url if s.image else s.video.url,
             'caption': s.caption,
+            'viewed': is_viewed,
         })
 
     return JsonResponse({'stories': list(grouped.values())})
+
+
+@login_required
+@require_POST
+def view_story(request, story_id):
+    """Отмечает историю просмотренной для текущего пользователя."""
+    story = get_object_or_404(Story, id=story_id)
+    if story.author_id != request.user.id:
+        StoryView.objects.get_or_create(story=story, user=request.user)
+    return JsonResponse({'ok': True})
 
 
 @login_required
