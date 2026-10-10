@@ -1,6 +1,7 @@
 import os
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
+from django.db.models import Count
 from django.template.loader import render_to_string
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
@@ -9,6 +10,7 @@ from django.utils import timezone
 from .models import Post, PostImage, Like, Comment
 from events.models import Event
 from stories.models import Story
+from users.models import downscale_image
 
 VIDEO_EXTENSIONS = {'.mp4', '.mov', '.webm', '.avi', '.mkv'}
 POSTS_PER_PAGE = 10
@@ -33,7 +35,8 @@ def feed(request):
                     if ext in VIDEO_EXTENSIONS:
                         media = PostImage(post=post, video=f, media_type='video', order=i)
                     else:
-                        media = PostImage(post=post, image=f, media_type='image', order=i)
+                        processed = downscale_image(f, 1600)
+                        media = PostImage(post=post, image=processed or f, media_type='image', order=i)
                     media.full_clean()
                     media.save()
             except ValidationError as e:
@@ -62,8 +65,15 @@ def feed(request):
             return JsonResponse({'error': 'Добавьте текст или выберите фото'}, status=400)
         return redirect('feed')
     liked_post_ids = set(Like.objects.filter(user=request.user).values_list('post_id', flat=True))
-    posts_qs = Post.objects.select_related('author__profile').prefetch_related(
-        'images', 'likes', 'comments__author__profile',
+    posts_qs = (
+        Post.objects
+        .select_related('author__profile')
+        .prefetch_related('images', 'comments__author__profile')
+        .annotate(
+            likes_count=Count('likes', distinct=True),
+            comments_total=Count('comments', distinct=True),
+        )
+        .order_by('-created_at')
     )
 
     # AJAX-запрос на подгрузку следующей страницы (infinite scroll)

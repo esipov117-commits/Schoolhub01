@@ -11,7 +11,7 @@
             {% for photo in photos %}
                 <div class="photo-card">
                     {% if photo.image %}
-                        <img src="{{ photo.image.url }}" alt="Фото">
+                        <img src="{{ photo.image.url }}" alt="Фото" loading="lazy" decoding="async">
                     {% elif photo.video %}
                         <video controls src="{{ photo.video.url }}"></video>
                     {% endif %}

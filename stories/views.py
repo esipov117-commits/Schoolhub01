@@ -5,6 +5,7 @@ from django.utils import timezone
 import os
 
 from .models import Story
+from users.models import downscale_image
 
 
 @login_required
@@ -40,13 +41,20 @@ def upload_story(request):
             else 'photo'
         )
 
-        story = Story.objects.create(
-            author=request.user,
-            media_type=media_type,
-            image=file if media_type == 'photo' else None,
-            video=file if media_type == 'video' else None,
-            caption=caption,
-        )
+        if media_type == 'photo':
+            story = Story.objects.create(
+                author=request.user,
+                media_type=media_type,
+                image=downscale_image(file, 1600) or file,
+                caption=caption,
+            )
+        else:
+            story = Story.objects.create(
+                author=request.user,
+                media_type=media_type,
+                video=file,
+                caption=caption,
+            )
 
         # Если запрос пришел через JavaScript (Fetch) — отдаем чистый JSON
         if is_ajax:

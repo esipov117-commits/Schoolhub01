@@ -1642,7 +1642,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
     render([]);
     refresh();
-    setInterval(refresh, 8000);
+    setInterval(function () {
+        if (!document.hidden) refresh();
+    }, 8000);
+    document.addEventListener('visibilitychange', function () {
+        if (!document.hidden) refresh();
+    });
 })();
 </script>
 

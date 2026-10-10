@@ -34,7 +34,7 @@
         </div>
 
         {% if event.image %}
-            <img src="{{ event.image.url }}" class="event-image">
+            <img src="{{ event.image.url }}" class="event-image" loading="lazy" decoding="async">
         {% endif %}
 
         {% if event.location %}

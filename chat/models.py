@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from django.contrib.postgres.indexes import GinIndex
 from django.db import models
 from django.utils import timezone
 
@@ -13,17 +14,33 @@ class UserKey(models.Model):
 
     @classmethod
     def raw_key_for(cls, user):
+        # Кэшируем расшифрованный ключ на объекте пользователя в рамках запроса,
+        # иначе каждое сообщение при расшифровке делает отдельный запрос к БД.
+        cached = getattr(user, '_chat_raw_key', None)
+        if cached is not None:
+            return cached
+
         obj, _ = cls.objects.get_or_create(
             user=user,
             defaults={'key_encrypted': crypto.wrap_key(crypto.new_user_key())},
         )
-        return crypto.unwrap_key(obj.key_encrypted)
+        key = crypto.unwrap_key(obj.key_encrypted)
+        try:
+            user._chat_raw_key = key
+        except AttributeError:
+            pass
+        return key
 
 
 class Chat(models.Model):
     participants = models.ManyToManyField(User, related_name='chats')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['-updated_at']),
+        ]
 
     def interlocutor(self, user):
         return self.participants.exclude(pk=user.pk).first()
@@ -41,6 +58,12 @@ class Message(models.Model):
     bodies = models.JSONField()
     read_by = models.JSONField(default=list)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['chat', '-created_at']),
+            GinIndex(fields=['read_by']),
+        ]
 
     @classmethod
     def create_encrypted(cls, chat, sender, text):

@@ -146,7 +146,7 @@
     function commentHtml(cid, author, avatarUrl, text, postId) {
         var profileUrl = CFG.profileBase + encodeURIComponent(author) + '/';
         var avatar = avatarUrl
-            ? '<img src="' + esc(avatarUrl) + '" alt="">'
+            ? '<img src="' + esc(avatarUrl) + '" alt="" loading="lazy" decoding="async">'
             : '<span class="comment-avatar-ph">' + esc((author || '?').charAt(0).toUpperCase()) + '</span>';
         return '' +
             '<a class="comment-avatar" href="' + profileUrl + '">' + avatar + '</a>' +
@@ -1105,7 +1105,7 @@
     /* ====================== Новая карточка поста ====================== */
     function avatarHtml(username, avatarUrl) {
         if (avatarUrl) {
-            return '<img src="' + esc(avatarUrl) + '" alt="' + esc(username) + '">';
+            return '<img src="' + esc(avatarUrl) + '" alt="' + esc(username) + '" loading="lazy" decoding="async">';
         }
         return '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.7 0 4.9-2.2 4.9-4.9S14.7 2.2 12 2.2 7.1 4.4 7.1 7.1 9.3 12 12 12zm0 2.4c-3.3 0-9.8 1.6-9.8 4.9v2.4h19.6v-2.4c0-3.3-6.5-4.9-9.8-4.9z"/></svg>';
     }
@@ -1118,7 +1118,7 @@
             for (i = 0; i < items.length; i++) {
                 out += items[i].type === 'video'
                     ? '<video src="' + esc(items[i].url) + '" class="grid-media" controls playsinline></video>'
-                    : '<img src="' + esc(items[i].url) + '" class="grid-media">';
+                    : '<img src="' + esc(items[i].url) + '" class="grid-media" loading="lazy" decoding="async">';
             }
             out += '</div>';
             return out;
@@ -1127,7 +1127,7 @@
         for (i = 0; i < items.length; i++) {
             out += items[i].type === 'video'
                 ? '<video src="' + esc(items[i].url) + '" class="carousel-img" controls playsinline></video>'
-                : '<img src="' + esc(items[i].url) + '" class="carousel-img">';
+                : '<img src="' + esc(items[i].url) + '" class="carousel-img" loading="lazy" decoding="async">';
         }
         out += '</div>';
         if (items.length > 1) {
@@ -1185,7 +1185,7 @@
             '    <form class="add-comment-form" data-post-id="' + d.id + '">' +
             '      <span class="comment-me">' +
                         (CFG.meAvatar
-                            ? '<img src="' + esc(CFG.meAvatar) + '" alt="">'
+                            ? '<img src="' + esc(CFG.meAvatar) + '" alt="" loading="lazy" decoding="async">'
                             : '<span class="comment-avatar-ph">' + esc(((CFG.meName || '?').charAt(0) || '?').toUpperCase()) + '</span>') +
             '      </span>' +
             '      <div class="comment-input-wrap">' +

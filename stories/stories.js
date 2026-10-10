@@ -144,6 +144,8 @@ class StoryViewer {
                     <img
                         src="${avatarUrl}"
                         alt="${name}"
+                        loading="lazy"
+                        decoding="async"
                     >
                 </div>
                 <span class="story-label">

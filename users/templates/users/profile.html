@@ -70,7 +70,8 @@
             <img
                 class="profile-avatar"
                 src="{{ profile.avatar.url }}"
-                alt="{{ profile_user.username }}">
+                alt="{{ profile_user.username }}"
+                loading="lazy" decoding="async">
         {% else %}
             <div class="profile-avatar empty-avatar">
                 {{ profile_user.username|first|upper }}

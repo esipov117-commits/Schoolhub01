@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.utils import timezone
 from tasks.models import TodoTask
-from .models import Profile, Follow
+from .models import Profile, Follow, downscale_image
 from posts.models import Post
 from events.models import Event
 
@@ -173,11 +173,11 @@ def edit_profile(request):
 
         avatar = request.FILES.get('avatar')
         if avatar:
-            profile_obj.avatar = avatar
+            profile_obj.avatar = downscale_image(avatar, 400) or avatar
 
         banner = request.FILES.get('banner')
         if banner:
-            profile_obj.banner = banner
+            profile_obj.banner = downscale_image(banner, 1600) or banner
         try:
             banner_position = int(request.POST.get('banner_position', profile_obj.banner_position or 50))
         except (TypeError, ValueError):

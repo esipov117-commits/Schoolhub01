@@ -112,7 +112,7 @@
         <a class="dialog" href="{% url 'chat_room' d.chat.pk %}">
             <div class="dialog-avatar">
                 {% if d.avatar %}
-                    <img src="{{ d.avatar }}" alt="{{ d.other.username }}">
+                    <img src="{{ d.avatar }}" alt="{{ d.other.username }}" loading="lazy" decoding="async">
                 {% else %}
                     <svg viewBox="0 0 24 24" fill="currentColor">
                         <circle cx="12" cy="8" r="4"/>

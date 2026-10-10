@@ -1,5 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.db.models import Count, Q, OuterRef, Subquery
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST
@@ -18,17 +19,60 @@ def _avatar_url(user):
     return None
 
 
-def _dialog_data(request, chat):
-    other = chat.interlocutor(request.user)
-    last = chat.messages.order_by('-created_at').first()
-    return {
-        'chat': chat,
-        'other': other,
-        'last_text': last.text_for(request.user) if last else '',
-        'last': last,
-        'unread': chat.unread_count_for(request.user),
-        'avatar': _avatar_url(other) if other else None,
-    }
+def _dialogs_qs(request):
+    """Все диалоги пользователя одним запросом: счётчик непрочитанных,
+    id последнего сообщения и участники (с профилями) — без N+1."""
+    return (
+        request.user.chats
+        .annotate(
+            unread=Count(
+                'messages',
+                filter=~Q(messages__sender=request.user)
+                & ~Q(messages__read_by__contains=[str(request.user.pk)]),
+                distinct=True,
+            ),
+            last_message_id=Subquery(
+                Message.objects
+                .filter(chat=OuterRef('pk'))
+                .order_by('-created_at', '-pk')
+                .values('pk')[:1]
+            ),
+        )
+        .prefetch_related('participants__profile')
+        .order_by('-updated_at')
+    )
+
+
+def _bulk_dialogs(request, chats):
+    """Собирает список диалогов, не делая запросов на каждый чат."""
+    chats = list(chats)
+    if not chats:
+        return []
+
+    last_ids = [c.last_message_id for c in chats if c.last_message_id]
+    last_map = {}
+    if last_ids:
+        last_map = {
+            m.pk: m
+            for m in Message.objects.filter(pk__in=last_ids)
+        }
+
+    dialogs = []
+    for chat in chats:
+        other = next(
+            (p for p in chat.participants.all() if p.pk != request.user.pk),
+            None,
+        )
+        msg = last_map.get(chat.last_message_id)
+        dialogs.append({
+            'chat': chat,
+            'other': other,
+            'last': msg,
+            'last_text': msg.text_for(request.user) if msg else '',
+            'unread': chat.unread,
+            'avatar': _avatar_url(other) if other else None,
+        })
+    return dialogs
 
 
 @login_required
@@ -36,10 +80,7 @@ def chat_list(request):
     if request.method == 'POST':
         return start_chat(request)
 
-    dialogs = [
-        _dialog_data(request, chat)
-        for chat in request.user.chats.order_by('-updated_at')
-    ]
+    dialogs = _bulk_dialogs(request, _dialogs_qs(request))
     return render(request, 'chat/chat_list.html', {'dialogs': dialogs})
 
 
@@ -51,9 +92,17 @@ def chat_room(request, chat_id):
     if request.method == 'POST':
         return send_message(request, chat_id)
 
-    messages = list(chat.messages.order_by('created_at'))
-    for message in messages:
-        message.mark_read_by(request.user)
+    messages = list(chat.messages.select_related('sender').order_by('created_at'))
+
+    # Помечаем прочитанными одним batch-запросом вместо N сохранений.
+    to_mark = [
+        m for m in messages
+        if m.sender_id != request.user.pk and str(request.user.pk) not in m.read_by
+    ]
+    for m in to_mark:
+        m.read_by.append(str(request.user.pk))
+    if to_mark:
+        Message.objects.bulk_update(to_mark, ['read_by'], batch_size=100)
 
     return render(request, 'chat/chat_room.html', {
         'chat': chat,
@@ -97,7 +146,7 @@ def poll_messages(request, chat_id):
     except ValueError:
         after = 0
 
-    messages = chat.messages.filter(pk__gt=after).order_by('created_at')
+    messages = chat.messages.filter(pk__gt=after).select_related('sender').order_by('created_at')
     return JsonResponse({
         'messages': [
             {
@@ -115,22 +164,27 @@ def poll_messages(request, chat_id):
 @login_required
 def unread_api(request):
     """Непрочитанные сообщения для колокольчика уведомлений."""
-    dialogs = [
-        _dialog_data(request, chat)
-        for chat in request.user.chats.order_by('-updated_at')
-    ]
+    dialogs = _bulk_dialogs(request, _dialogs_qs(request))
     items = []
     total = 0
     for d in dialogs:
         if not d['unread'] or not d['other']:
             continue
-        last_unread = (
-            d['chat'].messages
-            .exclude(sender=request.user)
-            .exclude(read_by__contains=[str(request.user.pk)])
-            .order_by('-created_at')
-            .first()
-        )
+        last = d['last']
+        if (
+            last is not None
+            and last.sender_id != request.user.pk
+            and str(request.user.pk) not in last.read_by
+        ):
+            last_unread = last
+        else:
+            last_unread = (
+                d['chat'].messages
+                .exclude(sender=request.user)
+                .exclude(read_by__contains=[str(request.user.pk)])
+                .order_by('-created_at')
+                .first()
+            )
         total += d['unread']
         items.append({
             'chat_id': d['chat'].pk,

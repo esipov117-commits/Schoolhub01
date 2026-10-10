@@ -26,6 +26,10 @@ class Story(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['-created_at']),
+            models.Index(fields=['expires_at']),
+        ]
 
     def save(self, *args, **kwargs):
         if not self.expires_at:

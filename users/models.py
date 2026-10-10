@@ -1,6 +1,69 @@
+import os
+from io import BytesIO
+
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+from django.core.files.base import ContentFile
+from PIL import Image, ImageOps
+
+
+def downscale_image(field_file, max_dim, quality=82):
+    """Уменьшает картинку до max_dim по большей стороне и оптимизирует её.
+    Возвращает ContentFile или None, если обрабатывать нечего/нельзя."""
+    if not field_file:
+        return None
+
+    def reset():
+        try:
+            field_file.seek(0)
+        except Exception:
+            pass
+
+    name = getattr(field_file, 'name', '') or ''
+    ext = os.path.splitext(name)[1].lower()
+    if ext in ('.gif', '.svg'):
+        return None
+
+    try:
+        field_file.seek(0)
+        img = Image.open(field_file)
+        img.load()
+    except Exception:
+        reset()
+        return None
+
+    img = ImageOps.exif_transpose(img)
+
+    if max(img.size) <= max_dim and ext in ('.jpg', '.jpeg', '.png', '.webp'):
+        reset()
+        return None
+
+    fmt = (img.format or '').upper()
+    if fmt not in ('JPEG', 'PNG', 'WEBP'):
+        fmt = 'JPEG' if ext in ('.jpg', '.jpeg') else 'PNG'
+
+    if max(img.size) > max_dim:
+        img.thumbnail((max_dim, max_dim), Image.LANCZOS)
+
+    out = BytesIO()
+    if fmt == 'JPEG':
+        if img.mode not in ('RGB', 'L'):
+            img = img.convert('RGB')
+        img.save(out, format='JPEG', quality=quality, optimize=True, progressive=True)
+        out_ext = '.jpg'
+    elif fmt == 'WEBP':
+        img.save(out, format='WEBP', quality=quality, method=6)
+        out_ext = '.webp'
+    else:
+        if img.mode not in ('RGB', 'RGBA', 'L', 'P'):
+            img = img.convert('RGB')
+        img.save(out, format='PNG', optimize=True)
+        out_ext = '.png'
+
+    base = os.path.splitext(os.path.basename(name))[0]
+    reset()
+    return ContentFile(out.getvalue(), name=base + out_ext)
 
 
 def validate_image_size(image):

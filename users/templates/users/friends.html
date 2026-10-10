@@ -8,7 +8,7 @@
             {% for friend in friends %}
                 <a class="friend-item" href="{% url 'profile_user' friend.username %}">
                     {% if friend.profile.avatar %}
-                        <img src="{{ friend.profile.avatar.url }}" alt="{{ friend.username }}">
+                        <img src="{{ friend.profile.avatar.url }}" alt="{{ friend.username }}" loading="lazy" decoding="async">
                     {% else %}
                         <div class="friend-avatar">{{ friend.username|first|upper }}</div>
                     {% endif %}

@@ -953,7 +953,7 @@
                     data-author-avatar="{% if author.profile.avatar %}{{ author.profile.avatar.url }}{% endif %}">
                 <span class="story-avatar has-story">
                     {% if author.profile.avatar %}
-                    <img src="{{ author.profile.avatar.url }}" alt="{{ author.username }}">
+                    <img src="{{ author.profile.avatar.url }}" alt="{{ author.username }}" loading="lazy" decoding="async">
                     {% else %}
                     <span class="story-avatar-placeholder">{{ author.username|first|upper }}</span>
                     {% endif %}

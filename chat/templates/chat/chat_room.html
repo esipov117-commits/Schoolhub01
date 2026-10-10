@@ -131,7 +131,7 @@
         </a>
         <div class="chat-head-avatar">
             {% if other_avatar %}
-                <img src="{{ other_avatar }}" alt="{{ other.username }}">
+                <img src="{{ other_avatar }}" alt="{{ other.username }}" loading="lazy" decoding="async">
             {% else %}
                 <svg viewBox="0 0 24 24" fill="currentColor">
                     <circle cx="12" cy="8" r="4"/>
@@ -250,7 +250,12 @@
     });
 
     toBottom();
-    setInterval(poll, 3000);
+    setInterval(function () {
+        if (!document.hidden) poll();
+    }, 3000);
+    document.addEventListener('visibilitychange', function () {
+        if (!document.hidden) poll();
+    });
 })();
 </script>
 {% endblock %}

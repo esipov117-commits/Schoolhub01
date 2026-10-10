@@ -17,6 +17,9 @@ class Post(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['-created_at']),
+        ]
 
     def __str__(self):
         return f"{self.author.username}: {self.content[:50]}..."
@@ -64,6 +67,9 @@ class Comment(models.Model):
 
     class Meta:
         ordering = ['created_at']
+        indexes = [
+            models.Index(fields=['post', 'created_at']),
+        ]
 
     def __str__(self):
         return f"{self.author.username} on post {self.post_id}: {self.text[:30]}"

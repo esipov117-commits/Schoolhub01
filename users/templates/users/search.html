@@ -7,7 +7,7 @@
     <div class="card" style="display:flex; align-items:center; justify-content:space-between;">
         <a href="{% url 'profile_user' u.username %}" style="display:flex; align-items:center; gap:12px; text-decoration:none; color:inherit;">
             {% if u.profile.avatar %}
-                <img src="{{ u.profile.avatar.url }}" class="avatar avatar-medium">
+                <img src="{{ u.profile.avatar.url }}" class="avatar avatar-medium" loading="lazy" decoding="async">
             {% else %}
                 <div class="avatar avatar-medium"></div>
             {% endif %}
