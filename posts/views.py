@@ -1,4 +1,5 @@
 import os
+from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.template.loader import render_to_string
 from django.shortcuts import render, redirect, get_object_or_404
@@ -26,12 +27,20 @@ def feed(request):
 
         if content or files:
             post = Post.objects.create(author=request.user, content=content, layout=layout)
-            for i, f in enumerate(files):
-                ext = os.path.splitext(f.name)[1].lower()
-                if ext in VIDEO_EXTENSIONS:
-                    PostImage.objects.create(post=post, video=f, media_type='video', order=i)
-                else:
-                    PostImage.objects.create(post=post, image=f, media_type='image', order=i)
+            try:
+                for i, f in enumerate(files):
+                    ext = os.path.splitext(f.name)[1].lower()
+                    if ext in VIDEO_EXTENSIONS:
+                        media = PostImage(post=post, video=f, media_type='video', order=i)
+                    else:
+                        media = PostImage(post=post, image=f, media_type='image', order=i)
+                    media.full_clean()
+                    media.save()
+            except ValidationError as e:
+                post.delete()
+                if is_ajax:
+                    return JsonResponse({'error': '; '.join(e.messages)}, status=400)
+                return redirect('feed')
 
             if is_ajax:
                 media_items = [
@@ -53,11 +62,14 @@ def feed(request):
             return JsonResponse({'error': 'Добавьте текст или выберите фото'}, status=400)
         return redirect('feed')
     liked_post_ids = set(Like.objects.filter(user=request.user).values_list('post_id', flat=True))
- 
+    posts_qs = Post.objects.select_related('author__profile').prefetch_related(
+        'images', 'likes', 'comments__author__profile',
+    )
+
     # AJAX-запрос на подгрузку следующей страницы (infinite scroll)
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest' and request.GET.get('page'):
         page_number = request.GET.get('page')
-        paginator = Paginator(Post.objects.all(), POSTS_PER_PAGE)
+        paginator = Paginator(posts_qs, POSTS_PER_PAGE)
         page_obj = paginator.get_page(page_number)
  
         html_list = [
@@ -71,7 +83,7 @@ def feed(request):
         return JsonResponse({'html': html_list, 'has_next': page_obj.has_next()})
  
     # Обычный первый рендер страницы
-    paginator = Paginator(Post.objects.all(), POSTS_PER_PAGE)
+    paginator = Paginator(posts_qs, POSTS_PER_PAGE)
     page_obj = paginator.get_page(1)
 
     # Активные истории, сгруппированные по автору (для ленты в stories)
@@ -149,10 +161,11 @@ def add_comment(request, post_id):
 
     comment = Comment.objects.create(post=post, author=request.user, text=text)
 
+    author_profile = getattr(comment.author, 'profile', None)
     return JsonResponse({
         'id': comment.id,
         'author': comment.author.username,
-        'author_avatar': comment.author.profile.avatar.url if comment.author.profile.avatar else None,
+        'author_avatar': author_profile.avatar.url if author_profile and author_profile.avatar else None,
         'text': comment.text,
         'comments_count': post.comments.count(),
     })

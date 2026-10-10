@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import login as auth_login
@@ -35,6 +36,8 @@ def login_view(request):
                 REMEMBERED_USER_COOKIE,
                 form.get_user().username,
                 max_age=365 * 24 * 60 * 60,
+                httponly=True,
+                secure=not settings.DEBUG,
                 samesite='Lax',
             )
             return response
@@ -75,7 +78,7 @@ def _build_profile_context(request, target_user):
 
 def register(request):
     if request.method == 'POST':
-        form = UserCreationForm(request.POST, request.FILES)
+        form = UserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
             Profile.objects.create(user=user)
@@ -163,8 +166,8 @@ def edit_profile(request):
     profile_obj, created = Profile.objects.get_or_create(user=request.user)
 
     if request.method == 'POST':
-        profile_obj.display_name = request.POST.get('display_name')
-        profile_obj.group_name = request.POST.get('group_name')
+        profile_obj.display_name = request.POST.get('display_name') or profile_obj.display_name
+        profile_obj.group_name = request.POST.get('group_name') or profile_obj.group_name
         profile_obj.status = request.POST.get('status', '')
         profile_obj.bio = request.POST.get('bio', '')
 
@@ -175,12 +178,30 @@ def edit_profile(request):
         banner = request.FILES.get('banner')
         if banner:
             profile_obj.banner = banner
-        profile_obj.banner_position = request.POST.get('banner_position', profile_obj.banner_position or 50)
+        try:
+            banner_position = int(request.POST.get('banner_position', profile_obj.banner_position or 50))
+        except (TypeError, ValueError):
+            banner_position = profile_obj.banner_position or 50
+        profile_obj.banner_position = max(0, min(100, banner_position))
 
         profile_obj.save()
         return redirect('profile')
 
     return render(request, 'users/edit_profile.html', {'profile': profile_obj})
+
+
+@login_required
+def settings_page(request):
+    profile_obj, _ = Profile.objects.get_or_create(user=request.user)
+
+    if request.method == "POST":
+        profile_obj.dark_mode = request.POST.get("dark_mode") == "on"
+        profile_obj.save(update_fields=["dark_mode"])
+        return redirect("settings")
+
+    return render(request, "users/settings.html", {
+        "profile": profile_obj,
+    })
 
 
 @login_required

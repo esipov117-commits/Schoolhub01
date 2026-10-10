@@ -76,7 +76,6 @@ INSTALLED_APPS = [
     'chat',
     'planner',
     'tasks',
-    'settings',
     'stories'
 ]
  
