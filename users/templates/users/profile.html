@@ -126,11 +126,18 @@
                                 {% endif %}
                             </button>
                         </form>
-                        <button
-                            type="button"
-                            class="profile-btn">
-                            <svg class="i"><use href="#i-chat"></use></svg> Написать
-                        </button>
+                        <form
+                            method="POST"
+                            action="{% url 'start_chat' %}"
+                            class="inline-form">
+                            {% csrf_token %}
+                            <input type="hidden" name="username" value="{{ profile_user.username }}">
+                            <button
+                                type="submit"
+                                class="profile-btn">
+                                <svg class="i"><use href="#i-chat"></use></svg> Написать
+                            </button>
+                        </form>
                     {% endif %}
                 </div>
             </div>
