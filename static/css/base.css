@@ -493,10 +493,33 @@ img {
     text-align: center;
 }
 
-.profile-card h3 {
+.profile-card-link {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    color: inherit;
+}
+
+.profile-card-link h3 {
     margin-top: 10px;
     font-size: 16px;
+    transform: scale(1) translateY(0);
+    transition: transform 0.4s ease;
 }
+
+.profile-card-link:hover h3 {
+    transform: scale(1.2) translateY(-2px);
+}
+
+.profile-card-link .avatar {
+    transition: transform 0.4s ease;
+}
+
+.profile-card-link:hover .avatar {
+    transform: scale(1.08);
+}
+
 
 .profile-card h3 > svg {
     width: 14px;

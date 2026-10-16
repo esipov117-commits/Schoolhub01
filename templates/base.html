@@ -271,6 +271,7 @@
 
         <div class="card profile-card">
 
+            <a href="{% url 'profile' %}" rel="noopener" class="profile-card-link" title="Мой профиль">
             {% if user.profile.avatar %}
                 <img
                     src="{{ user.profile.avatar.url }}"
@@ -301,6 +302,7 @@
                 </svg>
                 {% endif %}
             </h3>
+            </a>
 
             <p>
                 {{ user.profile.group_name|default:"Группа не указана" }}
