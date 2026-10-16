@@ -68,13 +68,14 @@ class ProfileSectionPagesTests(TestCase):
                 self.assertContains(response, 'wall-post-media')
                 self.assertContains(response, media.image.url)
 
-    def test_profile_about_card_wraps_long_bio(self):
+    def test_profile_bio_block_wraps_long_bio(self):
         self.user.profile.bio = 'ОченьДлинноеСловоБезПробелов ' * 20
         self.user.profile.save()
         self.client.force_login(self.user)
         response = self.client.get(reverse('profile'))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'profile-about-card')
+        self.assertContains(response, 'profile-bio-block')
+        self.assertContains(response, 'profile-bio')
         self.assertContains(response, 'overflow-wrap: anywhere')
         self.assertContains(response, 'word-break: break-word')

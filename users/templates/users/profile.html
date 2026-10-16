@@ -141,6 +141,12 @@
                     {% endif %}
                 </div>
             </div>
+            {% if profile.bio %}
+            <div class="profile-bio-block">
+                <span class="profile-bio-label"><svg class="i"><use href="#i-user"></use></svg> О себе</span>
+                <p class="profile-bio">{{ profile.bio }}</p>
+            </div>
+            {% endif %}
             <div class="profile-meta">
                 <span class="meta-badge">
                     <svg class="i"><use href="#i-cap"></use></svg> {{ profile.group_name|default:"Группа не указана" }}
@@ -186,16 +192,8 @@
     </a>
 </div>
 {% block profile_content %}
-<div class="profile-columns">
-    <div class="profile-left-column">
-        <div class="card profile-about-card">
-<h3><svg class="i"><use href="#i-user"></use></svg> О себе</h3>
-<p>
-{{ profile.bio|default:"Пользователь пока ничего не рассказал о себе." }}</p>
-        </div>
-    </div>
-    <div class="profile-main-column">
-        <h3 class="section-title">Посты</h3>
+<div class="profile-main-column">
+    <h3 class="section-title">Посты</h3>
         {% for post in user_posts %}
             <div class="card post">
                 {{ post.content|linebreaksbr }}
@@ -228,7 +226,6 @@
         </div>
         {% endif %}
     </div>
-</div>
 {% endblock %}
 </div>
 <div
@@ -458,21 +455,26 @@ function closeLightbox() {
     background: var(--sidebar-active-bg);
     font-weight: 700;
 }
-.profile-columns {
-    display: grid;
-    grid-template-columns: minmax(220px, 280px) 1fr;
-    gap: 20px;
-    align-items: start;
-}
-.profile-left-column,
 .profile-main-column {
     display: flex;
     flex-direction: column;
     gap: 16px;
     min-width: 0;
 }
-.profile-about-card p {
+.profile-bio-block {
+    margin-top: 4px;
+}
+.profile-bio-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
     color: var(--muted);
+    font-size: 12.5px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+.profile-bio {
+    color: var(--text);
     font-size: 14px;
     line-height: 1.6;
     white-space: pre-wrap;
@@ -720,9 +722,6 @@ function closeLightbox() {
     .profile-btn {
         flex: 1;
         min-width: 130px;
-    }
-    .profile-columns {
-        grid-template-columns: 1fr;
     }
     .stats {
         gap: 20px;
