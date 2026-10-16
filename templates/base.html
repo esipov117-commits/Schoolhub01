@@ -503,6 +503,18 @@ img {
     text-align: center;
 }
 
+.profile-card-link {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    color: inherit;
+}
+
+.profile-card-link:hover h3 {
+    text-decoration: underline;
+}
+
 .profile-card h3 {
     margin-top: 10px;
     font-size: 16px;
@@ -1349,6 +1361,7 @@ button.btn-primary:active {
 
         <div class="card profile-card">
 
+            <a href="{% url 'profile' %}" class="profile-card-link" title="Мой профиль">
             {% if user.profile.avatar %}
                 <img
                     src="{{ user.profile.avatar.url }}"
@@ -1379,6 +1392,7 @@ button.btn-primary:active {
                 </svg>
                 {% endif %}
             </h3>
+            </a>
 
             <p>
                 {{ user.profile.group_name|default:"Группа не указана" }}
