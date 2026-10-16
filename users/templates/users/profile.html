@@ -189,10 +189,9 @@
 <div class="profile-columns">
     <div class="profile-left-column">
         <div class="card profile-about-card">
-            <h3><svg class="i"><use href="#i-user"></use></svg> О себе</h3>
-            <p>
-                {{ profile.bio|default:"Пользователь пока ничего не рассказал о себе." }}
-            </p>
+<h3><svg class="i"><use href="#i-user"></use></svg> О себе</h3>
+<p>
+{{ profile.bio|default:"Пользователь пока ничего не рассказал о себе." }}</p>
         </div>
     </div>
     <div class="profile-main-column">
@@ -414,14 +413,15 @@ function closeLightbox() {
 }
 .stats {
     display: flex;
-    gap: 48px;
+    gap: 16px;
     margin-top: 20px;
     padding-top: 18px;
     border-top: 1px solid var(--border);
 }
 .stats a,
 .stats > div {
-    text-align: left;
+    flex: 1;
+    text-align: center;
     text-decoration: none;
     color: inherit;
 }
