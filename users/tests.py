@@ -1,6 +1,12 @@
+import tempfile
+from io import BytesIO
+
 from django.contrib.auth.models import User
-from django.test import TestCase
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import TestCase, override_settings
 from django.urls import reverse
+
+from posts.models import Post, PostImage
 
 from .models import Profile
 
@@ -32,3 +38,41 @@ class ProfileSectionPagesTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Фото')
         self.assertContains(response, 'Пока нет фото')
+
+    def test_rightbar_profile_card_links_to_profile(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse('feed'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'profile-card-link')
+        self.assertContains(response, 'href="/profile/"')
+
+    def _make_image_file(self, name='wall.png'):
+        from PIL import Image
+        buf = BytesIO()
+        Image.new('RGB', (80, 60), 'blue').save(buf, 'PNG')
+        buf.seek(0)
+        return SimpleUploadedFile(name, buf.read(), content_type='image/png')
+
+    def test_wall_post_shows_images(self):
+        post = Post.objects.create(author=self.user, content='с фото')
+        media = PostImage.objects.create(
+            post=post, image=self._make_image_file(), media_type='image',
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            with override_settings(MEDIA_ROOT=tmp):
+                self.client.force_login(self.user)
+                response = self.client.get(reverse('profile'))
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, 'wall-post-media')
+                self.assertContains(response, media.image.url)
+
+    def test_profile_header_shows_bio(self):
+        self.user.profile.bio = 'Люблю программировать'
+        self.user.profile.save()
+        self.client.force_login(self.user)
+        response = self.client.get(reverse('profile'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'profile-bio')
+        self.assertContains(response, 'Люблю программировать')
