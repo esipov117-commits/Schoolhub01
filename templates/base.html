@@ -271,7 +271,7 @@
 
         <div class="card profile-card">
 
-            <a href="{% url 'profile' %}" target="_blank" rel="noopener" class="profile-card-link" title="Мой профиль">
+            <a href="{% url 'profile' %}" rel="noopener" class="profile-card-link" title="Мой профиль">
             {% if user.profile.avatar %}
                 <img
                     src="{{ user.profile.avatar.url }}"

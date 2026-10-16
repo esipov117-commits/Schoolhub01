@@ -125,7 +125,7 @@ def profile(request, username=None):
     posts_qs = (
         Post.objects
         .filter(author=target_user)
-        .only('id', 'content', 'created_at', 'edited_at')
+        .prefetch_related('images')
         .order_by('-created_at')
     )
     page_obj = Paginator(posts_qs, PROFILE_POSTS_PER_PAGE).get_page(request.GET.get('page'))
