@@ -1,0 +1,70 @@
+{% load post_extras %}
+<div class="comment" id="comment-{{ comment.id }}">
+    <a class="comment-avatar" href="{% url 'profile_user' comment.author.username %}">
+        {% if comment.author.profile.avatar %}
+            <img src="{{ comment.author.profile.avatar.url }}" alt="{{ comment.author.username }}" loading="lazy" decoding="async">
+        {% else %}
+            <span class="comment-avatar-ph">{{ comment.author.username|first|upper }}</span>
+        {% endif %}
+    </a>
+    <div class="comment-main">
+        <div class="comment-line">
+            <a class="comment-author" href="{% url 'profile_user' comment.author.username %}">{{ comment.author.username }}</a><span class="comment-text">{{ comment.text }}</span>
+        </div>
+        <div class="comment-meta">
+            <span class="comment-time">{{ comment.created_at|timeago }}</span>
+            <button
+                type="button"
+                class="reply-btn"
+                data-comment-id="{{ comment.id }}"
+                data-author="{{ comment.author.username }}">
+                Ответить
+            </button>
+        </div>
+        {% if comment.replies.all %}
+        <div class="comment-replies" id="replies-{{ comment.id }}">
+            {% for reply in comment.replies.all %}
+            <div class="comment reply" id="comment-{{ reply.id }}">
+                <a class="comment-avatar" href="{% url 'profile_user' reply.author.username %}">
+                    {% if reply.author.profile.avatar %}
+                        <img src="{{ reply.author.profile.avatar.url }}" alt="{{ reply.author.username }}" loading="lazy" decoding="async">
+                    {% else %}
+                        <span class="comment-avatar-ph">{{ reply.author.username|first|upper }}</span>
+                    {% endif %}
+                </a>
+                <div class="comment-main">
+                    <div class="comment-line">
+                        <a class="comment-author" href="{% url 'profile_user' reply.author.username %}">{{ reply.author.username }}</a><span class="comment-text">{{ reply.text }}</span>
+                    </div>
+                    <div class="comment-meta">
+                        <span class="comment-time">{{ reply.created_at|timeago }}</span>
+                    </div>
+                </div>
+                {% if reply.author == user or post.author == user %}
+                <button
+                    type="button"
+                    class="delete-comment-btn"
+                    data-comment-id="{{ reply.id }}"
+                    data-post-id="{{ post.id }}"
+                    title="Удалить">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+                </button>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="comment-replies" id="replies-{{ comment.id }}"></div>
+        {% endif %}
+    </div>
+    {% if comment.author == user or post.author == user %}
+    <button
+        type="button"
+        class="delete-comment-btn"
+        data-comment-id="{{ comment.id }}"
+        data-post-id="{{ post.id }}"
+        title="Удалить">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    {% endif %}
+</div>

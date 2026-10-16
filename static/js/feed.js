@@ -215,16 +215,27 @@
         var block = card.querySelector('.comments-block');
         if (!block) return;
         var list = block.querySelector('.comments-list');
-        var total = list ? list.querySelectorAll(':scope > .comment').length : 0;
         var sm = block.querySelector('.show-more-comments');
-        if (total === 0) {
-            if (list && !list.querySelector('.comments-empty')) {
+        if (!list) return;
+        var rootsTotal = parseInt(block.getAttribute('data-roots-total') || '0', 10);
+        var rendered = list.querySelectorAll(':scope > .comment').length;
+        if (rendered === 0 && rootsTotal === 0) {
+            if (!list.querySelector('.comments-empty')) {
                 list.innerHTML = '<div class="comments-empty">Пока нет комментариев — напишите первый.</div>';
             }
             block.classList.remove('expanded');
             if (sm) sm.style.display = 'none';
-        } else if (sm) {
-            sm.style.display = (total > 2 && !block.classList.contains('expanded')) ? '' : 'none';
+            return;
+        }
+        block.classList.add('expanded');
+        if (sm) {
+            var remaining = rootsTotal - rendered;
+            if (remaining <= 0) {
+                sm.style.display = 'none';
+            } else {
+                sm.style.display = '';
+                sm.textContent = 'Показать ещё ' + commentsText(remaining);
+            }
         }
     }
 
@@ -334,12 +345,34 @@
             .catch(function () { btn._busy = false; toast('Ошибка сети'); });
     });
 
-    /* Показать ещё комментарии */
+    /* Показать ещё комментарии: догружаем порцию по AJAX */
     document.addEventListener('click', function (e) {
         var sm = e.target.closest && e.target.closest('.show-more-comments');
-        if (!sm) return;
+        if (!sm || sm._busy) return;
+        var card = sm.closest('.post-card');
         var block = sm.closest('.comments-block');
-        if (block) block.classList.add('expanded');
+        if (!card || !block) return;
+        var list = block.querySelector('.comments-list');
+        if (!list) return;
+        var postId = card.getAttribute('data-post-id');
+        var offset = parseInt(sm.getAttribute('data-offset') || '0', 10);
+        sm._busy = true;
+        var url = CFG.urls.loadComments.replace('/0/', '/' + postId + '/') + '?offset=' + offset;
+        getJSON(url)
+            .then(function (d) {
+                sm._busy = false;
+                if (!d || !Array.isArray(d.html) || !d.html.length) {
+                    sm.style.display = 'none';
+                    return;
+                }
+                var frag = document.createElement('div');
+                frag.innerHTML = d.html.join('');
+                while (frag.firstChild) list.appendChild(frag.firstChild);
+                sm.setAttribute('data-offset', offset + d.html.length);
+                block.classList.add('expanded');
+                syncShowMore(card);
+            })
+            .catch(function () { sm._busy = false; toast('Ошибка сети'); });
     });
 
     /* Поделиться постом: нативный Web Share API, иначе — копирование ссылки */

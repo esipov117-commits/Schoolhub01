@@ -1,7 +1,7 @@
 import os
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
-from django.db.models import Count, IntegerField, OuterRef, Subquery
+from django.db.models import Count, IntegerField, OuterRef, Prefetch, Subquery
 from django.db.models.functions import Coalesce
 from django.template.loader import render_to_string
 from django.shortcuts import render, redirect, get_object_or_404
@@ -9,12 +9,12 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.utils import timezone
 from .models import Post, PostImage, Like, Comment
-from events.models import Event
 from stories.models import Story, StoryView
 from users.models import downscale_image
 
 VIDEO_EXTENSIONS = {'.mp4', '.mov', '.webm', '.avi', '.mkv'}
 POSTS_PER_PAGE = 10
+COMMENTS_PER_BATCH = 2
 
 
 def _post_queryset():
@@ -39,17 +39,34 @@ def _post_queryset():
         .annotate(c=Count('pk'))
         .values('c')
     )
+    roots_sq = (
+        Comment.objects.filter(post=OuterRef('pk'), parent__isnull=True)
+        .order_by()
+        .values('post')
+        .annotate(c=Count('pk'))
+        .values('c')
+    )
     return (
         Post.objects
         .select_related('author__profile')
         .prefetch_related(
             'images',
-            'comments__author__profile',
-            'comments__replies__author__profile',
+            Prefetch(
+                'comments',
+                queryset=(
+                    Comment.objects
+                    .filter(parent__isnull=True)
+                    .select_related('author__profile')
+                    .prefetch_related('replies__author__profile')
+                    .order_by('created_at')
+                ),
+                to_attr='roots',
+            ),
         )
         .annotate(
             likes_count=Coalesce(Subquery(likes_sq, output_field=IntegerField()), 0),
             comments_total=Coalesce(Subquery(comments_sq, output_field=IntegerField()), 0),
+            roots_total=Coalesce(Subquery(roots_sq, output_field=IntegerField()), 0),
         )
         .order_by('-created_at')
     )
@@ -148,8 +165,6 @@ def feed(request):
         for author, author_stories in grouped.items()
     ]
 
-    upcoming_events = Event.objects.filter(date__gte=timezone.now()).order_by('date')[:3]
-
     stats = {
         'posts_count': Post.objects.filter(author=request.user).count(),
         'friends_count': 0,
@@ -161,7 +176,6 @@ def feed(request):
         'stats': stats,
         'has_next': page_obj.has_next(),
         'other_stories': other_stories,
-        'upcoming_events': upcoming_events,
     })
  
 
@@ -237,6 +251,38 @@ def add_comment(request, post_id):
         'parent_id': comment.parent_id,
         'parent_author': comment.parent.author.username if comment.parent_id else None,
         'comments_count': post.comments.count(),
+    })
+
+
+@login_required
+def load_comments(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+    try:
+        offset = int(request.GET.get('offset', 0))
+    except (TypeError, ValueError):
+        offset = 0
+    if offset < 0:
+        offset = 0
+
+    roots = (
+        Comment.objects
+        .filter(post=post, parent__isnull=True)
+        .select_related('author__profile')
+        .prefetch_related('replies__author__profile')
+        .order_by('created_at')
+    )
+    batch = list(roots[offset:offset + COMMENTS_PER_BATCH])
+    html_list = [
+        render_to_string(
+            'posts/_comment.html',
+            {'comment': c, 'post': post, 'user': request.user},
+            request=request,
+        )
+        for c in batch
+    ]
+    return JsonResponse({
+        'html': html_list,
+        'has_more': offset + len(batch) < roots.count(),
     })
 
 

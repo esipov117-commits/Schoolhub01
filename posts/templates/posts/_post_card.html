@@ -51,7 +51,7 @@
                 {% if media.media_type == 'video' %}
                 <video src="{{ media.video.url }}" class="grid-media" controls playsinline></video>
                 {% else %}
-                <img src="{{ media.image.url }}" class="grid-media" loading="lazy" decoding="async">
+                <img src="{{ media.image.url }}" class="grid-media" width="{{ media.width|default:'' }}" height="{{ media.height|default:'' }}" loading="lazy" decoding="async">
                 {% endif %}
             {% endfor %}
         </div>
@@ -62,7 +62,7 @@
                 {% if media.media_type == 'video' %}
                 <video src="{{ media.video.url }}" class="carousel-img" controls playsinline></video>
                 {% else %}
-                <img src="{{ media.image.url }}" class="carousel-img" loading="lazy" decoding="async">
+                <img src="{{ media.image.url }}" class="carousel-img" width="{{ media.width|default:'' }}" height="{{ media.height|default:'' }}" loading="lazy" decoding="async">
                 {% endif %}
             {% endfor %}
             </div>
@@ -114,88 +114,18 @@
         <span class="comments-count toggle-comments-btn" data-post-id="{{ post.id }}">{{ post.comments_total|comments_text }}</span>
     </div>
 
-    <div class="comments-block" id="comments-{{ post.id }}" style="display:none;">
+    <div class="comments-block" id="comments-{{ post.id }}" data-roots-total="{{ post.roots_total }}" style="display:none;">
         <div class="comments-list">
-            {% for comment in post.comments.all %}
-                {% if not comment.parent_id %}
-            <div class="comment" id="comment-{{ comment.id }}">
-                <a class="comment-avatar" href="{% url 'profile_user' comment.author.username %}">
-                    {% if comment.author.profile.avatar %}
-                        <img src="{{ comment.author.profile.avatar.url }}" alt="{{ comment.author.username }}" loading="lazy" decoding="async">
-                    {% else %}
-                        <span class="comment-avatar-ph">{{ comment.author.username|first|upper }}</span>
-                    {% endif %}
-                </a>
-                <div class="comment-main">
-                    <div class="comment-line">
-                        <a class="comment-author" href="{% url 'profile_user' comment.author.username %}">{{ comment.author.username }}</a><span class="comment-text">{{ comment.text }}</span>
-                    </div>
-                    <div class="comment-meta">
-                        <span class="comment-time">{{ comment.created_at|timeago }}</span>
-                        <button
-                            type="button"
-                            class="reply-btn"
-                            data-comment-id="{{ comment.id }}"
-                            data-author="{{ comment.author.username }}">
-                            Ответить
-                        </button>
-                    </div>
-                    {% if comment.replies.all %}
-                    <div class="comment-replies" id="replies-{{ comment.id }}">
-                        {% for reply in comment.replies.all %}
-                        <div class="comment reply" id="comment-{{ reply.id }}">
-                            <a class="comment-avatar" href="{% url 'profile_user' reply.author.username %}">
-                                {% if reply.author.profile.avatar %}
-                                    <img src="{{ reply.author.profile.avatar.url }}" alt="{{ reply.author.username }}" loading="lazy" decoding="async">
-                                {% else %}
-                                    <span class="comment-avatar-ph">{{ reply.author.username|first|upper }}</span>
-                                {% endif %}
-                            </a>
-                            <div class="comment-main">
-                                <div class="comment-line">
-                                    <a class="comment-author" href="{% url 'profile_user' reply.author.username %}">{{ reply.author.username }}</a><span class="comment-text">{{ reply.text }}</span>
-                                </div>
-                                <div class="comment-meta">
-                                    <span class="comment-time">{{ reply.created_at|timeago }}</span>
-                                </div>
-                            </div>
-                            {% if reply.author == user or post.author == user %}
-                            <button
-                                type="button"
-                                class="delete-comment-btn"
-                                data-comment-id="{{ reply.id }}"
-                                data-post-id="{{ post.id }}"
-                                title="Удалить">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
-                            </button>
-                            {% endif %}
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% else %}
-                    <div class="comment-replies" id="replies-{{ comment.id }}"></div>
-                    {% endif %}
-                </div>
-                {% if comment.author == user or post.author == user %}
-                <button
-                    type="button"
-                    class="delete-comment-btn"
-                    data-comment-id="{{ comment.id }}"
-                    data-post-id="{{ post.id }}"
-                    title="Удалить">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
-                </button>
-                {% endif %}
-            </div>
-                {% endif %}
+            {% for comment in post.roots|slice:":2" %}
+            {% include "posts/_comment.html" %}
             {% empty %}
             <div class="comments-empty">Пока нет комментариев — напишите первый.</div>
             {% endfor %}
         </div>
 
-        {% with cc=post.comments_total %}
+        {% with cc=post.roots_total %}
         {% if cc > 2 %}
-        <button type="button" class="show-more-comments" data-post-id="{{ post.id }}">
+        <button type="button" class="show-more-comments" data-post-id="{{ post.id }}" data-offset="2">
             Показать ещё {{ cc|add:"-2"|comments_text }}
         </button>
         {% endif %}

@@ -263,6 +263,10 @@
     }
 
     /* Полировка карточки поста */
+    .feed-main .post-card {
+        content-visibility: auto;
+        contain-intrinsic-size: auto 560px;
+    }
     .feed-main .post-card .post-content { font-size: 14.5px; line-height: 1.56; }
     .feed-main .post-card .post-media { margin-top: 10px; margin-bottom: 2px; border-radius: 14px; overflow: hidden; }
     .feed-main .post-card .post-actions { margin-top: 8px; }
@@ -453,14 +457,14 @@
         gap: 12px;
         margin-bottom: 10px;
     }
-    .comments-list > .comment:nth-child(n + 3) { display: none; }
-    .comments-block.expanded .comments-list > .comment { display: flex; }
     .comment {
         display: flex;
         align-items: flex-start;
         gap: 10px;
         font-size: 14px;
         word-break: break-word;
+        content-visibility: auto;
+        contain-intrinsic-size: auto 64px;
     }
     .comment-avatar {
         width: 32px;

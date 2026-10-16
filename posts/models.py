@@ -32,10 +32,19 @@ class PostImage(models.Model):
     ]
 
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='images')
-    image = models.ImageField(upload_to='posts/', blank=True, null=True, validators=[validate_image_size])
+    image = models.ImageField(
+        upload_to='posts/',
+        blank=True,
+        null=True,
+        validators=[validate_image_size],
+        width_field='width',
+        height_field='height',
+    )
     video = models.FileField(upload_to='posts/videos/', blank=True, null=True, validators=[validate_video_size])
     media_type = models.CharField(max_length=10, choices=MEDIA_TYPE_CHOICES, default='image')
     order = models.PositiveSmallIntegerField(default=0)
+    width = models.PositiveIntegerField(null=True, blank=True)
+    height = models.PositiveIntegerField(null=True, blank=True)
 
     class Meta:
         ordering = ['order', 'id']
