@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.test import TestCase, Client
 from django.contrib.auth import get_user_model
 from django.template.loader import render_to_string
@@ -94,6 +95,24 @@ class CommentReplyTests(TestCase):
         resp = self.client.post(reverse('delete_comment', args=[root.id]))
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(Comment.objects.filter(post=self.post).count(), 0)
+
+    def test_extracted_assets_exist(self):
+        for rel in ('static/css/base.css', 'static/css/feed.css', 'static/js/base.js'):
+            path = settings.BASE_DIR / rel
+            self.assertTrue(path.exists(), rel)
+            self.assertGreater(path.stat().st_size, 0, rel)
+
+    def test_feed_page_uses_external_assets(self):
+        self.client.force_login(self.author)
+        resp = self.client.get(reverse('feed'))
+        self.assertEqual(resp.status_code, 200)
+        html = resp.content.decode()
+        self.assertNotIn('<style>', html)
+        # Имена файлов хешируются ManifestStaticFilesStorage.
+        for asset in ('css/base.', 'css/feed.', 'js/base.', 'js/feed.'):
+            self.assertIn(asset, html)
+        # Единственный инлайн-скрипт — конфиг FEED_CONFIG.
+        self.assertEqual(html.count('<script>'), 1)
 
     def test_card_template_renders_nested_replies(self):
         root = Comment.objects.create(
