@@ -42,7 +42,11 @@ def _post_queryset():
     return (
         Post.objects
         .select_related('author__profile')
-        .prefetch_related('images', 'comments__author__profile')
+        .prefetch_related(
+            'images',
+            'comments__author__profile',
+            'comments__replies__author__profile',
+        )
         .annotate(
             likes_count=Coalesce(Subquery(likes_sq, output_field=IntegerField()), 0),
             comments_total=Coalesce(Subquery(comments_sq, output_field=IntegerField()), 0),
@@ -209,7 +213,20 @@ def add_comment(request, post_id):
     if not text:
         return JsonResponse({'error': 'Комментарий не может быть пустым'}, status=400)
 
-    comment = Comment.objects.create(post=post, author=request.user, text=text)
+    parent = None
+    parent_id = request.POST.get('parent_id', '').strip()
+    if parent_id:
+        try:
+            parent = Comment.objects.get(id=parent_id)
+        except (Comment.DoesNotExist, ValueError):
+            return JsonResponse({'error': 'Комментарий не найден'}, status=400)
+        if parent.post_id != post.id:
+            return JsonResponse({'error': 'Комментарий не найден'}, status=400)
+        # Одноуровневая вложенность: ответ на ответ прикрепляем к корневому.
+        if parent.parent_id:
+            parent = parent.parent
+
+    comment = Comment.objects.create(post=post, author=request.user, text=text, parent=parent)
 
     author_profile = getattr(comment.author, 'profile', None)
     return JsonResponse({
@@ -217,6 +234,8 @@ def add_comment(request, post_id):
         'author': comment.author.username,
         'author_avatar': author_profile.avatar.url if author_profile and author_profile.avatar else None,
         'text': comment.text,
+        'parent_id': comment.parent_id,
+        'parent_author': comment.parent.author.username if comment.parent_id else None,
         'comments_count': post.comments.count(),
     })
 

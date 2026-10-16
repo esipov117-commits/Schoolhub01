@@ -63,13 +63,29 @@ class Comment(models.Model):
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='comments')
     author = models.ForeignKey(User, on_delete=models.CASCADE)
     text = models.CharField(max_length=500)
+    parent = models.ForeignKey(
+        'self',
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name='replies',
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['created_at']
         indexes = [
             models.Index(fields=['post', 'created_at']),
+            models.Index(fields=['post', 'parent', 'created_at']),
         ]
+
+    @property
+    def is_reply(self):
+        return self.parent_id is not None
+
+    @property
+    def root(self):
+        return self.parent if self.parent_id else self
 
     def __str__(self):
         return f"{self.author.username} on post {self.post_id}: {self.text[:30]}"

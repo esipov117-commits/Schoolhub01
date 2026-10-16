@@ -162,13 +162,24 @@
     }
 
     /* ====================== Комментарии ====================== */
-    function commentHtml(cid, author, avatarUrl, text, postId) {
+    function commentAvatarHtml(author, avatarUrl) {
         var profileUrl = CFG.profileBase + encodeURIComponent(author) + '/';
         var avatar = avatarUrl
             ? '<img src="' + esc(avatarUrl) + '" alt="" loading="lazy" decoding="async">'
             : '<span class="comment-avatar-ph">' + esc((author || '?').charAt(0).toUpperCase()) + '</span>';
+        return '<a class="comment-avatar" href="' + profileUrl + '">' + avatar + '</a>';
+    }
+
+    function deleteBtnHtml(cid, postId, canDelete) {
+        if (!canDelete) return '';
+        return '<button type="button" class="delete-comment-btn" data-comment-id="' + cid +
+            '" data-post-id="' + postId + '" title="Удалить">' + TRASH_SVG + '</button>';
+    }
+
+    function replyHtml(cid, author, avatarUrl, text, postId, canDelete) {
+        var profileUrl = CFG.profileBase + encodeURIComponent(author) + '/';
         return '' +
-            '<a class="comment-avatar" href="' + profileUrl + '">' + avatar + '</a>' +
+            commentAvatarHtml(author, avatarUrl) +
             '<div class="comment-main">' +
             '  <div class="comment-line">' +
             '    <a class="comment-author" href="' + profileUrl + '">' + esc(author) + '</a>' +
@@ -176,8 +187,27 @@
             '  </div>' +
             '  <div class="comment-meta"><span class="comment-time">только что</span></div>' +
             '</div>' +
-            '<button type="button" class="delete-comment-btn" data-comment-id="' + cid +
-            '" data-post-id="' + postId + '" title="Удалить">' + TRASH_SVG + '</button>';
+            deleteBtnHtml(cid, postId, canDelete);
+    }
+
+    function commentHtml(cid, author, avatarUrl, text, postId, canDelete) {
+        var profileUrl = CFG.profileBase + encodeURIComponent(author) + '/';
+        return '' +
+            '<div class="comment" id="comment-' + cid + '">' +
+              commentAvatarHtml(author, avatarUrl) +
+              '<div class="comment-main">' +
+              '  <div class="comment-line">' +
+              '    <a class="comment-author" href="' + profileUrl + '">' + esc(author) + '</a>' +
+              '    <span class="comment-text">' + esc(text) + '</span>' +
+              '  </div>' +
+              '  <div class="comment-meta"><span class="comment-time">только что</span>' +
+              '    <button type="button" class="reply-btn" data-comment-id="' + cid +
+              '" data-author="' + esc(author) + '">Ответить</button>' +
+              '  </div>' +
+              '  <div class="comment-replies" id="replies-' + cid + '"></div>' +
+              '</div>' +
+              deleteBtnHtml(cid, postId, canDelete) +
+            '</div>';
     }
 
     function syncShowMore(card) {
@@ -185,7 +215,7 @@
         var block = card.querySelector('.comments-block');
         if (!block) return;
         var list = block.querySelector('.comments-list');
-        var total = list ? list.querySelectorAll('.comment').length : 0;
+        var total = list ? list.querySelectorAll(':scope > .comment').length : 0;
         var sm = block.querySelector('.show-more-comments');
         if (total === 0) {
             if (list && !list.querySelector('.comments-empty')) {
@@ -224,8 +254,10 @@
                 var text = (input.value || '').trim();
                 if (!text) return;
                 var id = form.getAttribute('data-post-id');
+                var parentId = form.getAttribute('data-parent-id') || '';
                 var fd = new FormData();
                 fd.append('text', text);
+                fd.append('parent_id', parentId);
                 postForm(CFG.urls.comment.replace('/0/', '/' + id + '/'), fd)
                     .then(function (res) {
                         if (!res.ok) { toast(res.data.error || 'Не удалось отправить'); return; }
@@ -237,11 +269,24 @@
                         if (empty) empty.remove();
                         block.classList.add('expanded');
                         var div = document.createElement('div');
-                        div.className = 'comment';
-                        div.id = 'comment-' + d.id;
-                        div.innerHTML = commentHtml(d.id, d.author, d.author_avatar, d.text, id);
-                        list.appendChild(div);
+                        if (d.parent_id) {
+                            var wrap = document.getElementById('replies-' + d.parent_id);
+                            if (!wrap) return;
+                            div.className = 'comment reply';
+                            div.id = 'comment-' + d.id;
+                            div.innerHTML = replyHtml(d.id, d.author, d.author_avatar, d.text, id, true);
+                            wrap.appendChild(div);
+                            var root = document.getElementById('comment-' + d.parent_id);
+                            if (root) root.style.display = '';
+                        } else {
+                            div.className = 'comment';
+                            div.id = 'comment-' + d.id;
+                            div.innerHTML = commentHtml(d.id, d.author, d.author_avatar, d.text, id, true);
+                            list.appendChild(div);
+                        }
                         input.value = '';
+                        form.setAttribute('data-parent-id', '');
+                        input.placeholder = 'Добавьте комментарий…';
                         syncSend();
                         updateCounts(card, null, d.comments_count);
                         syncShowMore(card);
@@ -254,6 +299,21 @@
             btn.setAttribute('data-bound', '1');
         });
     }
+
+    document.addEventListener('click', function (e) {
+        var replyBtn = e.target.closest && e.target.closest('.reply-btn');
+        if (!replyBtn) return;
+        var card = replyBtn.closest('.post-card');
+        var form = card && card.querySelector('.add-comment-form');
+        if (!form) return;
+        var input = form.querySelector('input[name=text]');
+        var author = replyBtn.getAttribute('data-author') || '';
+        form.setAttribute('data-parent-id', replyBtn.getAttribute('data-comment-id') || '');
+        if (input) {
+            input.placeholder = 'Ответить ' + author + '…';
+            input.focus();
+        }
+    });
 
     document.addEventListener('click', function (e) {
         var btn = e.target.closest && e.target.closest('.delete-comment-btn');
