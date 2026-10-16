@@ -32,3 +32,12 @@ class ProfileSectionPagesTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Фото')
         self.assertContains(response, 'Пока нет фото')
+
+    def test_rightbar_profile_card_links_to_profile_new_tab(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse('feed'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'profile-card-link')
+        self.assertContains(response, 'href="/profile/"')
+        self.assertContains(response, 'target="_blank"')
