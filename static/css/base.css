@@ -117,8 +117,7 @@ img {
     padding: 0 16px;
     color: var(--muted);
     width: 300px;
-    height: 100%;
-    align-self: stretch;
+    height: 42px;
     display: flex;
     align-items: center;
     gap: 10px;
