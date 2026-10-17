@@ -117,6 +117,9 @@
     }
     @media (max-width: 480px) {
         .story-viewer-media { max-height: 100vh; }
+        @supports (height: 100dvh) {
+            .story-viewer-media { max-height: 100dvh; }
+        }
     }
     @media (min-width: 481px) {
         .story-viewer-media { border-radius: 14px; overflow: hidden; }
@@ -125,7 +128,7 @@
     .viewer-header {
         position: absolute;
         top: 0; left: 0; right: 0;
-        padding: 12px;
+        padding: calc(12px + env(safe-area-inset-top, 0px)) 12px 12px;
         background: linear-gradient(to bottom, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0) 100%);
         z-index: 15;
         display: flex;
@@ -241,7 +244,8 @@
 
     .story-close {
         position: absolute;
-        top: 20px; right: 20px;
+        top: calc(20px + env(safe-area-inset-top, 0px));
+        right: 20px;
         background: none;
         border: none;
         color: rgba(255, 255, 255, 0.75);
@@ -367,10 +371,18 @@
         margin-top: 8px;
     }
     .carousel-dot {
+        position: relative;
         width: 6px;
         height: 6px;
         border-radius: 50%;
         background: var(--border);
+    }
+    /* Расширяем зону нажатия точки, не меняя её вид */
+    .carousel-dot::after {
+        content: "";
+        position: absolute;
+        inset: -10px -8px;
+        border-radius: 50%;
     }
     .carousel-dot.active { background: var(--accent); }
 
@@ -1044,4 +1056,95 @@
         border-radius: 18px;
         width: 320px;
         box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+    }
+
+    /* ===== Мобильные исправления ленты ===== */
+
+    /* Шапка поста: аватар + имя, кнопки владельца прижаты вправо */
+    .feed-main .post-card .post-head-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+    }
+    .feed-main .post-card .post-head-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    /* Заголовок поста: не даём длинному имени/времени вылезать за карточку */
+    .feed-main .post-card .post-author-wrap {
+        min-width: 0;
+        overflow: hidden;
+    }
+    .feed-main .post-card .post-author,
+    .feed-main .post-card .post-time {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* Кнопки владельца поста (изменить/удалить) */
+    .post-owner-actions {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        flex-shrink: 0;
+    }
+    .post-ctrl-btn {
+        background: none;
+        border: none;
+        color: var(--muted);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px;
+        min-width: 40px;
+        min-height: 40px;
+        border-radius: 50%;
+        transition: background 0.15s ease, color 0.15s ease;
+    }
+    .post-ctrl-btn:hover { background: var(--sidebar-active-bg); }
+    .post-ctrl-btn.danger:hover { color: #e0245e; }
+    .post-ctrl-btn svg { width: 18px; height: 18px; }
+
+    /* Подтверждение удаления не должно вылезать на узких экранах */
+    #confirmOverlay > div {
+        width: 320px;
+        max-width: calc(100vw - 32px);
+    }
+
+    @media (max-width: 760px) {
+        /* Комфортные зоны нажатия для действий поста */
+        .feed-main .post-card .post-actions {
+            gap: 6px;
+        }
+        .feed-main .post-card .post-actions button {
+            width: 44px;
+            height: 44px;
+        }
+        .feed-main .post-card .post-actions button svg {
+            width: 23px;
+            height: 23px;
+        }
+
+        /* Кнопки изменения/удаления — крупнее и разнесены, чтобы не промахнуться */
+        .post-ctrl-btn {
+            min-width: 46px;
+            min-height: 46px;
+            padding: 8px;
+        }
+        .post-owner-actions {
+            gap: 4px;
+            margin-right: -6px;
+        }
+
+        /* Точки карусели: больше визуально */
+        .carousel-dots { gap: 10px; }
+        .carousel-dot { width: 7px; height: 7px; }
     }

@@ -5,11 +5,8 @@ from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import login as auth_login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.utils import timezone
-from tasks.models import TodoTask
 from .models import Profile, Follow, downscale_image
 from posts.models import Post, PostImage
-from events.models import Event
 
 REMEMBERED_USER_COOKIE = 'sh_remembered_user'
 
@@ -98,20 +95,9 @@ def home(request):
 
     Profile.objects.get_or_create(user=request.user)
 
-    tasks = TodoTask.objects.filter(user=request.user)
-    upcoming_events = Event.objects.filter(date__gte=timezone.now()).order_by('date')[:3]
+    from .dashboard_views import build_dashboard_context
 
-    stats = {
-        'posts_count': Post.objects.filter(author=request.user).count(),
-        'friends_count': 0,   # пока нет системы друзей
-        'groups_count': 0,    # пока нет групп
-    }
-
-    return render(request, 'home.html', {
-        'tasks': tasks,
-        'upcoming_events': upcoming_events,
-        'stats': stats,
-    })
+    return render(request, 'home.html', build_dashboard_context(request))
 
 
 @login_required

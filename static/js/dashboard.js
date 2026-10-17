@@ -714,7 +714,7 @@
 
 
     loadTradingViewChart("chart-aapl", "NASDAQ:AAPL");
-    loadTradingViewChart("chart-spacex", "NASDAQ:SPCX");
+    loadTradingViewChart("chart-tsla", "NASDAQ:TSLA");
 
 
     /* =====================================================

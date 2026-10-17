@@ -37,67 +37,22 @@ NEWS_FEEDS = (
 )
 
 
-def _completed_status_values():
-    """Detect common completed values from TodoTask.status choices."""
-    try:
-        choices = TodoTask._meta.get_field("status").choices
-    except Exception:
-        choices = ()
-
-    completed_markers = (
-        "complete",
-        "completed",
-        "done",
-        "finished",
-        "выполн",
-        "готов",
-    )
-
-    values = []
-
-    for value, label in choices:
-        text = f"{value} {label}".lower()
-
-        if any(marker in text for marker in completed_markers):
-            values.append(value)
-
-    return values or [
-        "completed",
-        "complete",
-        "done",
-        "finished",
-        "COMPLETED",
-        "DONE",
-    ]
-
-
-@login_required
-def mission_dashboard(request):
-    """Render the dashboard without replacing users.views."""
-    today = timezone.localdate()
-
+def build_dashboard_context(request):
+    """Shared context for the home page / Mission Control dashboard."""
     tasks = TodoTask.objects.filter(user=request.user)
-    completed_values = _completed_status_values()
 
-    completed_tasks_count = tasks.filter(
-        status__in=completed_values
-    ).count()
+    completed_tasks_count = tasks.filter(completed=True).count()
 
-    open_tasks = tasks.exclude(
-        status__in=completed_values
-    )
+    open_tasks = tasks.filter(completed=False)
 
-    try:
-        today_tasks = open_tasks.order_by("due_date", "id")[:5]
-    except Exception:
-        today_tasks = open_tasks.order_by("id")[:5]
+    today_tasks = open_tasks.order_by("-created_at")[:6]
 
     events_queryset = Event.objects.filter(
-        date__gte=today
-    ).order_by("date", "time")
+        date__gte=timezone.now()
+    ).order_by("date")
 
     upcoming_events_count = events_queryset.count()
-    events = events_queryset[:5]
+    events = events_queryset[:6]
 
     # Пытаемся получить город из профиля пользователя.
     # Если такого поля нет, используем Томск.
@@ -110,15 +65,20 @@ def mission_dashboard(request):
     except Exception:
         pass
 
+    try:
+        friends_count = request.user.following.count()
+    except Exception:
+        friends_count = 0
+
     stats = {
         "posts_count": Post.objects.filter(
             author=request.user
         ).count(),
-        "friends_count": 0,
+        "friends_count": friends_count,
         "groups_count": 0,
     }
 
-    context = {
+    return {
         "today_tasks": today_tasks,
         "events": events,
         "open_tasks_count": open_tasks.count(),
@@ -128,7 +88,15 @@ def mission_dashboard(request):
         "stats": stats,
     }
 
-    return render(request, "home.html", context)
+
+@login_required
+def mission_dashboard(request):
+    """Render the Mission Control dashboard."""
+    return render(
+        request,
+        "home.html",
+        build_dashboard_context(request),
+    )
 
 
 def _parse_rss_feed(category, url):

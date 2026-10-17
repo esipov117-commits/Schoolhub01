@@ -1,600 +1,237 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Dashboard{% endblock %}
+{% block title %}Центр управления — SchoolHub{% endblock %}
+
+{% block grid_columns %}1fr{% endblock %}
 
 {% block extra_head %}
-<style>
-    :root {
-        --bg: #1c1c1e;
-        --card: #2c2c2e;
-        --border: #414144;
-        --text: #f5f5f7;
-        --muted: #98989d;
-        --blue: #0a84ff;
-        --green: #30d158;
-    }
-
-    body {
-        margin: 0;
-        background: var(--bg) !important;
-        color: var(--text);
-        font-family: -apple-system, BlinkMacSystemFont,
-            "SF Pro Display", "Segoe UI", sans-serif;
-        -webkit-font-smoothing: antialiased;
-    }
-
-    .dashboard {
-        max-width: 1440px;
-        min-height: 100vh;
-        padding: 48px 36px;
-        margin: auto;
-    }
-
-    .dashboard-header {
-        margin-bottom: 32px;
-    }
-
-    .dashboard-header h1 {
-        margin: 0;
-        font-size: 30px;
-        font-weight: 700;
-        letter-spacing: -1px;
-    }
-
-    .dashboard-header p {
-        margin: 7px 0 0;
-        color: var(--muted);
-        font-size: 13px;
-    }
-
-    .widgets {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        align-items: stretch;
-        gap: 18px;
-    }
-
-    .widget {
-        min-width: 0;
-        min-height: 390px;
-        padding: 24px;
-        overflow: hidden;
-        border: 1px solid var(--border);
-        border-radius: 14px;
-        background: var(--card);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, .12);
-        transition: background .2s ease, border-color .2s ease;
-    }
-
-    .widget:hover {
-        background: #303033;
-        border-color: #555559;
-    }
-
-    .widget-header {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding-bottom: 20px;
-        border-bottom: 1px solid var(--border);
-    }
-
-    .widget-icon {
-        display: grid;
-        place-items: center;
-        width: 38px;
-        height: 38px;
-        flex-shrink: 0;
-        border-radius: 10px;
-        background: #3a3a3c;
-        color: #dedee3;
-    }
-
-    .widget-icon svg {
-        width: 20px;
-        height: 20px;
-    }
-
-    .widget-title {
-        margin: 0;
-        font-size: 15px;
-        font-weight: 600;
-    }
-
-    .widget-subtitle {
-        margin: 4px 0 0;
-        color: var(--muted);
-        font-size: 12px;
-    }
-
-    .widget-content {
-        padding-top: 24px;
-    }
-
-    .big-value {
-        margin: 0;
-        font-size: 48px;
-        line-height: 1.15;
-        font-weight: 600;
-        letter-spacing: -2px;
-    }
-
-    .description {
-        margin: 9px 0 25px;
-        color: #b0b0b6;
-        font-size: 13px;
-    }
-
-    .data-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 16px;
-        min-height: 39px;
-        border-bottom: 1px solid rgba(255,255,255,.055);
-        font-size: 12px;
-    }
-
-    .data-row:last-child {
-        border-bottom: 0;
-    }
-
-    .data-label {
-        color: #c5c5ca;
-    }
-
-    .data-value {
-        color: var(--text);
-        text-align: right;
-    }
-
-    .widget-status {
-        margin-top: 20px;
-        color: var(--muted);
-        font-size: 11px;
-    }
-
-    .status-dot {
-        display: inline-block;
-        width: 6px;
-        height: 6px;
-        margin-right: 7px;
-        border-radius: 50%;
-        background: var(--green);
-        vertical-align: middle;
-    }
-
-    .status-dot.loading {
-        background: #ffbd2e;
-    }
-
-    /* Apple quote embed */
-
-    .stock-content {
-        padding-top: 16px;
-    }
-
-    .tradingview-widget-container,
-    .tradingview-widget-container__widget {
-        width: 100% !important;
-        min-height: 240px;
-    }
-
-    .tradingview-widget-container iframe {
-        max-width: 100%;
-    }
-
-    /* SpaceX */
-
-    .launch-name {
-        min-height: 52px;
-        margin: 0 0 8px;
-        font-size: 23px;
-        font-weight: 600;
-        line-height: 1.3;
-        letter-spacing: -.6px;
-        overflow-wrap: anywhere;
-    }
-
-    .launch-details {
-        min-height: 36px;
-        margin: 0 0 23px;
-        color: var(--muted);
-        font-size: 12px;
-        line-height: 1.6;
-    }
-
-    .countdown-label {
-        margin-bottom: 8px;
-        color: var(--muted);
-        font-size: 11px;
-    }
-
-    .countdown {
-        font-size: 27px;
-        font-variant-numeric: tabular-nums;
-        font-weight: 600;
-        letter-spacing: -.8px;
-    }
-
-    .launch-date {
-        margin-top: 18px;
-        color: #c5c5ca;
-        font-size: 12px;
-        line-height: 1.6;
-    }
-
-    @media (max-width: 1050px) {
-        .widgets {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-    }
-
-    @media (max-width: 680px) {
-        .dashboard {
-            padding: 28px 16px;
-        }
-
-        .widgets {
-            grid-template-columns: minmax(0, 1fr);
-        }
-
-        .widget {
-            min-height: 350px;
-        }
-
-        .dashboard-header h1 {
-            font-size: 27px;
-        }
-    }
-</style>
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
 {% endblock %}
 
-
 {% block content %}
-<main class="dashboard">
+<div class="mission-dashboard"
+     id="mission-dashboard"
+     data-user-id="{{ user.id }}"
+     data-default-city="{{ weather_default_city|default:'Tomsk'|escape }}"
+     data-news-url="{% url 'dashboard_news' %}">
 
-    <header class="dashboard-header">
-        <h1>Dashboard</h1>
-        <p>{% now "l, d E Y" %}</p>
+    <header class="dash-header">
+        <div>
+            <h1 class="dash-title">Центр управления</h1>
+            <p class="dash-subtitle">{% now "l, j F Y" %} · Привет, {{ user.profile.display_name|default:user.username }}</p>
+        </div>
+
+        <div class="dash-actions">
+            <button type="button" class="dash-btn" id="dashboard-reset">
+                Сбросить
+            </button>
+            <button type="button" class="dash-btn primary" id="dashboard-edit-toggle">
+                ☷ Настроить виджеты
+            </button>
+        </div>
     </header>
 
-    <section class="widgets">
+    <div class="dash-manager" id="widget-manager" hidden>
+        <div class="dash-manager-head">
+            <span>Скрытые виджеты</span>
+            <span class="dash-manager-hint">Перетаскивайте карточки за ⠿, меняйте ширину кнопкой ⤢ и скрывайте кнопкой ✕. Раскладка сохраняется автоматически.</span>
+        </div>
+        <div class="hidden-widget-list" id="hidden-widget-list"></div>
+    </div>
 
-        <!-- WEATHER -->
-        <article class="widget" id="weather-widget"
-                 data-city="{{ weather_default_city|default:'Tomsk'|escape }}">
+    <section class="widget-board" id="widget-board">
 
-            <header class="widget-header">
-                <div class="widget-icon">
-                    <svg viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="1.6">
-                        <circle cx="12" cy="12" r="4"/>
-                        <path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42
-                                 M17.65 17.65l1.42 1.42M2 12h2m16 0h2
-                                 M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42"/>
-                    </svg>
-                </div>
-                <div>
-                    <h2 class="widget-title">Weather</h2>
-                    <p class="widget-subtitle" id="weather-city">Loading…</p>
-                </div>
+        <!-- ПОГОДА -->
+        <article class="widget-card widget-wide"
+                 data-widget-id="weather"
+                 data-widget-title="Погода"
+                 data-size="wide">
+            <header class="widget-head">
+                <span class="widget-drag-handle" title="Перетащить" aria-hidden="true">⠿</span>
+                <span class="widget-title">Погода</span>
+                <span class="widget-head-actions">
+                    <button type="button" class="widget-control" data-widget-action="size" title="Изменить ширину" aria-label="Изменить ширину">⤢</button>
+                    <button type="button" class="widget-control" data-widget-action="hide" title="Скрыть" aria-label="Скрыть">✕</button>
+                </span>
             </header>
+            <div class="widget-body">
+                <form class="weather-form" id="weather-form" autocomplete="off">
+                    <input type="text" id="weather-city" name="city"
+                           placeholder="Введите город" aria-label="Город">
+                    <button type="submit">Найти</button>
+                </form>
+                <div class="weather-content" id="weather-content"></div>
+            </div>
+        </article>
 
-            <div class="widget-content">
-                <p class="big-value" id="weather-temperature">—°</p>
-                <p class="description" id="weather-description">
-                    Loading current conditions…
-                </p>
-
-                <div class="data-row">
-                    <span class="data-label">Feels like</span>
-                    <span class="data-value" id="weather-feels">—</span>
+        <!-- ОБЗОР -->
+        <article class="widget-card"
+                 data-widget-id="overview"
+                 data-widget-title="Обзор">
+            <header class="widget-head">
+                <span class="widget-drag-handle" title="Перетащить" aria-hidden="true">⠿</span>
+                <span class="widget-title">Обзор</span>
+                <span class="widget-head-actions">
+                    <button type="button" class="widget-control" data-widget-action="size" title="Изменить ширину" aria-label="Изменить ширину">⤢</button>
+                    <button type="button" class="widget-control" data-widget-action="hide" title="Скрыть" aria-label="Скрыть">✕</button>
+                </span>
+            </header>
+            <div class="widget-body">
+                <div class="stat-grid">
+                    <div class="stat-tile">
+                        <div class="stat-tile-value">{{ stats.posts_count|default:0 }}</div>
+                        <div class="stat-tile-label">Публикации</div>
+                    </div>
+                    <div class="stat-tile">
+                        <div class="stat-tile-value">{{ stats.friends_count|default:0 }}</div>
+                        <div class="stat-tile-label">Подписки</div>
+                    </div>
+                    <div class="stat-tile">
+                        <div class="stat-tile-value">{{ stats.groups_count|default:0 }}</div>
+                        <div class="stat-tile-label">Группы</div>
+                    </div>
                 </div>
-
-                <div class="data-row">
-                    <span class="data-label">Humidity</span>
-                    <span class="data-value" id="weather-humidity">—</span>
-                </div>
-
-                <div class="data-row">
-                    <span class="data-label">Wind</span>
-                    <span class="data-value" id="weather-wind">—</span>
-                </div>
-
-                <div class="widget-status" id="weather-status">
-                    <span class="status-dot loading"></span>Connecting
+                <div class="stat-grid">
+                    <div class="stat-tile">
+                        <div class="stat-tile-value">{{ open_tasks_count|default:0 }}</div>
+                        <div class="stat-tile-label">Активные задачи</div>
+                    </div>
+                    <div class="stat-tile">
+                        <div class="stat-tile-value">{{ completed_tasks_count|default:0 }}</div>
+                        <div class="stat-tile-label">Выполнено</div>
+                    </div>
+                    <div class="stat-tile">
+                        <div class="stat-tile-value">{{ upcoming_events_count|default:0 }}</div>
+                        <div class="stat-tile-label">События</div>
+                    </div>
                 </div>
             </div>
         </article>
 
-
-        <!-- APPLE STOCK -->
-        <article class="widget">
-            <header class="widget-header">
-                <div class="widget-icon">
-                    <svg viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="1.6">
-                        <path d="M3 17l6-6 4 3 8-9"/>
-                        <path d="M15 5h6v6"/>
-                    </svg>
-                </div>
-                <div>
-                    <h2 class="widget-title">Apple Inc.</h2>
-                    <p class="widget-subtitle">AAPL · NASDAQ</p>
-                </div>
+        <!-- ЗАДАЧИ -->
+        <article class="widget-card"
+                 data-widget-id="tasks"
+                 data-widget-title="Задачи">
+            <header class="widget-head">
+                <span class="widget-drag-handle" title="Перетащить" aria-hidden="true">⠿</span>
+                <span class="widget-title">Задачи</span>
+                <span class="widget-head-actions">
+                    <button type="button" class="widget-control" data-widget-action="size" title="Изменить ширину" aria-label="Изменить ширину">⤢</button>
+                    <button type="button" class="widget-control" data-widget-action="hide" title="Скрыть" aria-label="Скрыть">✕</button>
+                </span>
             </header>
-
-            <div class="stock-content">
-                <div class="tradingview-widget-container">
-                    <div class="tradingview-widget-container__widget"></div>
-                    <script
-                        type="text/javascript"
-                        src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-info.js"
-                        async
-                    >
-                    {
-                        "symbol": "NASDAQ:AAPL",
-                        "width": "100%",
-                        "locale": "en",
-                        "colorTheme": "dark",
-                        "isTransparent": true
-                    }
-                    </script>
+            <div class="widget-body">
+                <div class="list-rows">
+                    {% for task in today_tasks %}
+                    <div class="list-row">
+                        <span class="list-row-icon">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/></svg>
+                        </span>
+                        <div class="list-row-main">
+                            <div class="list-row-title">{{ task.title }}</div>
+                            <div class="list-row-sub">Создано {{ task.created_at|date:"j M, H:i" }}</div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="widget-empty">Активных задач нет. Отличная работа!</div>
+                    {% endfor %}
                 </div>
             </div>
         </article>
 
-
-        <!-- SPACEX -->
-        <article class="widget" id="spacex-widget">
-
-            <header class="widget-header">
-                <div class="widget-icon">
-                    <svg viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="1.6">
-                        <path d="M12 3l3 8-3 10-3-10 3-8z"/>
-                        <path d="M9 11H5l4 4m6-4h4l-4 4"/>
-                    </svg>
-                </div>
-                <div>
-                    <h2 class="widget-title">SpaceX</h2>
-                    <p class="widget-subtitle">Upcoming launch</p>
-                </div>
+        <!-- СОБЫТИЯ -->
+        <article class="widget-card"
+                 data-widget-id="events"
+                 data-widget-title="События">
+            <header class="widget-head">
+                <span class="widget-drag-handle" title="Перетащить" aria-hidden="true">⠿</span>
+                <span class="widget-title">Ближайшие события</span>
+                <span class="widget-head-actions">
+                    <button type="button" class="widget-control" data-widget-action="size" title="Изменить ширину" aria-label="Изменить ширину">⤢</button>
+                    <button type="button" class="widget-control" data-widget-action="hide" title="Скрыть" aria-label="Скрыть">✕</button>
+                </span>
             </header>
-
-            <div class="widget-content">
-                <h3 class="launch-name" id="launch-name">Loading launch…</h3>
-
-                <p class="launch-details" id="launch-details">
-                    Retrieving mission information.
-                </p>
-
-                <div class="countdown-label">TIME UNTIL LAUNCH</div>
-                <div class="countdown" id="launch-countdown">—</div>
-
-                <div class="launch-date" id="launch-date">
-                    Scheduled date: loading…
+            <div class="widget-body">
+                <div class="list-rows">
+                    {% for event in events %}
+                    <a class="list-row" href="{% url 'events_list' %}">
+                        <span class="list-row-icon">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        </span>
+                        <div class="list-row-main">
+                            <div class="list-row-title">{{ event.title }}</div>
+                            <div class="list-row-sub">{{ event.date|date:"j M, H:i" }}{% if event.location %} · {{ event.location }}{% endif %}</div>
+                        </div>
+                    </a>
+                    {% empty %}
+                    <div class="widget-empty">Предстоящих событий пока нет.</div>
+                    {% endfor %}
                 </div>
+            </div>
+        </article>
 
-                <div class="widget-status" id="launch-status">
-                    <span class="status-dot loading"></span>Connecting
+        <!-- APPLE -->
+        <article class="widget-card widget-wide"
+                 data-widget-id="chart-aapl"
+                 data-widget-title="Apple"
+                 data-size="wide">
+            <header class="widget-head">
+                <span class="widget-drag-handle" title="Перетащить" aria-hidden="true">⠿</span>
+                <span class="widget-title">Apple · AAPL</span>
+                <span class="widget-head-actions">
+                    <button type="button" class="widget-control" data-widget-action="size" title="Изменить ширину" aria-label="Изменить ширину">⤢</button>
+                    <button type="button" class="widget-control" data-widget-action="hide" title="Скрыть" aria-label="Скрыть">✕</button>
+                </span>
+            </header>
+            <div class="widget-body">
+                <div class="chart-box" id="chart-aapl"></div>
+            </div>
+        </article>
+
+        <!-- TESLA -->
+        <article class="widget-card widget-wide"
+                 data-widget-id="chart-tsla"
+                 data-widget-title="Tesla"
+                 data-size="wide">
+            <header class="widget-head">
+                <span class="widget-drag-handle" title="Перетащить" aria-hidden="true">⠿</span>
+                <span class="widget-title">Tesla · TSLA</span>
+                <span class="widget-head-actions">
+                    <button type="button" class="widget-control" data-widget-action="size" title="Изменить ширину" aria-label="Изменить ширину">⤢</button>
+                    <button type="button" class="widget-control" data-widget-action="hide" title="Скрыть" aria-label="Скрыть">✕</button>
+                </span>
+            </header>
+            <div class="widget-body">
+                <div class="chart-box" id="chart-tsla"></div>
+            </div>
+        </article>
+
+        <!-- НОВОСТИ -->
+        <article class="widget-card"
+                 data-widget-id="news"
+                 data-widget-title="Новости">
+            <header class="widget-head">
+                <span class="widget-drag-handle" title="Перетащить" aria-hidden="true">⠿</span>
+                <span class="widget-title">Новости</span>
+                <span class="widget-head-actions">
+                    <button type="button" class="widget-control" data-widget-action="size" title="Изменить ширину" aria-label="Изменить ширину">⤢</button>
+                    <button type="button" class="widget-control" data-widget-action="hide" title="Скрыть" aria-label="Скрыть">✕</button>
+                </span>
+            </header>
+            <div class="widget-body">
+                <div class="widget-toolbar">
+                    <span class="widget-toolbar-label">Свежие заголовки</span>
+                    <button type="button" class="widget-refresh" id="news-refresh" title="Обновить" aria-label="Обновить">↻</button>
                 </div>
+                <div class="news-list" id="news-list"></div>
             </div>
         </article>
 
     </section>
-</main>
+</div>
 {% endblock %}
 
-
 {% block extra_scripts %}
-<script>
-(() => {
-    "use strict";
-
-    const $ = id => document.getElementById(id);
-
-    async function getJSON(url) {
-        const response = await fetch(url);
-
-        if (!response.ok) {
-            throw new Error(`Request failed: ${response.status}`);
-        }
-
-        return response.json();
-    }
-
-    function setStatus(id, message, loading = false) {
-        const el = $(id);
-        el.replaceChildren();
-
-        const dot = document.createElement("span");
-        dot.className = "status-dot" + (loading ? " loading" : "");
-
-        el.append(dot, document.createTextNode(message));
-    }
-
-    /* WEATHER — Open-Meteo */
-
-    const weatherDescriptions = {
-        0: "Clear sky",
-        1: "Mainly clear",
-        2: "Partly cloudy",
-        3: "Overcast",
-        45: "Fog",
-        48: "Depositing rime fog",
-        51: "Light drizzle",
-        53: "Drizzle",
-        55: "Dense drizzle",
-        61: "Slight rain",
-        63: "Rain",
-        65: "Heavy rain",
-        71: "Slight snowfall",
-        73: "Snowfall",
-        75: "Heavy snowfall",
-        80: "Rain showers",
-        81: "Rain showers",
-        82: "Heavy rain showers",
-        95: "Thunderstorm",
-        96: "Thunderstorm with hail",
-        99: "Thunderstorm with hail"
-    };
-
-    async function loadWeather() {
-        const city = $("weather-widget").dataset.city || "Tomsk";
-
-        try {
-            const geoURL = new URL(
-                "https://geocoding-api.open-meteo.com/v1/search"
-            );
-            geoURL.search = new URLSearchParams({
-                name: city,
-                count: "1",
-                language: "en",
-                format: "json"
-            });
-
-            const geo = await getJSON(geoURL);
-
-            if (!geo.results || !geo.results.length) {
-                throw new Error("City not found");
-            }
-
-            const place = geo.results[0];
-
-            $("weather-city").textContent =
-                [place.name, place.country].filter(Boolean).join(", ");
-
-            const forecastURL = new URL(
-                "https://api.open-meteo.com/v1/forecast"
-            );
-
-            forecastURL.search = new URLSearchParams({
-                latitude: String(place.latitude),
-                longitude: String(place.longitude),
-                current: [
-                    "temperature_2m",
-                    "relative_humidity_2m",
-                    "apparent_temperature",
-                    "weather_code",
-                    "wind_speed_10m"
-                ].join(","),
-                timezone: "auto"
-            });
-
-            const forecast = await getJSON(forecastURL);
-            const current = forecast.current;
-
-            if (!current) throw new Error("No current weather data");
-
-            $("weather-temperature").textContent =
-                `${Math.round(current.temperature_2m)}°`;
-
-            $("weather-description").textContent =
-                weatherDescriptions[current.weather_code] ||
-                "Current conditions";
-
-            $("weather-feels").textContent =
-                `${Math.round(current.apparent_temperature)}°`;
-
-            $("weather-humidity").textContent =
-                `${current.relative_humidity_2m}%`;
-
-            $("weather-wind").textContent =
-                `${Math.round(current.wind_speed_10m)} km/h`;
-
-            setStatus("weather-status", "Live weather");
-        } catch (error) {
-            $("weather-description").textContent =
-                "Weather data is currently unavailable.";
-            setStatus("weather-status", "Connection unavailable", true);
-            console.error("Weather widget:", error);
-        }
-    }
-
-    /* SPACEX — next launch */
-
-    let launchTimestamp = null;
-    let countdownTimer = null;
-
-    function updateCountdown() {
-        if (!launchTimestamp) return;
-
-        const remaining = launchTimestamp - Date.now();
-
-        if (remaining <= 0) {
-            $("launch-countdown").textContent = "Launch time reached";
-            return;
-        }
-
-        const totalSeconds = Math.floor(remaining / 1000);
-        const days = Math.floor(totalSeconds / 86400);
-        const hours = Math.floor((totalSeconds % 86400) / 3600);
-        const minutes = Math.floor((totalSeconds % 3600) / 60);
-        const seconds = totalSeconds % 60;
-
-        $("launch-countdown").textContent =
-            `${days}d ${String(hours).padStart(2, "0")}:` +
-            `${String(minutes).padStart(2, "0")}:` +
-            `${String(seconds).padStart(2, "0")}`;
-    }
-
-    async function loadSpaceX() {
-        try {
-            const launch = await getJSON(
-                "https://api.spacexdata.com/v4/launches/next"
-            );
-
-            if (!launch || !launch.name || !launch.date_utc) {
-                throw new Error("No upcoming launch returned");
-            }
-
-            $("launch-name").textContent = launch.name;
-
-            $("launch-details").textContent =
-                launch.details || "Upcoming SpaceX mission.";
-
-            const date = new Date(launch.date_utc);
-
-            if (Number.isNaN(date.getTime())) {
-                throw new Error("Invalid launch date");
-            }
-
-            launchTimestamp = date.getTime();
-
-            $("launch-date").textContent =
-                "Scheduled: " +
-                new Intl.DateTimeFormat(undefined, {
-                    dateStyle: "medium",
-                    timeStyle: "short"
-                }).format(date);
-
-            updateCountdown();
-
-            if (!countdownTimer) {
-                countdownTimer = setInterval(updateCountdown, 1000);
-            }
-
-            setStatus("launch-status", "Launch data loaded");
-        } catch (error) {
-            $("launch-name").textContent = "Launch data unavailable";
-            $("launch-details").textContent =
-                "The launch feed could not be reached. It will retry automatically.";
-            $("launch-date").textContent = "";
-            setStatus("launch-status", "Connection unavailable", true);
-
-            console.error("SpaceX widget:", error);
-        }
-    }
-
-    loadWeather();
-    loadSpaceX();
-
-    // Refresh automatically; no buttons required.
-    setInterval(loadWeather, 10 * 60 * 1000);
-    setInterval(loadSpaceX, 5 * 60 * 1000);
-})();
-</script>
+<script src="{% static 'js/dashboard.js' %}" defer></script>
 {% endblock %}

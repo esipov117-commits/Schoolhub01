@@ -1339,21 +1339,21 @@
             : '';
         return '' +
             '<div class="card post-card" id="post-' + d.id + '" data-post-id="' + d.id + '">' +
-            '  <div style="display:flex; justify-content:space-between; align-items:center;">' +
-            '    <div style="display:flex; align-items:center; gap:10px;">' +
+            '  <div class="post-head-row">' +
+            '    <div class="post-head-left">' +
             '      <a href="' + profileUrl + '"><span class="post-avatar">' +
                       avatarHtml(d.author, d.author_avatar) + '</span></a>' +
-            '      <div><a href="' + profileUrl + '" style="text-decoration:none; color:inherit;">' +
+            '      <div class="post-author-wrap"><a href="' + profileUrl + '" style="text-decoration:none; color:inherit;">' +
             '        <span class="post-author">' + esc(d.author) + '</span></a>' +
             '        <span class="post-time" title="' + esc(fullDate(d.created_at)) + '">' +
                       esc(timeAgo(d.created_at)) + '<span class="post-edited" style="display:none;"> · изменено</span></span></div>' +
             '    </div>' +
-            '    <div style="display:flex; align-items:center; gap:2px;">' +
-            '      <button type="button" class="edit-post-btn" data-post-id="' + d.id +
-                  '" title="Редактировать" style="background:none;border:none;color:var(--muted);cursor:pointer;display:flex;align-items:center;padding:4px;">' +
+            '    <div class="post-owner-actions">' +
+            '      <button type="button" class="edit-post-btn post-ctrl-btn" data-post-id="' + d.id +
+                  '" title="Редактировать" aria-label="Редактировать">' +
                       PENCIL_SVG + '</button>' +
-            '      <button type="button" class="delete-post-btn" data-post-id="' + d.id +
-                  '" style="background:none;border:none;color:var(--muted);cursor:pointer;display:flex;align-items:center;padding:4px;">' +
+            '      <button type="button" class="delete-post-btn post-ctrl-btn danger" data-post-id="' + d.id +
+                  '" title="Удалить" aria-label="Удалить">' +
                   '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/></svg>' +
             '    </button>' +
             '    </div>' +
@@ -1411,4 +1411,14 @@
     bindAll(document);
     refreshStoriesBar();
     document.querySelectorAll('.comments-block').forEach(function (b) { b.style.display = 'none'; });
+
+    /* Мобильная клавиатура: подскроллить поле комментария в видимую область */
+    document.addEventListener('focusin', function (e) {
+        var t = e.target;
+        if (!t || !t.matches || !t.matches('.add-comment-form input[name="text"]')) return;
+        setTimeout(function () {
+            try { t.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+            catch (err) { t.scrollIntoView(); }
+        }, 300);
+    });
 })();
