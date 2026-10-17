@@ -41,6 +41,23 @@ class Story(models.Model):
         return timezone.now() >= self.expires_at
 
 
+class StoryLike(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='story_likes',
+    )
+    story = models.ForeignKey(
+        Story,
+        on_delete=models.CASCADE,
+        related_name='likes',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'story')
+
+
 class StoryView(models.Model):
     story = models.ForeignKey(
         Story,
