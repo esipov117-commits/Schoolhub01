@@ -78,6 +78,12 @@ class CommentReplyTests(TestCase):
             Comment.objects.filter(post=self.post, text='bad').exists()
         )
 
+    def test_carousel_media_not_huge_vertically(self):
+        css = (settings.BASE_DIR / 'static' / 'css' / 'feed.css').read_text(encoding='utf-8')
+        self.assertIn('max-height: 50vh', css)
+        self.assertIn('object-fit: cover', css)
+        self.assertNotIn('max-height: 75vh', css)
+
     def test_comments_total_includes_replies(self):
         root = Comment.objects.create(
             post=self.post, author=self.author, text='root',
