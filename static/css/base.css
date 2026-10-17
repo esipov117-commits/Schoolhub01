@@ -114,9 +114,11 @@ img {
     background: var(--sidebar-active-bg);
     border: none;
     border-radius: 999px;
-    padding: 9px 16px;
+    padding: 0 16px;
     color: var(--muted);
     width: 300px;
+    height: 100%;
+    align-self: stretch;
     display: flex;
     align-items: center;
     gap: 10px;
