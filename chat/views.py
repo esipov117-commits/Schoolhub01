@@ -217,8 +217,8 @@ def unread_api(request):
 @require_POST
 def start_chat(request):
     username = request.POST.get('username', '').strip()
-    other = get_object_or_404(User, username=username)
-    if other == request.user:
+    other = User.objects.filter(username=username).first()
+    if not other or other == request.user:
         return redirect('chat')
 
     chat = (
