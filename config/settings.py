@@ -28,7 +28,7 @@ CHAT_MASTER_KEY = config('CHAT_MASTER_KEY', default='')
 # По умолчанию DEBUG=False — безопаснее. Локально явно ставь DEBUG=True в .env
 DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = ['129.101.113.88', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['129.101.113.88', 'localhost', '127.0.0.1', '0.0.0.0', '10.0.2.2', '192.168.0.22']
 
 CSRF_TRUSTED_ORIGINS = [
     'http://129.101.113.88',

@@ -171,7 +171,7 @@ document.addEventListener("DOMContentLoaded", function () {
     var indicator = null;
     var activeLink = null;
 
-    if (bottomNav) {
+    if (bottomNav && !reduce) {
         activeLink = bottomNav.querySelector('a.active') || bottomNav.querySelector('a');
 
         indicator = document.createElement('span');
@@ -198,39 +198,69 @@ document.addEventListener("DOMContentLoaded", function () {
         window.addEventListener('resize', function () { place(activeLink, false); });
     }
 
-    if (reduce) return;
+    var layout = document.querySelector('.layout');
+    if (!layout) return;
 
-    var navLinks = document.querySelectorAll('.sidebar a, .bottom-nav a');
-
-    navLinks.forEach(function (link) {
-        link.addEventListener('click', function (event) {
-            if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-            if (event.button !== 0) return;
-
-            var href = link.getAttribute('href');
-            if (!href || href.charAt(0) === '#' || link.target === '_blank') return;
-
-            event.preventDefault();
-
-            var icon = link.querySelector('svg');
-            if (icon) {
-                icon.style.animation = 'none';
-                void icon.offsetWidth;
-                icon.style.animation = 'navIconPop .38s cubic-bezier(.34, 1.56, .64, 1)';
-            }
-
-            if (indicator && bottomNav.contains(link)) {
-                activeLink = link;
-                place(link, true);
-                bottomNav.querySelectorAll('a').forEach(function (a) {
-                    a.classList.remove('active');
-                });
-                link.classList.add('active');
-            }
-
-            setTimeout(function () {
-                window.location.href = href;
-            }, 130);
+    if (!window.__loadedScripts) {
+        window.__loadedScripts = {};
+        document.querySelectorAll('script[src]').forEach(function (s) {
+            window.__loadedScripts[s.getAttribute('src')] = true;
         });
+    }
+
+    function activate(root) {
+        root.querySelectorAll('script:not([src])').forEach(function (old) {
+            var s = document.createElement('script');
+            s.textContent = old.textContent;
+            old.replaceWith(s);
+        });
+        root.querySelectorAll('script[src]').forEach(function (old) {
+            var src = old.getAttribute('src');
+            if (window.__loadedScripts[src]) return;
+            window.__loadedScripts[src] = true;
+            var s = document.createElement('script');
+            s.setAttribute('src', src);
+            old.replaceWith(s);
+        });
+    }
+
+    function navigate(url, push) {
+        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function (r) { return r.text(); })
+            .then(function (html) {
+                var doc = new DOMParser().parseFromString(html, 'text/html');
+                var newLayout = doc.querySelector('.layout');
+                if (!newLayout) { window.location.href = url; return; }
+                layout.innerHTML = newLayout.innerHTML;
+                activate(layout);
+
+                var pageScripts = document.getElementById('pageScripts');
+                var newScripts = doc.getElementById('pageScripts');
+                if (pageScripts && newScripts) {
+                    pageScripts.innerHTML = newScripts.innerHTML;
+                    activate(pageScripts);
+                }
+
+                document.title = doc.title;
+                if (push) history.pushState({ spa: true }, '', url);
+
+                if (window.__pageInits) window.__pageInits.forEach(function (init) { init(); });
+            })
+            .catch(function () { window.location.href = url; });
+    }
+
+    document.addEventListener('click', function (e) {
+        var a = e.target.closest('a');
+        if (!a) return;
+        var href = a.getAttribute('href');
+        if (!href || href.charAt(0) !== '/' || href.charAt(1) === '/') return;
+        if (a.target === '_blank') return;
+        if (a.closest('form')) return;
+        e.preventDefault();
+        navigate(a.getAttribute('href'), true);
+    });
+
+    window.addEventListener('popstate', function () {
+        navigate(location.pathname + location.search, false);
     });
 })();
