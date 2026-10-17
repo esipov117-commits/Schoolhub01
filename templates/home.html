@@ -1,230 +1,600 @@
 {% extends "base.html" %}
+{% load static %}
+
+{% block title %}Dashboard{% endblock %}
+
 {% block extra_head %}
 <style>
-    .mobile-events { display: none; }
-    @media (max-width: 1060px) {
-        .mobile-events { display: block; }
+    :root {
+        --bg: #1c1c1e;
+        --card: #2c2c2e;
+        --border: #414144;
+        --text: #f5f5f7;
+        --muted: #98989d;
+        --blue: #0a84ff;
+        --green: #30d158;
+    }
+
+    body {
+        margin: 0;
+        background: var(--bg) !important;
+        color: var(--text);
+        font-family: -apple-system, BlinkMacSystemFont,
+            "SF Pro Display", "Segoe UI", sans-serif;
+        -webkit-font-smoothing: antialiased;
+    }
+
+    .dashboard {
+        max-width: 1440px;
+        min-height: 100vh;
+        padding: 48px 36px;
+        margin: auto;
+    }
+
+    .dashboard-header {
+        margin-bottom: 32px;
+    }
+
+    .dashboard-header h1 {
+        margin: 0;
+        font-size: 30px;
+        font-weight: 700;
+        letter-spacing: -1px;
+    }
+
+    .dashboard-header p {
+        margin: 7px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+    }
+
+    .widgets {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        align-items: stretch;
+        gap: 18px;
+    }
+
+    .widget {
+        min-width: 0;
+        min-height: 390px;
+        padding: 24px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: var(--card);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, .12);
+        transition: background .2s ease, border-color .2s ease;
+    }
+
+    .widget:hover {
+        background: #303033;
+        border-color: #555559;
+    }
+
+    .widget-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .widget-icon {
+        display: grid;
+        place-items: center;
+        width: 38px;
+        height: 38px;
+        flex-shrink: 0;
+        border-radius: 10px;
+        background: #3a3a3c;
+        color: #dedee3;
+    }
+
+    .widget-icon svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .widget-title {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 600;
+    }
+
+    .widget-subtitle {
+        margin: 4px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+    }
+
+    .widget-content {
+        padding-top: 24px;
+    }
+
+    .big-value {
+        margin: 0;
+        font-size: 48px;
+        line-height: 1.15;
+        font-weight: 600;
+        letter-spacing: -2px;
+    }
+
+    .description {
+        margin: 9px 0 25px;
+        color: #b0b0b6;
+        font-size: 13px;
+    }
+
+    .data-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        min-height: 39px;
+        border-bottom: 1px solid rgba(255,255,255,.055);
+        font-size: 12px;
+    }
+
+    .data-row:last-child {
+        border-bottom: 0;
+    }
+
+    .data-label {
+        color: #c5c5ca;
+    }
+
+    .data-value {
+        color: var(--text);
+        text-align: right;
+    }
+
+    .widget-status {
+        margin-top: 20px;
+        color: var(--muted);
+        font-size: 11px;
+    }
+
+    .status-dot {
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        margin-right: 7px;
+        border-radius: 50%;
+        background: var(--green);
+        vertical-align: middle;
+    }
+
+    .status-dot.loading {
+        background: #ffbd2e;
+    }
+
+    /* Apple quote embed */
+
+    .stock-content {
+        padding-top: 16px;
+    }
+
+    .tradingview-widget-container,
+    .tradingview-widget-container__widget {
+        width: 100% !important;
+        min-height: 240px;
+    }
+
+    .tradingview-widget-container iframe {
+        max-width: 100%;
+    }
+
+    /* SpaceX */
+
+    .launch-name {
+        min-height: 52px;
+        margin: 0 0 8px;
+        font-size: 23px;
+        font-weight: 600;
+        line-height: 1.3;
+        letter-spacing: -.6px;
+        overflow-wrap: anywhere;
+    }
+
+    .launch-details {
+        min-height: 36px;
+        margin: 0 0 23px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.6;
+    }
+
+    .countdown-label {
+        margin-bottom: 8px;
+        color: var(--muted);
+        font-size: 11px;
+    }
+
+    .countdown {
+        font-size: 27px;
+        font-variant-numeric: tabular-nums;
+        font-weight: 600;
+        letter-spacing: -.8px;
+    }
+
+    .launch-date {
+        margin-top: 18px;
+        color: #c5c5ca;
+        font-size: 12px;
+        line-height: 1.6;
+    }
+
+    @media (max-width: 1050px) {
+        .widgets {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 680px) {
+        .dashboard {
+            padding: 28px 16px;
+        }
+
+        .widgets {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .widget {
+            min-height: 350px;
+        }
+
+        .dashboard-header h1 {
+            font-size: 27px;
+        }
     }
 </style>
 {% endblock %}
 
+
 {% block content %}
+<main class="dashboard">
 
-<div class="card">
-    <h2 style="font-size:28px; margin-bottom:6px;">
-        Добрый день, {{ user.profile.display_name|default:user.username }} 
-    </h2>
-    <p style="color:var(--muted); font-size:15px;">
-        Сегодня отличный день, чтобы сделать всё запланированное.
-    </p>
-</div>
+    <header class="dashboard-header">
+        <h1>Dashboard</h1>
+        <p>{% now "l, d E Y" %}</p>
+    </header>
 
-<div style="height:16px;"></div>
+    <section class="widgets">
 
-<div class="card">
-    <div class="card-header">
-        <div class="card-title"><svg class="i"><use href="#i-note"></use></svg> Сегодня</div>
-        <button
-            class="card-link"
-            onclick="openTaskModal()"
-            style="border:none;background:none;cursor:pointer;">
-            + Добавить
-        </button>
-    </div>
+        <!-- WEATHER -->
+        <article class="widget" id="weather-widget"
+                 data-city="{{ weather_default_city|default:'Tomsk'|escape }}">
 
-    {% if tasks %}
-    <div style="display:flex; flex-direction:column; gap:12px;">
-        {% for task in tasks %}
-        <div style="
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            padding:12px;
-            background:var(--bg);
-            border-radius:12px;
-        ">
-            <form method="POST" action="{% url 'tasks:complete_task' task.id %}">
-                {% csrf_token %}
-                <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
-                    <input
-                        type="checkbox"
-                        onchange="this.form.submit()"
-                        {% if task.completed %}checked{% endif %}
-                    >
-                    <span {% if task.completed %}style="text-decoration:line-through;color:var(--muted);"{% endif %}>
-                        {{ task.title }}
-                    </span>
-                </label>
-            </form>
-
-            <a href="{% url 'tasks:delete_task' task.id %}" style="color:red; text-decoration:none;" aria-label="Удалить задачу">
-                <svg class="i"><use href="#i-trash"></use></svg>
-            </a>
-        </div>
-        {% endfor %}
-    </div>
-    {% else %}
-    <div style="text-align:center; padding:25px; color:var(--muted);">
-        Пока задач нет <svg class="i"><use href="#i-smile"></use></svg>
-    </div>
-    {% endif %}
-</div>
-
-<div style="height:16px;" class="mobile-events"></div>
-
-<div class="card mobile-events">
-    <div class="card-header">
-        <div class="card-title"><svg class="i"><use href="#i-calendar"></use></svg> Ближайшие события</div>
-        <a href="{% url 'events_list' %}" class="card-link">Все</a>
-    </div>
-
-    {% if upcoming_events %}
-    <div style="display:flex; flex-direction:column; gap:12px;">
-        {% for event in upcoming_events %}
-        <a href="{% url 'events_list' %}" style="
-            display:flex;
-            gap:14px;
-            padding:12px;
-            background:var(--bg);
-            border-radius:12px;
-            text-decoration:none;
-            color:inherit;
-        ">
-            {% if event.image %}
-            <img src="{{ event.image.url }}" alt="{{ event.title }}" loading="lazy" decoding="async" style="
-                width:56px;
-                height:56px;
-                border-radius:10px;
-                object-fit:cover;
-                flex-shrink:0;
-            ">
-            {% else %}
-            <div style="
-                width:56px;
-                height:56px;
-                border-radius:10px;
-                background:var(--panel);
-                display:flex;
-                align-items:center;
-                justify-content:center;
-                flex-shrink:0;
-                font-size:22px;
-            "><svg class="i" style="width:22px; height:22px; color:var(--muted);"><use href="#i-calendar"></use></svg></div>
-            {% endif %}
-
-            <div style="min-width:0;">
-                <div style="font-weight:700; font-size:14.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                    {{ event.title }}
+            <header class="widget-header">
+                <div class="widget-icon">
+                    <svg viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="1.6">
+                        <circle cx="12" cy="12" r="4"/>
+                        <path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42
+                                 M17.65 17.65l1.42 1.42M2 12h2m16 0h2
+                                 M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42"/>
+                    </svg>
                 </div>
-                <div style="color:var(--muted); font-size:13px; margin-top:2px;">
-                    {{ event.date|date:"d.m, H:i" }}
+                <div>
+                    <h2 class="widget-title">Weather</h2>
+                    <p class="widget-subtitle" id="weather-city">Loading…</p>
+                </div>
+            </header>
+
+            <div class="widget-content">
+                <p class="big-value" id="weather-temperature">—°</p>
+                <p class="description" id="weather-description">
+                    Loading current conditions…
+                </p>
+
+                <div class="data-row">
+                    <span class="data-label">Feels like</span>
+                    <span class="data-value" id="weather-feels">—</span>
+                </div>
+
+                <div class="data-row">
+                    <span class="data-label">Humidity</span>
+                    <span class="data-value" id="weather-humidity">—</span>
+                </div>
+
+                <div class="data-row">
+                    <span class="data-label">Wind</span>
+                    <span class="data-value" id="weather-wind">—</span>
+                </div>
+
+                <div class="widget-status" id="weather-status">
+                    <span class="status-dot loading"></span>Connecting
                 </div>
             </div>
-        </a>
-        {% endfor %}
-    </div>
-    {% else %}
-    <div style="text-align:center; padding:25px; color:var(--muted);">
-        Событий пока нет <svg class="i"><use href="#i-inbox"></use></svg>
-    </div>
-    {% endif %}
-</div>
+        </article>
 
-<!-- Модальное окно -->
-<div id="taskModal" style="
-    display:none;
-    position:fixed;
-    top:50%;
-    left:50%;
-    transform:translate(-50%, -50%);
-    width:350px;
-    background:var(--panel);
-    padding:24px;
-    border-radius:18px;
-    box-shadow:0 15px 40px rgba(0,0,0,.25);
-    z-index:1000;
-">
-    <h3 style="margin-top:0;">Новая задача</h3>
 
-    <form method="POST" action="{% url 'tasks:create_task' %}">
-        {% csrf_token %}
-        <input
-            type="text"
-            name="title"
-            placeholder="Что нужно сделать?"
-            required
-            style="width:100%; margin-bottom:12px;">
-        <button class="btn-primary">Добавить</button>
-        <button type="button" onclick="closeTaskModal()" style="margin-left:10px; cursor:pointer;">
-            Отмена
-        </button>
-    </form>
-</div>
+        <!-- APPLE STOCK -->
+        <article class="widget">
+            <header class="widget-header">
+                <div class="widget-icon">
+                    <svg viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="1.6">
+                        <path d="M3 17l6-6 4 3 8-9"/>
+                        <path d="M15 5h6v6"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="widget-title">Apple Inc.</h2>
+                    <p class="widget-subtitle">AAPL · NASDAQ</p>
+                </div>
+            </header>
 
-<script>
-function openTaskModal(){
-    document.getElementById("taskModal").style.display = "block";
-}
-function closeTaskModal(){
-    document.getElementById("taskModal").style.display = "none";
-}
-</script>
+            <div class="stock-content">
+                <div class="tradingview-widget-container">
+                    <div class="tradingview-widget-container__widget"></div>
+                    <script
+                        type="text/javascript"
+                        src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-info.js"
+                        async
+                    >
+                    {
+                        "symbol": "NASDAQ:AAPL",
+                        "width": "100%",
+                        "locale": "en",
+                        "colorTheme": "dark",
+                        "isTransparent": true
+                    }
+                    </script>
+                </div>
+            </div>
+        </article>
 
+
+        <!-- SPACEX -->
+        <article class="widget" id="spacex-widget">
+
+            <header class="widget-header">
+                <div class="widget-icon">
+                    <svg viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="1.6">
+                        <path d="M12 3l3 8-3 10-3-10 3-8z"/>
+                        <path d="M9 11H5l4 4m6-4h4l-4 4"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="widget-title">SpaceX</h2>
+                    <p class="widget-subtitle">Upcoming launch</p>
+                </div>
+            </header>
+
+            <div class="widget-content">
+                <h3 class="launch-name" id="launch-name">Loading launch…</h3>
+
+                <p class="launch-details" id="launch-details">
+                    Retrieving mission information.
+                </p>
+
+                <div class="countdown-label">TIME UNTIL LAUNCH</div>
+                <div class="countdown" id="launch-countdown">—</div>
+
+                <div class="launch-date" id="launch-date">
+                    Scheduled date: loading…
+                </div>
+
+                <div class="widget-status" id="launch-status">
+                    <span class="status-dot loading"></span>Connecting
+                </div>
+            </div>
+        </article>
+
+    </section>
+</main>
 {% endblock %}
 
-{% block sidebar_extra %}
-<div class="card">
-    <div class="card-header">
-        <div class="card-title"><svg class="i"><use href="#i-calendar"></use></svg> Ближайшие события</div>
-        <a href="{% url 'events_list' %}" class="card-link">Все</a>
-    </div>
 
-    {% if upcoming_events %}
-    <div style="display:flex; flex-direction:column; gap:10px;">
-        {% for event in upcoming_events %}
-        <a href="{% url 'events_list' %}" style="
-            display:flex;
-            gap:10px;
-            text-decoration:none;
-            color:inherit;
-        ">
-            {% if event.image %}
-            <img src="{{ event.image.url }}" alt="{{ event.title }}" loading="lazy" decoding="async" style="
-                width:44px;
-                height:44px;
-                border-radius:8px;
-                object-fit:cover;
-                flex-shrink:0;
-            ">
-            {% else %}
-            <div style="
-                width:44px;
-                height:44px;
-                border-radius:8px;
-                background:var(--bg);
-                display:flex;
-                align-items:center;
-                justify-content:center;
-                flex-shrink:0;
-                font-size:18px;
-            "><svg class="i" style="width:18px; height:18px; color:var(--muted);"><use href="#i-calendar"></use></svg></div>
-            {% endif %}
+{% block extra_scripts %}
+<script>
+(() => {
+    "use strict";
 
-            <div style="min-width:0;">
-                <div style="font-weight:600; font-size:13.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                    {{ event.title }}
-                </div>
-                <div style="color:var(--muted); font-size:12px; margin-top:1px;">
-                    {{ event.date|date:"d.m, H:i" }}
-                </div>
-            </div>
-        </a>
-        {% endfor %}
-    </div>
-    {% else %}
-    <div style="text-align:center; padding:16px; color:var(--muted); font-size:13.5px;">
-        Событий пока нет <svg class="i"><use href="#i-inbox"></use></svg>
-    </div>
-    {% endif %}
-</div>
+    const $ = id => document.getElementById(id);
+
+    async function getJSON(url) {
+        const response = await fetch(url);
+
+        if (!response.ok) {
+            throw new Error(`Request failed: ${response.status}`);
+        }
+
+        return response.json();
+    }
+
+    function setStatus(id, message, loading = false) {
+        const el = $(id);
+        el.replaceChildren();
+
+        const dot = document.createElement("span");
+        dot.className = "status-dot" + (loading ? " loading" : "");
+
+        el.append(dot, document.createTextNode(message));
+    }
+
+    /* WEATHER — Open-Meteo */
+
+    const weatherDescriptions = {
+        0: "Clear sky",
+        1: "Mainly clear",
+        2: "Partly cloudy",
+        3: "Overcast",
+        45: "Fog",
+        48: "Depositing rime fog",
+        51: "Light drizzle",
+        53: "Drizzle",
+        55: "Dense drizzle",
+        61: "Slight rain",
+        63: "Rain",
+        65: "Heavy rain",
+        71: "Slight snowfall",
+        73: "Snowfall",
+        75: "Heavy snowfall",
+        80: "Rain showers",
+        81: "Rain showers",
+        82: "Heavy rain showers",
+        95: "Thunderstorm",
+        96: "Thunderstorm with hail",
+        99: "Thunderstorm with hail"
+    };
+
+    async function loadWeather() {
+        const city = $("weather-widget").dataset.city || "Tomsk";
+
+        try {
+            const geoURL = new URL(
+                "https://geocoding-api.open-meteo.com/v1/search"
+            );
+            geoURL.search = new URLSearchParams({
+                name: city,
+                count: "1",
+                language: "en",
+                format: "json"
+            });
+
+            const geo = await getJSON(geoURL);
+
+            if (!geo.results || !geo.results.length) {
+                throw new Error("City not found");
+            }
+
+            const place = geo.results[0];
+
+            $("weather-city").textContent =
+                [place.name, place.country].filter(Boolean).join(", ");
+
+            const forecastURL = new URL(
+                "https://api.open-meteo.com/v1/forecast"
+            );
+
+            forecastURL.search = new URLSearchParams({
+                latitude: String(place.latitude),
+                longitude: String(place.longitude),
+                current: [
+                    "temperature_2m",
+                    "relative_humidity_2m",
+                    "apparent_temperature",
+                    "weather_code",
+                    "wind_speed_10m"
+                ].join(","),
+                timezone: "auto"
+            });
+
+            const forecast = await getJSON(forecastURL);
+            const current = forecast.current;
+
+            if (!current) throw new Error("No current weather data");
+
+            $("weather-temperature").textContent =
+                `${Math.round(current.temperature_2m)}°`;
+
+            $("weather-description").textContent =
+                weatherDescriptions[current.weather_code] ||
+                "Current conditions";
+
+            $("weather-feels").textContent =
+                `${Math.round(current.apparent_temperature)}°`;
+
+            $("weather-humidity").textContent =
+                `${current.relative_humidity_2m}%`;
+
+            $("weather-wind").textContent =
+                `${Math.round(current.wind_speed_10m)} km/h`;
+
+            setStatus("weather-status", "Live weather");
+        } catch (error) {
+            $("weather-description").textContent =
+                "Weather data is currently unavailable.";
+            setStatus("weather-status", "Connection unavailable", true);
+            console.error("Weather widget:", error);
+        }
+    }
+
+    /* SPACEX — next launch */
+
+    let launchTimestamp = null;
+    let countdownTimer = null;
+
+    function updateCountdown() {
+        if (!launchTimestamp) return;
+
+        const remaining = launchTimestamp - Date.now();
+
+        if (remaining <= 0) {
+            $("launch-countdown").textContent = "Launch time reached";
+            return;
+        }
+
+        const totalSeconds = Math.floor(remaining / 1000);
+        const days = Math.floor(totalSeconds / 86400);
+        const hours = Math.floor((totalSeconds % 86400) / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+
+        $("launch-countdown").textContent =
+            `${days}d ${String(hours).padStart(2, "0")}:` +
+            `${String(minutes).padStart(2, "0")}:` +
+            `${String(seconds).padStart(2, "0")}`;
+    }
+
+    async function loadSpaceX() {
+        try {
+            const launch = await getJSON(
+                "https://api.spacexdata.com/v4/launches/next"
+            );
+
+            if (!launch || !launch.name || !launch.date_utc) {
+                throw new Error("No upcoming launch returned");
+            }
+
+            $("launch-name").textContent = launch.name;
+
+            $("launch-details").textContent =
+                launch.details || "Upcoming SpaceX mission.";
+
+            const date = new Date(launch.date_utc);
+
+            if (Number.isNaN(date.getTime())) {
+                throw new Error("Invalid launch date");
+            }
+
+            launchTimestamp = date.getTime();
+
+            $("launch-date").textContent =
+                "Scheduled: " +
+                new Intl.DateTimeFormat(undefined, {
+                    dateStyle: "medium",
+                    timeStyle: "short"
+                }).format(date);
+
+            updateCountdown();
+
+            if (!countdownTimer) {
+                countdownTimer = setInterval(updateCountdown, 1000);
+            }
+
+            setStatus("launch-status", "Launch data loaded");
+        } catch (error) {
+            $("launch-name").textContent = "Launch data unavailable";
+            $("launch-details").textContent =
+                "The launch feed could not be reached. It will retry automatically.";
+            $("launch-date").textContent = "";
+            setStatus("launch-status", "Connection unavailable", true);
+
+            console.error("SpaceX widget:", error);
+        }
+    }
+
+    loadWeather();
+    loadSpaceX();
+
+    // Refresh automatically; no buttons required.
+    setInterval(loadWeather, 10 * 60 * 1000);
+    setInterval(loadSpaceX, 5 * 60 * 1000);
+})();
+</script>
 {% endblock %}

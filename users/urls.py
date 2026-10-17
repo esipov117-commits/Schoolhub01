@@ -1,4 +1,5 @@
 from django.urls import path
+from .dashboard_views import mission_dashboard, dashboard_news
 from . import views
 
 urlpatterns = [
@@ -15,4 +16,6 @@ urlpatterns = [
     path("search/", views.search_users, name="search_users"),
     path("profile/<str:username>/followers/", views.followers_list, name="followers_list"),
     path("profile/<str:username>/following/", views.following_list, name="following_list"),
+    path("", mission_dashboard, name="dashboard"),
+    path("dashboard/news/", dashboard_news, name="dashboard_news"),
 ]
