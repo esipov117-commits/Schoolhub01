@@ -1,4 +1,5 @@
-(function () {
+window.__pageInits = window.__pageInits || [];
+window.__pageInits.push(function () {
     "use strict";
 
     const root = document.getElementById("mission-dashboard");
@@ -867,9 +868,10 @@
 
     loadNews();
 
-    window.setInterval(
-        loadNews,
-        10 * 60 * 1000
-    );
-
-})();
+    if (!window.__newsInterval) {
+        window.__newsInterval = setInterval(
+            loadNews,
+            10 * 60 * 1000
+        );
+    }
+});

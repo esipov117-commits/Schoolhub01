@@ -601,10 +601,11 @@
             .catch(function () { loadingPosts = false; setFeedLoading(false); });
     }
 
-    if (feedLoading && 'IntersectionObserver' in window) {
-        new IntersectionObserver(function (entries) {
+    if (feedLoading && 'IntersectionObserver' in window && !window.__feedObserver) {
+        window.__feedObserver = new IntersectionObserver(function (entries) {
             entries.forEach(function (en) { if (en.isIntersecting) loadMorePosts(); });
-        }, { rootMargin: '600px' }).observe(feedLoading);
+        }, { rootMargin: '600px' });
+        window.__feedObserver.observe(feedLoading);
     }
 
     /* ====================== Лайтбокс ====================== */
@@ -1411,6 +1412,13 @@
     bindAll(document);
     refreshStoriesBar();
     document.querySelectorAll('.comments-block').forEach(function (b) { b.style.display = 'none'; });
+
+    window.__pageInits = window.__pageInits || [];
+    window.__pageInits.push(function () {
+        bindAll(document);
+        refreshStoriesBar();
+        document.querySelectorAll('.comments-block').forEach(function (b) { b.style.display = 'none'; });
+    });
 
     /* Мобильная клавиатура: подскроллить поле комментария в видимую область */
     document.addEventListener('focusin', function (e) {

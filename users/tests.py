@@ -57,6 +57,19 @@ class ProfileSectionPagesTests(TestCase):
         self.assertContains(response, 'profile-card-link')
         self.assertContains(response, 'href="/profile/"')
 
+    def test_spa_router_present(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse('feed'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="pageScripts"')
+        self.assertContains(response, 'js/base.')
+        base_js = (settings.BASE_DIR / 'static' / 'js' / 'base.js').read_text(encoding='utf-8')
+        self.assertIn('__pageInits', base_js)
+        self.assertIn('__loadedScripts', base_js)
+        self.assertIn('history.pushState', base_js)
+        feed_js = (settings.BASE_DIR / 'static' / 'js' / 'feed.js').read_text(encoding='utf-8')
+        self.assertIn('__pageInits', feed_js)
+
     def test_search_box_input_has_no_inner_border(self):
         css = (settings.BASE_DIR / 'static' / 'css' / 'base.css').read_text(encoding='utf-8')
         self.assertIn('.search-box input[type="text"]', css)
