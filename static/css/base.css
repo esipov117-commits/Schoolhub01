@@ -116,10 +116,7 @@ img {
     border-radius: 999px;
     padding: 9px 16px;
     color: var(--muted);
-    flex: 1;
-    width: auto;
-    max-width: 860px;
-    margin: 0 24px;
+    width: 300px;
     display: flex;
     align-items: center;
     gap: 10px;
