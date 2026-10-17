@@ -1,237 +1,37 @@
 {% extends "base.html" %}
-{% load static %}
 
-{% block title %}Центр управления — SchoolHub{% endblock %}
+{% block title %}Добро пожаловать — SchoolHub{% endblock %}
 
 {% block grid_columns %}1fr{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+<style>
+    .home-welcome {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 60vh;
+        text-align: center;
+    }
+    .home-welcome h1 {
+        margin: 0;
+        font-size: 30px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+    }
+    .home-welcome p {
+        margin: 0;
+        font-size: 18px;
+        color: var(--muted);
+    }
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="mission-dashboard"
-     id="mission-dashboard"
-     data-user-id="{{ user.id }}"
-     data-default-city="{{ weather_default_city|default:'Tomsk'|escape }}"
-     data-news-url="{% url 'dashboard_news' %}">
-
-    <header class="dash-header">
-        <div>
-            <h1 class="dash-title">Центр управления</h1>
-            <p class="dash-subtitle">{% now "l, j F Y" %} · Привет, {{ user.profile.display_name|default:user.username }}</p>
-        </div>
-
-        <div class="dash-actions">
-            <button type="button" class="dash-btn" id="dashboard-reset">
-                Сбросить
-            </button>
-            <button type="button" class="dash-btn primary" id="dashboard-edit-toggle">
-                ☷ Настроить виджеты
-            </button>
-        </div>
-    </header>
-
-    <div class="dash-manager" id="widget-manager" hidden>
-        <div class="dash-manager-head">
-            <span>Скрытые виджеты</span>
-            <span class="dash-manager-hint">Перетаскивайте карточки за ⠿, меняйте ширину кнопкой ⤢ и скрывайте кнопкой ✕. Раскладка сохраняется автоматически.</span>
-        </div>
-        <div class="hidden-widget-list" id="hidden-widget-list"></div>
-    </div>
-
-    <section class="widget-board" id="widget-board">
-
-        <!-- ПОГОДА -->
-        <article class="widget-card widget-wide"
-                 data-widget-id="weather"
-                 data-widget-title="Погода"
-                 data-size="wide">
-            <header class="widget-head">
-                <span class="widget-drag-handle" title="Перетащить" aria-hidden="true">⠿</span>
-                <span class="widget-title">Погода</span>
-                <span class="widget-head-actions">
-                    <button type="button" class="widget-control" data-widget-action="size" title="Изменить ширину" aria-label="Изменить ширину">⤢</button>
-                    <button type="button" class="widget-control" data-widget-action="hide" title="Скрыть" aria-label="Скрыть">✕</button>
-                </span>
-            </header>
-            <div class="widget-body">
-                <form class="weather-form" id="weather-form" autocomplete="off">
-                    <input type="text" id="weather-city" name="city"
-                           placeholder="Введите город" aria-label="Город">
-                    <button type="submit">Найти</button>
-                </form>
-                <div class="weather-content" id="weather-content"></div>
-            </div>
-        </article>
-
-        <!-- ОБЗОР -->
-        <article class="widget-card"
-                 data-widget-id="overview"
-                 data-widget-title="Обзор">
-            <header class="widget-head">
-                <span class="widget-drag-handle" title="Перетащить" aria-hidden="true">⠿</span>
-                <span class="widget-title">Обзор</span>
-                <span class="widget-head-actions">
-                    <button type="button" class="widget-control" data-widget-action="size" title="Изменить ширину" aria-label="Изменить ширину">⤢</button>
-                    <button type="button" class="widget-control" data-widget-action="hide" title="Скрыть" aria-label="Скрыть">✕</button>
-                </span>
-            </header>
-            <div class="widget-body">
-                <div class="stat-grid">
-                    <div class="stat-tile">
-                        <div class="stat-tile-value">{{ stats.posts_count|default:0 }}</div>
-                        <div class="stat-tile-label">Публикации</div>
-                    </div>
-                    <div class="stat-tile">
-                        <div class="stat-tile-value">{{ stats.friends_count|default:0 }}</div>
-                        <div class="stat-tile-label">Подписки</div>
-                    </div>
-                    <div class="stat-tile">
-                        <div class="stat-tile-value">{{ stats.groups_count|default:0 }}</div>
-                        <div class="stat-tile-label">Группы</div>
-                    </div>
-                </div>
-                <div class="stat-grid">
-                    <div class="stat-tile">
-                        <div class="stat-tile-value">{{ open_tasks_count|default:0 }}</div>
-                        <div class="stat-tile-label">Активные задачи</div>
-                    </div>
-                    <div class="stat-tile">
-                        <div class="stat-tile-value">{{ completed_tasks_count|default:0 }}</div>
-                        <div class="stat-tile-label">Выполнено</div>
-                    </div>
-                    <div class="stat-tile">
-                        <div class="stat-tile-value">{{ upcoming_events_count|default:0 }}</div>
-                        <div class="stat-tile-label">События</div>
-                    </div>
-                </div>
-            </div>
-        </article>
-
-        <!-- ЗАДАЧИ -->
-        <article class="widget-card"
-                 data-widget-id="tasks"
-                 data-widget-title="Задачи">
-            <header class="widget-head">
-                <span class="widget-drag-handle" title="Перетащить" aria-hidden="true">⠿</span>
-                <span class="widget-title">Задачи</span>
-                <span class="widget-head-actions">
-                    <button type="button" class="widget-control" data-widget-action="size" title="Изменить ширину" aria-label="Изменить ширину">⤢</button>
-                    <button type="button" class="widget-control" data-widget-action="hide" title="Скрыть" aria-label="Скрыть">✕</button>
-                </span>
-            </header>
-            <div class="widget-body">
-                <div class="list-rows">
-                    {% for task in today_tasks %}
-                    <div class="list-row">
-                        <span class="list-row-icon">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/></svg>
-                        </span>
-                        <div class="list-row-main">
-                            <div class="list-row-title">{{ task.title }}</div>
-                            <div class="list-row-sub">Создано {{ task.created_at|date:"j M, H:i" }}</div>
-                        </div>
-                    </div>
-                    {% empty %}
-                    <div class="widget-empty">Активных задач нет. Отличная работа!</div>
-                    {% endfor %}
-                </div>
-            </div>
-        </article>
-
-        <!-- СОБЫТИЯ -->
-        <article class="widget-card"
-                 data-widget-id="events"
-                 data-widget-title="События">
-            <header class="widget-head">
-                <span class="widget-drag-handle" title="Перетащить" aria-hidden="true">⠿</span>
-                <span class="widget-title">Ближайшие события</span>
-                <span class="widget-head-actions">
-                    <button type="button" class="widget-control" data-widget-action="size" title="Изменить ширину" aria-label="Изменить ширину">⤢</button>
-                    <button type="button" class="widget-control" data-widget-action="hide" title="Скрыть" aria-label="Скрыть">✕</button>
-                </span>
-            </header>
-            <div class="widget-body">
-                <div class="list-rows">
-                    {% for event in events %}
-                    <a class="list-row" href="{% url 'events_list' %}">
-                        <span class="list-row-icon">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                        </span>
-                        <div class="list-row-main">
-                            <div class="list-row-title">{{ event.title }}</div>
-                            <div class="list-row-sub">{{ event.date|date:"j M, H:i" }}{% if event.location %} · {{ event.location }}{% endif %}</div>
-                        </div>
-                    </a>
-                    {% empty %}
-                    <div class="widget-empty">Предстоящих событий пока нет.</div>
-                    {% endfor %}
-                </div>
-            </div>
-        </article>
-
-        <!-- APPLE -->
-        <article class="widget-card widget-wide"
-                 data-widget-id="chart-aapl"
-                 data-widget-title="Apple"
-                 data-size="wide">
-            <header class="widget-head">
-                <span class="widget-drag-handle" title="Перетащить" aria-hidden="true">⠿</span>
-                <span class="widget-title">Apple · AAPL</span>
-                <span class="widget-head-actions">
-                    <button type="button" class="widget-control" data-widget-action="size" title="Изменить ширину" aria-label="Изменить ширину">⤢</button>
-                    <button type="button" class="widget-control" data-widget-action="hide" title="Скрыть" aria-label="Скрыть">✕</button>
-                </span>
-            </header>
-            <div class="widget-body">
-                <div class="chart-box" id="chart-aapl"></div>
-            </div>
-        </article>
-
-        <!-- TESLA -->
-        <article class="widget-card widget-wide"
-                 data-widget-id="chart-tsla"
-                 data-widget-title="Tesla"
-                 data-size="wide">
-            <header class="widget-head">
-                <span class="widget-drag-handle" title="Перетащить" aria-hidden="true">⠿</span>
-                <span class="widget-title">Tesla · TSLA</span>
-                <span class="widget-head-actions">
-                    <button type="button" class="widget-control" data-widget-action="size" title="Изменить ширину" aria-label="Изменить ширину">⤢</button>
-                    <button type="button" class="widget-control" data-widget-action="hide" title="Скрыть" aria-label="Скрыть">✕</button>
-                </span>
-            </header>
-            <div class="widget-body">
-                <div class="chart-box" id="chart-tsla"></div>
-            </div>
-        </article>
-
-        <!-- НОВОСТИ -->
-        <article class="widget-card"
-                 data-widget-id="news"
-                 data-widget-title="Новости">
-            <header class="widget-head">
-                <span class="widget-drag-handle" title="Перетащить" aria-hidden="true">⠿</span>
-                <span class="widget-title">Новости</span>
-                <span class="widget-head-actions">
-                    <button type="button" class="widget-control" data-widget-action="size" title="Изменить ширину" aria-label="Изменить ширину">⤢</button>
-                    <button type="button" class="widget-control" data-widget-action="hide" title="Скрыть" aria-label="Скрыть">✕</button>
-                </span>
-            </header>
-            <div class="widget-body">
-                <div class="widget-toolbar">
-                    <span class="widget-toolbar-label">Свежие заголовки</span>
-                    <button type="button" class="widget-refresh" id="news-refresh" title="Обновить" aria-label="Обновить">↻</button>
-                </div>
-                <div class="news-list" id="news-list"></div>
-            </div>
-        </article>
-
-    </section>
-</div>
-{% endblock %}
-
-{% block extra_scripts %}
-<script src="{% static 'js/dashboard.js' %}" defer></script>
+<section class="home-welcome">
+    <h1>Добро пожаловать</h1>
+    <p>{{ user.username }}</p>
+</section>
 {% endblock %}
