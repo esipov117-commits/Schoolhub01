@@ -99,3 +99,35 @@ class ProfileSectionPagesTests(TestCase):
         self.assertContains(response, 'profile-about-card')
         self.assertContains(response, 'overflow-wrap: anywhere')
         self.assertContains(response, 'word-break: break-word')
+
+
+class SearchUsersTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='tester', password='secret123')
+        Profile.objects.create(user=self.user)
+        self.other = User.objects.create_user(username='target', password='secret123')
+        Profile.objects.create(user=self.other)
+
+    def test_pg_trgm_extension_installed(self):
+        from django.db import connection
+        with connection.cursor() as cur:
+            cur.execute("SELECT 1 FROM pg_extension WHERE extname='pg_trgm'")
+            self.assertTrue(cur.fetchone())
+
+    def test_exact_search_finds_user(self):
+        self.client.force_login(self.user)
+        resp = self.client.get(reverse('search_users'), {'q': 'target'})
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'target')
+
+    def test_empty_query_returns_empty(self):
+        self.client.force_login(self.user)
+        resp = self.client.get(reverse('search_users'), {'q': ''})
+        self.assertEqual(resp.status_code, 200)
+        self.assertNotContains(resp, 'target')
+
+    def test_trigram_tolerates_typo(self):
+        self.client.force_login(self.user)
+        resp = self.client.get(reverse('search_users'), {'q': 'tesetr'})
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'tester')

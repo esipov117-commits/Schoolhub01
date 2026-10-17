@@ -5,6 +5,8 @@ from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import login as auth_login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.contrib.postgres.search import TrigramSimilarity
+from django.db.models import Value
 from .models import Profile, Follow, downscale_image
 from posts.models import Post, PostImage
 
@@ -221,10 +223,11 @@ def search_users(request):
     if query:
         results = (
             User.objects
-            .filter(username__icontains=query)
+            .filter(username__trigram_similar=query)
             .exclude(id=request.user.id)
             .select_related('profile')
-            .order_by('username')[:PEOPLE_PER_PAGE]
+            .annotate(similarity=TrigramSimilarity(Value(query), 'username'))
+            .order_by('-similarity', 'username')[:PEOPLE_PER_PAGE]
         )
     else:
         results = User.objects.none()
