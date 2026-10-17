@@ -812,6 +812,8 @@
         this.captionEl = document.getElementById('viewer-caption');
         this.mediaBox = root.querySelector('.story-viewer-media');
         this.deleteBtn = document.getElementById('storyDeleteBtn');
+        this.statsBtn = document.getElementById('storyStatsBtn');
+        this.likeBtn = document.getElementById('storyLikeBtn');
         this.soundBtn = document.getElementById('storySoundBtn');
         this.muted = false;
         this._origAppend = null;
@@ -831,7 +833,10 @@
             this.avatarEl.style.display = 'none';
         }
         var isOwn = String(group.author_id) === String(CFG.meId);
+        this.isOwn = isOwn;
         this.deleteBtn.style.display = isOwn ? 'flex' : 'none';
+        this.statsBtn.style.display = isOwn ? 'flex' : 'none';
+        this.likeBtn.style.display = isOwn ? 'none' : 'flex';
         this.renderProgress();
         this.show(0);
     };
@@ -940,6 +945,88 @@
         this.updateSoundBtn();
     };
 
+    StoryViewer.prototype.updateLikeBtn = function () {
+        if (!this.likeBtn || !this.group) return;
+        var item = this.group.items[this.index];
+        if (!item) return;
+        this.likeBtn.classList.toggle('liked', !!item.liked_by_me);
+        this.likeBtn.title = item.liked_by_me ? 'Не нравится' : 'Нравится';
+    };
+
+    StoryViewer.prototype.toggleLike = function () {
+        var self = this;
+        if (!this.group) return;
+        var item = this.group.items[this.index];
+        if (!item) return;
+        if (this.likeBtn._busy) return;
+        this.likeBtn._busy = true;
+        var url = CFG.urls.likeStory.replace('/0/', '/' + item.id + '/');
+        postForm(url, new FormData())
+            .then(function (res) {
+                self.likeBtn._busy = false;
+                if (!res.ok) {
+                    if (res.data && res.data.error) toast(res.data.error);
+                    return;
+                }
+                item.liked_by_me = res.data.liked;
+                item.likes_count = res.data.likes_count;
+                self.updateLikeBtn();
+            })
+            .catch(function () {
+                self.likeBtn._busy = false;
+                toast('Ошибка сети');
+            });
+    };
+
+    StoryViewer.prototype.openStats = function () {
+        var self = this;
+        if (!this.group) return;
+        var item = this.group.items[this.index];
+        if (!item) return;
+        var modal = document.getElementById('storyStatsModal');
+        var summary = document.getElementById('storyStatsSummary');
+        var list = document.getElementById('storyStatsList');
+        if (!modal) return;
+        summary.textContent = 'Загрузка…';
+        list.innerHTML = '';
+        modal.showModal();
+        var url = CFG.urls.storyStats.replace('/0/', '/' + item.id + '/');
+        getJSON(url)
+            .then(function (d) {
+                summary.textContent = 'Лайков: ' + d.likes_count + ' · Просмотров: ' + d.viewers.length;
+                list.innerHTML = '';
+                if (!d.viewers.length) {
+                    list.innerHTML = '<div class="story-stats-empty">Просмотров пока нет</div>';
+                    return;
+                }
+                d.viewers.forEach(function (v) {
+                    var row = document.createElement('div');
+                    row.className = 'story-stats-row';
+                    var av = document.createElement('img');
+                    av.className = 'story-stats-avatar';
+                    if (v.avatar) {
+                        av.src = v.avatar;
+                    } else {
+                        av.alt = v.username.charAt(0).toUpperCase();
+                        av.className += ' story-stats-avatar-ph';
+                    }
+                    var name = document.createElement('span');
+                    name.className = 'story-stats-name';
+                    name.textContent = v.username;
+                    var time = document.createElement('span');
+                    time.className = 'story-stats-time';
+                    time.textContent = new Date(v.viewed_at).toLocaleString();
+                    row.appendChild(av);
+                    row.appendChild(name);
+                    row.appendChild(time);
+                    list.appendChild(row);
+                });
+            })
+            .catch(function () {
+                summary.textContent = 'Не удалось загрузить статистику';
+            });
+    };
+
     StoryViewer.prototype.show = function (i) {
         if (!this.group) return;
         if (i < 0) return this.prev();
@@ -947,6 +1034,7 @@
         stopViewerTimer();
         this.index = i;
         var item = this.group.items[i];
+        this.updateLikeBtn();
         markStoryViewed(this.group, item);
         var isVideo = item.type === 'video';
         this.clearMedia();
@@ -1019,6 +1107,17 @@
         document.getElementById('storyPrevZone').addEventListener('click', function () { storyViewer.prev(); });
         document.getElementById('storyDeleteBtn').addEventListener('click', function () { storyViewer.deleteCurrent(); });
         document.getElementById('storySoundBtn').addEventListener('click', function () { storyViewer.toggleSound(); });
+        document.getElementById('storyLikeBtn').addEventListener('click', function () { storyViewer.toggleLike(); });
+        document.getElementById('storyStatsBtn').addEventListener('click', function () { storyViewer.openStats(); });
+    }
+
+    var storyStatsModal = document.getElementById('storyStatsModal');
+    if (storyStatsModal) {
+        var storyStatsClose = document.getElementById('storyStatsClose');
+        storyStatsClose.addEventListener('click', function () { storyStatsModal.close(); });
+        storyStatsModal.addEventListener('click', function (e) {
+            if (e.target === storyStatsModal) storyStatsModal.close();
+        });
     }
 
     function openStoriesFor(authorId, authorName, authorAvatar) {

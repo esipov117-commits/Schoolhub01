@@ -110,12 +110,13 @@ def api_active_stories(request):
     for s in stories:
         uid = s.author.id
         if uid not in grouped:
+            author_profile = getattr(s.author, 'profile', None)
             grouped[uid] = {
                 'author_id': uid,
                 'author_name': s.author.username,
                 'author_avatar': (
-                    s.author.profile.avatar.url
-                    if s.author.profile.avatar else None
+                    author_profile.avatar.url
+                    if author_profile and author_profile.avatar else None
                 ),
                 'items': [],
                 'viewed': True,
@@ -126,7 +127,7 @@ def api_active_stories(request):
         grouped[uid]['items'].append({
             'id': s.id,
             'type': s.media_type,
-            'url': s.image.url if s.image else s.video.url,
+            'url': s.image.url if s.image else (s.video.url if s.video else ''),
             'caption': s.caption,
             'viewed': is_viewed,
             'liked_by_me': s.id in liked_ids,
@@ -180,14 +181,14 @@ def story_stats(request, story_id):
         .select_related('user__profile')
         .order_by('-viewed_at')
     )
-    viewer_list = [
-        {
+    viewer_list = []
+    for v in viewers:
+        viewer_profile = getattr(v.user, 'profile', None)
+        viewer_list.append({
             'username': v.user.username,
-            'avatar': v.user.profile.avatar.url if v.user.profile.avatar else None,
+            'avatar': viewer_profile.avatar.url if viewer_profile and viewer_profile.avatar else None,
             'viewed_at': v.viewed_at.isoformat(),
-        }
-        for v in viewers
-    ]
+        })
 
     return JsonResponse({
         'likes_count': story.likes.count(),
