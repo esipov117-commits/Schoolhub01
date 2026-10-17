@@ -157,6 +157,7 @@
 
             <div class="user-dropdown">
                 <a href="/profile/">Профиль</a>
+                <a href="{% url 'settings' %}">Настройки</a>
 
                 <form method="post" action="/accounts/logout/" style="margin:0;">
                     {% csrf_token %}
