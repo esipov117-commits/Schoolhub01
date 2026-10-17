@@ -1,6 +1,8 @@
 import tempfile
 from io import BytesIO
+from pathlib import Path
 
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
@@ -54,6 +56,12 @@ class ProfileSectionPagesTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'profile-card-link')
         self.assertContains(response, 'href="/profile/"')
+
+    def test_search_box_input_has_no_inner_border(self):
+        css = (settings.BASE_DIR / 'static' / 'css' / 'base.css').read_text(encoding='utf-8')
+        self.assertIn('.search-box input[type="text"]', css)
+        self.assertIn('box-shadow: none', css)
+        self.assertNotIn('.search-box input {', css)
 
     def test_wall_post_shows_images(self):
         post = Post.objects.create(author=self.user, content='с фото')
