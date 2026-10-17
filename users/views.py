@@ -95,9 +95,7 @@ def home(request):
 
     Profile.objects.get_or_create(user=request.user)
 
-    from .dashboard_views import build_dashboard_context
-
-    return render(request, 'home.html', build_dashboard_context(request))
+    return render(request, 'home.html')
 
 
 @login_required

@@ -356,8 +356,8 @@
         flex: 0 0 100%;
         width: 100%;
         height: auto;
-        max-height: 75vh;
-        object-fit: contain;
+        max-height: 50vh;
+        object-fit: cover;
         background: #000;
         border-radius: 14px;
         display: block;
@@ -395,6 +395,7 @@
     }
     .grid-media {
         width: 100%;
+        height: auto;
         aspect-ratio: 1;
         object-fit: cover;
         display: block;
