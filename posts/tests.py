@@ -78,6 +78,12 @@ class CommentReplyTests(TestCase):
             Comment.objects.filter(post=self.post, text='bad').exists()
         )
 
+    def test_carousel_media_not_huge_vertically(self):
+        css = (settings.BASE_DIR / 'static' / 'css' / 'feed.css').read_text(encoding='utf-8')
+        self.assertIn('max-height: 50vh', css)
+        self.assertIn('object-fit: cover', css)
+        self.assertNotIn('max-height: 75vh', css)
+
     def test_comments_total_includes_replies(self):
         root = Comment.objects.create(
             post=self.post, author=self.author, text='root',
@@ -117,19 +123,25 @@ class CommentReplyTests(TestCase):
                 self.assertEqual(pi.width, 120)
                 self.assertEqual(pi.height, 80)
 
-    def test_card_media_has_dimensions(self):
+    def test_card_grid_media_square(self):
         with tempfile.TemporaryDirectory() as tmp:
             with override_settings(MEDIA_ROOT=tmp):
-                PostImage.objects.create(
-                    post=self.post, image=self._make_image_file(), media_type='image',
-                )
+                Post.objects.filter(pk=self.post.pk).update(layout='grid')
+                for i in range(2):
+                    PostImage.objects.create(
+                        post=self.post,
+                        image=self._make_image_file('g%d.png' % i),
+                        media_type='image',
+                        order=i,
+                    )
                 post = _post_queryset().get(pk=self.post.pk)
                 html = render_to_string(
                     'posts/_post_card.html',
                     {'post': post, 'user': self.author, 'liked_post_ids': set()},
                 )
-                self.assertIn('width="120"', html)
-                self.assertIn('height="80"', html)
+                self.assertIn('grid-media', html)
+                self.assertNotIn('width="120"', html)
+                self.assertNotIn('height="80"', html)
 
     def test_card_renders_only_first_two_roots(self):
         for i in range(5):

@@ -52,7 +52,7 @@
                 {% if media.media_type == 'video' %}
                 <video src="{{ media.video.url }}" class="grid-media" controls playsinline></video>
                 {% else %}
-                <img src="{{ media.image.url }}" class="grid-media" width="{{ media.width|default:'' }}" height="{{ media.height|default:'' }}" loading="lazy" decoding="async">
+                <img src="{{ media.image.url }}" class="grid-media" loading="lazy" decoding="async">
                 {% endif %}
             {% endfor %}
         </div>
@@ -63,7 +63,7 @@
                 {% if media.media_type == 'video' %}
                 <video src="{{ media.video.url }}" class="carousel-img" controls playsinline></video>
                 {% else %}
-                <img src="{{ media.image.url }}" class="carousel-img" width="{{ media.width|default:'' }}" height="{{ media.height|default:'' }}" loading="lazy" decoding="async">
+                <img src="{{ media.image.url }}" class="carousel-img" loading="lazy" decoding="async">
                 {% endif %}
             {% endfor %}
             </div>
