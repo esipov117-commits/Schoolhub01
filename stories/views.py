@@ -3,9 +3,11 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
+from django.db.models import Count, IntegerField, OuterRef, Subquery
+from django.db.models.functions import Coalesce
 import os
 
-from .models import Story, StoryView
+from .models import Story, StoryLike, StoryView
 from users.models import downscale_image
 
 
@@ -75,17 +77,32 @@ def upload_story(request):
 def api_active_stories(request):
     """JSON-список активных историй для JS-просмотрщика."""
     cutoff = timezone.now() - timezone.timedelta(hours=24)
+    liked_sq = (
+        StoryLike.objects.filter(story=OuterRef('pk'))
+        .order_by()
+        .values('story')
+        .annotate(c=Count('pk'))
+        .values('c')
+    )
     stories = list(
         Story.objects.filter(created_at__gte=cutoff)
         .select_related('author', 'author__profile')
+        .annotate(likes_count=Coalesce(Subquery(liked_sq, output_field=IntegerField()), 0))
         .order_by('author', 'created_at')
     )
 
     viewed_ids = set()
+    liked_ids = set()
     if stories:
+        story_ids = [s.id for s in stories]
         viewed_ids = set(
             StoryView.objects
-            .filter(user=request.user, story_id__in=[s.id for s in stories])
+            .filter(user=request.user, story_id__in=story_ids)
+            .values_list('story_id', flat=True)
+        )
+        liked_ids = set(
+            StoryLike.objects
+            .filter(user=request.user, story_id__in=story_ids)
             .values_list('story_id', flat=True)
         )
 
@@ -112,6 +129,8 @@ def api_active_stories(request):
             'url': s.image.url if s.image else s.video.url,
             'caption': s.caption,
             'viewed': is_viewed,
+            'liked_by_me': s.id in liked_ids,
+            'likes_count': s.likes_count,
         })
 
     return JsonResponse({'stories': list(grouped.values())})
@@ -125,6 +144,55 @@ def view_story(request, story_id):
     if story.author_id != request.user.id:
         StoryView.objects.get_or_create(story=story, user=request.user)
     return JsonResponse({'ok': True})
+
+
+@login_required
+@require_POST
+def toggle_story_like(request, story_id):
+    """Лайк/анлайк истории (автор не может лайкать свою историю)."""
+    story = get_object_or_404(Story, id=story_id)
+    if story.author_id == request.user.id:
+        return JsonResponse({'error': 'Нельзя лайкать свою историю'}, status=403)
+
+    like, created = StoryLike.objects.get_or_create(story=story, user=request.user)
+    if not created:
+        like.delete()
+        liked = False
+    else:
+        liked = True
+
+    return JsonResponse({
+        'liked': liked,
+        'likes_count': story.likes.count(),
+    })
+
+
+@login_required
+def story_stats(request, story_id):
+    """Статистика истории для автора: количество лайков и список смотревших."""
+    story = get_object_or_404(Story, id=story_id)
+    if story.author_id != request.user.id:
+        return JsonResponse({'error': 'Статистика доступна только автору'}, status=403)
+
+    viewers = list(
+        StoryView.objects
+        .filter(story=story)
+        .select_related('user__profile')
+        .order_by('-viewed_at')
+    )
+    viewer_list = [
+        {
+            'username': v.user.username,
+            'avatar': v.user.profile.avatar.url if v.user.profile.avatar else None,
+            'viewed_at': v.viewed_at.isoformat(),
+        }
+        for v in viewers
+    ]
+
+    return JsonResponse({
+        'likes_count': story.likes.count(),
+        'viewers': viewer_list,
+    })
 
 
 @login_required
