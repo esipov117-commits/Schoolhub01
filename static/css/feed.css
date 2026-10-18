@@ -190,7 +190,9 @@
     }
     .viewer-icon-btn svg { width: 17px; height: 17px; }
     #storySoundBtn,
-    #storyDeleteBtn {
+    #storyDeleteBtn,
+    #storyStatsBtn,
+    #storyLikeBtn {
         position: absolute;
         bottom: calc(14px + env(safe-area-inset-bottom, 0px));
         z-index: 20;
@@ -199,6 +201,12 @@
     #storySoundBtn { left: 14px; }
     #storyDeleteBtn { right: 14px; display: none; }
     #storyDeleteBtn:hover { background: rgba(224, 36, 94, 0.85); color: #fff; }
+    #storyStatsBtn { right: 58px; display: none; }
+    #storyStatsBtn:hover { background: rgba(29, 161, 242, 0.85); color: #fff; }
+    #storyLikeBtn { right: 14px; }
+    #storyLikeBtn:hover { background: rgba(224, 36, 94, 0.85); color: #fff; }
+    #storyLikeBtn.liked { color: #e0245e; }
+    #storyLikeBtn.liked svg { fill: #e0245e; }
     .viewer-author-avatar {
         width: 32px;
         height: 32px;
@@ -256,6 +264,62 @@
     }
     .story-close:hover { color: #fff; }
     .story-close svg { width: 24px; height: 24px; }
+
+    .story-stats-summary {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text, inherit);
+        margin-bottom: 12px;
+        padding: 12px 14px;
+        background: var(--panel, rgba(255, 255, 255, 0.04));
+        border: 1px solid var(--border, rgba(0, 0, 0, 0.08));
+        border-radius: 12px;
+    }
+    .story-stats-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-height: 55vh;
+        overflow-y: auto;
+    }
+    .story-stats-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 14px;
+    }
+    .story-stats-avatar {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+        background: #333;
+        color: #fff;
+        text-align: center;
+        line-height: 34px;
+        font-size: 14px;
+        font-weight: 600;
+    }
+    .story-stats-name {
+        flex: 1;
+        font-size: 14px;
+        font-weight: 500;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .story-stats-time {
+        font-size: 12px;
+        color: var(--muted);
+        white-space: nowrap;
+    }
+    .story-stats-empty {
+        padding: 24px;
+        text-align: center;
+        color: var(--muted);
+        font-size: 14px;
+    }
 
     /* ===== Посты ===== */
     .feed-main .card {

@@ -224,6 +224,19 @@
                 <path d="M6 7l1 13h10l1-13"></path>
             </svg>
         </button>
+        <button class="viewer-icon-btn" id="storyStatsBtn" type="button" title="Статистика истории">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+        </button>
+        <button class="viewer-icon-btn" id="storyLikeBtn" type="button" title="Нравится" style="display:none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z"></path>
+            </svg>
+        </button>
     </div>
     <button class="story-close" id="storyViewerClose" type="button" title="Закрыть">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -233,6 +246,18 @@
         </svg>
     </button>
 </div>
+
+<!-- Модалка: статистика истории -->
+<dialog class="app-modal" id="storyStatsModal">
+    <div class="modal-head">
+        <span class="modal-title">Статистика истории</span>
+        <button class="modal-head-btn" type="button" id="storyStatsClose">Закрыть</button>
+    </div>
+    <div class="modal-body">
+        <div class="story-stats-summary" id="storyStatsSummary"></div>
+        <div class="story-stats-list" id="storyStatsList"></div>
+    </div>
+</dialog>
 
 <!-- Лайтбокс -->
 <div id="lightboxOverlay">
@@ -293,6 +318,8 @@ window.FEED_CONFIG = {
         uploadStory: "{% url 'upload_story' %}",
         deleteStory: "{% url 'delete_story' 0 %}",
         viewStory: "{% url 'view_story' 0 %}",
+        likeStory: "{% url 'toggle_story_like' 0 %}",
+        storyStats: "{% url 'story_stats' 0 %}",
         activeStories: "{% url 'api_active_stories' %}"
     }
 };
