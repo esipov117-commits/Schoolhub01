@@ -946,11 +946,25 @@
     };
 
     StoryViewer.prototype.updateLikeBtn = function () {
-        if (!this.likeBtn || !this.group) return;
+        if (!this.group) return;
         var item = this.group.items[this.index];
         if (!item) return;
-        this.likeBtn.classList.toggle('liked', !!item.liked_by_me);
-        this.likeBtn.title = item.liked_by_me ? 'Не нравится' : 'Нравится';
+        var count = item.likes_count || 0;
+        var likeCountEl = document.getElementById('storyLikeCount');
+        var statsCountEl = document.getElementById('storyStatsCount');
+        if (likeCountEl) {
+            likeCountEl.textContent = count ? count : '';
+            if (this.likeBtn) this.likeBtn.classList.toggle('has-count', count > 0);
+        }
+        if (statsCountEl) {
+            var statsBtn = document.getElementById('storyStatsBtn');
+            statsCountEl.textContent = count ? count : '';
+            if (statsBtn) statsBtn.classList.toggle('has-count', count > 0);
+        }
+        if (this.likeBtn) {
+            this.likeBtn.classList.toggle('liked', !!item.liked_by_me);
+            this.likeBtn.title = item.liked_by_me ? 'Не нравится' : 'Нравится';
+        }
     };
 
     StoryViewer.prototype.toggleLike = function () {
