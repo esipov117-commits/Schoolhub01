@@ -881,8 +881,17 @@ button.btn-primary:active {
         color: var(--muted);
     }
 
+    .mobile-search-form input:focus {
+        background: transparent;
+        border-color: transparent;
+        box-shadow: none;
+        outline: none;
+    }
+
     .mobile-search-form input {
-        width: 100%;
+        flex: 1 1 auto;
+        width: auto;
+        min-width: 0;
         height: 100%;
         min-height: 0;
         padding: 0;
