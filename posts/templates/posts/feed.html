@@ -8,7 +8,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="feed-main">
+<div class="feed-main" style="max-width:640px; margin:0 auto; width:100%;">
     <!-- Истории -->
     <section class="stories-card">
         <div class="stories-bar" id="storiesBar">
@@ -43,6 +43,24 @@
             {% endfor %}
         </div>
     </section>
+
+    <!-- Композер: создание поста (как в Threads) -->
+    <button class="composer-row" id="openPostModal" type="button" aria-label="Создать публикацию">
+        <span class="composer-avatar">
+            {% if user.profile.avatar %}
+            <img src="{{ user.profile.avatar.url }}" alt="{{ user.username }}" loading="lazy" decoding="async">
+            {% else %}
+            <span class="composer-avatar-ph">{{ user.username|first|upper }}</span>
+            {% endif %}
+        </span>
+        <span class="composer-placeholder">Что нового, {{ user.username }}?</span>
+        <span class="composer-plus" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+        </span>
+    </button>
 
     <!-- Посты -->
     <div id="feedPosts">
@@ -86,15 +104,6 @@
     </div>
     {% endif %}
 </div>
-
-<!-- FAB: создание поста -->
-<button class="fab-new-post" id="openPostModal" type="button" title="Создать публикацию">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-         stroke-linecap="round" stroke-linejoin="round">
-        <line x1="12" y1="5" x2="12" y2="19"></line>
-        <line x1="5" y1="12" x2="19" y2="12"></line>
-    </svg>
-</button>
 
 <!-- Модалка: создание истории -->
 <dialog class="app-modal" id="storyCreateModal">
