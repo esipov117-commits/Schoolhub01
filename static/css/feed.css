@@ -321,21 +321,23 @@
         font-size: 14px;
     }
 
-    /* ===== Посты ===== */
+    /* Threads-like polish for post card */
     .feed-main .card {
-        background: var(--panel);
-        border: 1px solid var(--border);
-        border-radius: 18px;
-        padding: 14px 16px 16px;
-        margin-bottom: 16px;
+        background: transparent;
+        border: none;
+        border-bottom: 1px solid var(--border);
+        border-radius: 0;
+        padding: 14px 0 16px;
+        margin-bottom: 0;
     }
-
-    /* Полировка карточки поста */
     .feed-main .post-card {
         content-visibility: auto;
-        contain-intrinsic-size: auto 560px;
+        contain-intrinsic-size: auto 480px;
     }
-    .feed-main .post-card .post-content { font-size: 14.5px; line-height: 1.56; }
+    .feed-main .post-card .post-content {
+        font-size: 15px;
+        line-height: 1.5;
+    }
     .feed-main .post-card .post-media { margin-top: 10px; margin-bottom: 2px; border-radius: 14px; overflow: hidden; }
     .feed-main .post-card .post-actions { margin-top: 8px; }
     .feed-main .post-card .post-meta-line { margin-top: 6px; }
@@ -767,38 +769,6 @@
         100% { background-position: 0 50%; }
     }
 
-    /* ===== FAB — создание поста ===== */
-    .fab-new-post {
-        position: fixed;
-        right: 24px;
-        bottom: 24px;
-        width: 56px;
-        height: 56px;
-        border-radius: 50%;
-        background: var(--accent);
-        color: #fff;
-        border: none;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 10px 25px rgba(0, 122, 255, 0.35);
-        z-index: 950;
-        transition: transform 0.15s ease, background 0.15s ease;
-    }
-    .fab-new-post:hover {
-        background: var(--accent-hover);
-        transform: scale(1.06);
-    }
-    .fab-new-post:active { transform: scale(0.95); }
-    .fab-new-post svg { width: 26px; height: 26px; }
-    @media (max-width: 760px) {
-        .fab-new-post {
-            right: 18px;
-            bottom: calc(88px + env(safe-area-inset-bottom, 0px));
-        }
-    }
-
     /* ===== Модальные окна ===== */
     dialog.app-modal {
         position: fixed;
@@ -1212,4 +1182,213 @@
         /* Точки карусели: больше визуально */
         .carousel-dots { gap: 10px; }
         .carousel-dot { width: 7px; height: 7px; }
+    }
+
+    /* =========================
+       THREADS-STYLE FEED (frontend only)
+    ========================= */
+
+    .feed-main {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 0 18px;
+    }
+
+    /* Истории: плоский блок с разделителем, компактные аватары */
+    .feed-main .stories-card {
+        background: transparent;
+        border: none;
+        border-bottom: 1px solid var(--border);
+        border-radius: 0;
+        padding: 16px 0 14px;
+        margin-bottom: 0;
+    }
+    .feed-main .story-avatar { width: 58px; height: 58px; }
+    .feed-main .story-label { font-size: 11.5px; }
+
+    /* Карточки: без рамок и теней — только волосяной разделитель */
+    .feed-main .card {
+        background: transparent;
+        border: none;
+        border-bottom: 1px solid var(--border);
+        border-radius: 0;
+        padding: 14px 0;
+        margin-bottom: 0;
+    }
+    .feed-main #feedPosts > .post-card:last-child { border-bottom: none; }
+
+    .feed-main .post-card {
+        content-visibility: auto;
+        contain-intrinsic-size: auto 480px;
+    }
+
+    /* Шапка: аватар 36px, имя и время в одну строку */
+    .feed-main .post-card .post-head-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    .feed-main .post-card .post-head-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+    .feed-main .post-card .post-head-left .avatar {
+        width: 36px;
+        height: 36px;
+    }
+    .feed-main .post-card .post-author-wrap {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 6px;
+        min-width: 0;
+        overflow: hidden;
+    }
+    .feed-main .post-card .post-author {
+        display: inline;
+        font-size: 14.5px;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 100%;
+    }
+    .feed-main .post-card .post-time {
+        display: inline;
+        font-size: 13.5px;
+        color: var(--muted);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* Правая колонка (контент, медиа, экшены) — отступ по ширине аватара,
+       как в Threads: всё выровнено по имени автора */
+    .feed-main .post-card .post-content,
+    .feed-main .post-card .post-grid,
+    .feed-main .post-card .post-carousel,
+    .feed-main .post-card .post-actions,
+    .feed-main .post-card .post-meta-line,
+    .feed-main .post-card .comments-block {
+        margin-left: 48px;
+    }
+
+    .feed-main .post-card .post-content {
+        font-size: 15px;
+        line-height: 1.5;
+        margin-top: 8px;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+    .feed-main .post-card .post-media { margin-top: 12px; margin-bottom: 2px; border-radius: 16px; overflow: hidden; }
+    .feed-main .post-card .post-grid,
+    .feed-main .post-card .post-carousel { margin-top: 12px; }
+    .feed-main .post-card .post-grid { border-radius: 16px; }
+
+    /* Экшены: круглые hover-зоны, как в Threads */
+    .feed-main .post-card .post-actions {
+        gap: 4px;
+        margin-top: 10px;
+    }
+    .feed-main .post-card .post-actions button {
+        width: 40px;
+        height: 40px;
+    }
+    .feed-main .post-card .post-actions button svg {
+        width: 22px;
+        height: 22px;
+    }
+    .feed-main .post-card .post-actions button:hover { background: var(--sidebar-active-bg); }
+    .feed-main .post-card .post-actions .like-btn.liked { color: #e0245e; }
+
+    /* Мета-строка: компактный muted-текст */
+    .feed-main .post-card .post-meta-line {
+        margin-top: 4px;
+        font-size: 13.5px;
+        color: var(--muted);
+    }
+    .feed-main .post-card .post-meta-line .meta-sep { color: var(--muted); }
+    .feed-main .post-card .comments-block { margin-top: 10px; }
+
+    /* Композер «Что нового?» в начале ленты (как в Threads) */
+    .feed-main .composer-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        padding: 16px 0;
+        margin: 0;
+        background: none;
+        border: none;
+        border-bottom: 1px solid var(--border);
+        color: var(--text);
+        font-family: inherit;
+        text-align: left;
+        cursor: pointer;
+        transition: background 0.15s ease;
+    }
+    .feed-main .composer-row:hover { background: var(--sidebar-active-bg); }
+    .feed-main .composer-row:active { background: transparent; }
+    .feed-main .composer-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        overflow: hidden;
+        flex-shrink: 0;
+        background: var(--sidebar-active-bg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--muted);
+        font-weight: 700;
+        font-size: 15px;
+    }
+    .feed-main .composer-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+    .feed-main .composer-placeholder {
+        flex: 1 1 auto;
+        min-width: 0;
+        font-size: 15px;
+        color: var(--muted);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .feed-main .composer-plus {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        color: var(--muted);
+        transition: color 0.15s ease, background 0.15s ease;
+    }
+    .feed-main .composer-row:hover .composer-plus {
+        color: var(--accent);
+        background: var(--sidebar-active-bg);
+    }
+    .feed-main .composer-plus svg { width: 18px; height: 18px; }
+
+    @media (max-width: 760px) {
+        .feed-main { padding: 0 14px; border-left: none; border-right: none; border-radius: 0; }
+        .feed-main .post-card .post-content,
+        .feed-main .post-card .post-grid,
+        .feed-main .post-card .post-carousel,
+        .feed-main .post-card .post-actions,
+        .feed-main .post-card .post-meta-line,
+        .feed-main .post-card .comments-block { margin-left: 48px; }
+        .feed-main .post-card .post-actions button { width: 44px; height: 44px; }
+        .feed-main .post-card .post-actions button svg { width: 23px; height: 23px; }
     }

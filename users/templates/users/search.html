@@ -11,7 +11,7 @@
             {% else %}
                 <div class="avatar avatar-medium"></div>
             {% endif %}
-            <div style="font-weight:600;">{{ u.profile.display_name|default:u.username }}</div>
+            <div style="font-weight:600; display:flex; align-items:center; gap:4px;">{{ u.profile.display_name|default:u.username }}{% if u.profile.is_verified %}{% include 'partials/verified.html' %}{% endif %}</div>
         </a>
         <form method="POST" action="{% url 'toggle_follow' u.username %}" style="margin:0;">
             {% csrf_token %}

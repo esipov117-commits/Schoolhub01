@@ -85,7 +85,7 @@
     cursor:default;
 }
 </style>
-<div class="feed-main" style="display:flex; flex-direction:column; gap:12px;">
+<div class="feed-main" style="display:flex; flex-direction:column; gap:12px; max-width:640px; margin:0 auto; width:100%;">
     {% for u in users %}
     <div class="card community-card">
         <a href="{% url 'profile_user' u.username %}" style="display:flex; align-items:center; gap:12px; text-decoration:none; color:inherit; flex:1; min-width:0;">
@@ -95,7 +95,7 @@
             <div class="avatar avatar-medium"></div>
             {% endif %}
             <div style="min-width:0;">
-                <div style="font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ u.profile.display_name|default:u.username }}</div>
+                <div style="font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; align-items:center; gap:4px;">{{ u.profile.display_name|default:u.username }}{% if u.profile.is_verified %}{% include 'partials/verified.html' %}{% endif %}</div>
                 <div style="color:var(--muted); font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">@{{ u.username }}</div>
             </div>
         </a>
