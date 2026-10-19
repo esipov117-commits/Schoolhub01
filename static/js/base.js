@@ -186,39 +186,98 @@ document.addEventListener('DOMContentLoaded', function () {
     var indicator = null;
     var navToken = 0;
 
-    /* ---- bottom nav sliding indicator ---- */
-    function placeIndicator(animate) {
+    /* ---- bottom nav: iOS "liquid glass" sliding indicator ---- */
+    var NAV_SPRING = 'cubic-bezier(.34, 1.45, .5, 1)';
+
+    function setIndicatorPosition(animate) {
         if (!bottomNav || !indicator) return;
         var el = bottomNav.querySelector('a.active') || bottomNav.querySelector('a');
         if (!el) return;
-        if (!animate) indicator.style.transition = 'none';
-        indicator.style.left = el.offsetLeft + 'px';
-        indicator.style.width = el.offsetWidth + 'px';
-        if (!animate) {
-            void indicator.offsetWidth;
-            indicator.style.transition = '';
+
+        var nBox = bottomNav.getBoundingClientRect();
+        var aBox = el.getBoundingClientRect();
+        if (!aBox.width) return; /* nav hidden (desktop) */
+
+        var border = bottomNav.clientLeft || 0;
+        var targetX = aBox.left - nBox.left - border;
+        var targetW = aBox.width;
+
+        /* current on-screen position (may be mid-animation) */
+        var cur = indicator.getBoundingClientRect();
+        var fromX = cur.width ? cur.left - nBox.left - border : targetX;
+        var fromW = cur.width || targetW;
+
+        if (indicator._anim) {
+            indicator._anim.forEach(function (a) { a.cancel(); });
+            indicator._anim = null;
         }
+
+        /* commit the destination as the base style */
+        indicator.style.transform = 'translate3d(' + targetX + 'px, 0, 0)';
+        indicator.style.width = targetW + 'px';
+
+        if (!animate || (fromX === targetX && fromW === targetW)) return;
+
+        var dist = targetX - fromX;
+        var stretch = reduce ? 0 : Math.min(Math.abs(dist) * 0.22, 26);
+        var dur = reduce ? 200 : 520;
+
+        /* glide across with a springy overshoot */
+        var move = indicator.animate(
+            [
+                { transform: 'translate3d(' + fromX + 'px, 0, 0)' },
+                { transform: 'translate3d(' + targetX + 'px, 0, 0)' }
+            ],
+            { duration: dur, easing: reduce ? 'ease-out' : NAV_SPRING, fill: 'backwards' }
+        );
+
+        /* liquid stretch: the pill swells mid-travel, then settles into place */
+        var morph = indicator.animate(
+            [
+                { width: fromW + 'px', offset: 0 },
+                { width: (targetW + stretch) + 'px', offset: 0.5 },
+                { width: targetW + 'px', offset: 1 }
+            ],
+            { duration: dur, easing: 'ease-in-out', fill: 'backwards' }
+        );
+
+        indicator._anim = [move, morph];
     }
 
-    if (bottomNav && !reduce) {
+    if (bottomNav) {
         indicator = document.createElement('span');
         indicator.className = 'bottom-nav-indicator';
         bottomNav.insertBefore(indicator, bottomNav.firstChild);
-        requestAnimationFrame(function () { placeIndicator(false); });
-        window.addEventListener('resize', function () { placeIndicator(false); });
+
+        var settle = function () { setIndicatorPosition(false); };
+        requestAnimationFrame(settle);
+        window.addEventListener('load', settle);
+        window.addEventListener('resize', settle);
+        window.addEventListener('orientationchange', settle);
+        if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(function () { setIndicatorPosition(false); });
+        }
+    }
+
+    /* Toggle "active" state for sidebar + bottom nav links matching a path.
+       Returns true if at least one nav link matched. */
+    function applyActive(path) {
+        var matched = false;
+        document.querySelectorAll('.sidebar a[href], .bottom-nav a[href]').forEach(function (a) {
+            var href = a.getAttribute('href');
+            if (!href || href.charAt(0) !== '/') return;
+            var active = href === '/' ? path === '/' : path.indexOf(href) === 0;
+            if (active) matched = true;
+            a.classList.toggle('active', active);
+        });
+        return matched;
     }
 
     /* Keep sidebar / bottom nav "active" state in sync with the URL.
        The bottom nav lives outside .layout, so it is not replaced on navigation. */
     function syncActiveLinks() {
-        var path = location.pathname;
-        document.querySelectorAll('.sidebar a[href], .bottom-nav a[href]').forEach(function (a) {
-            var href = a.getAttribute('href');
-            if (!href || href.charAt(0) !== '/') return;
-            var active = href === '/' ? path === '/' : path.indexOf(href) === 0;
-            a.classList.toggle('active', active);
-        });
-        placeIndicator(true);
+        applyActive(location.pathname);
+        setIndicatorPosition(true);
     }
 
     if (!layout) return;
@@ -260,23 +319,61 @@ document.addEventListener('DOMContentLoaded', function () {
         }, Promise.resolve());
     }
 
-    /* ---- stylesheets: add the ones the new page needs (e.g. feed.css) ---- */
-    function syncStylesheets(doc) {
+    /* ---- head assets: keep per-page <link>/<style> in sync across SPA navs ----
+       base.css is shared (marked with data-base-css); everything else in <head>
+       belongs to the current page and must be swapped when the page changes. */
+    var baseCssLink = document.head.querySelector('link[data-base-css]');
+    var managedHead = Array.prototype.slice.call(
+        document.head.querySelectorAll('link[rel="stylesheet"], style')
+    ).filter(function (n) { return !n.hasAttribute('data-base-css'); });
+
+    function isPageHeadNode(n) {
+        return !n.hasAttribute('data-base-css')
+            && (n.tagName === 'STYLE'
+                || (n.tagName === 'LINK' && n.getAttribute('rel') === 'stylesheet'));
+    }
+
+    function sameAsset(a, b) {
+        if (a.tagName !== b.tagName) return false;
+        if (a.tagName === 'LINK') return a.getAttribute('href') === b.getAttribute('href');
+        return (a.textContent || '').trim() === (b.textContent || '').trim();
+    }
+
+    /* Insert before base.css so the cascade matches a full page load
+       (page CSS is linked via extra_head, i.e. before base.css). */
+    function insertHeadNode(node) {
+        if (baseCssLink && baseCssLink.parentNode === document.head) {
+            document.head.insertBefore(node, baseCssLink);
+        } else {
+            document.head.appendChild(node);
+        }
+    }
+
+    function syncHeadAssets(doc) {
+        var desired = Array.prototype.filter.call(
+            doc.head.querySelectorAll('link[rel="stylesheet"], style'),
+            isPageHeadNode
+        );
+
+        /* drop assets the new page no longer needs (prevents feed.css leaking) */
+        managedHead = managedHead.filter(function (node) {
+            var keep = desired.some(function (d) { return sameAsset(node, d); });
+            if (!keep) node.remove();
+            return keep;
+        });
+
         var waits = [];
-        doc.querySelectorAll('link[rel="stylesheet"]').forEach(function (l) {
-            var href = l.getAttribute('href');
-            if (!href) return;
-            var exists = Array.prototype.some.call(
-                document.querySelectorAll('link[rel="stylesheet"]'),
-                function (x) { return x.getAttribute('href') === href; }
-            );
-            if (exists) return;
-            var clone = l.cloneNode(true);
-            waits.push(new Promise(function (resolve) {
-                clone.onload = clone.onerror = function () { resolve(); };
-                setTimeout(resolve, 3000);
-            }));
-            document.head.appendChild(clone);
+        desired.forEach(function (d) {
+            if (managedHead.some(function (m) { return sameAsset(m, d); })) return;
+            var node = d.cloneNode(true);
+            if (node.tagName === 'LINK') {
+                waits.push(new Promise(function (resolve) {
+                    node.onload = node.onerror = function () { resolve(); };
+                    setTimeout(resolve, 3000);
+                }));
+            }
+            insertHeadNode(node);
+            managedHead.push(node);
         });
         return Promise.all(waits);
     }
@@ -324,7 +421,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     finalPath = u.pathname + u.search + u.hash;
                 } catch (e) { throw new Error('fallback'); }
 
-                return syncStylesheets(doc).then(function () {
+                return syncHeadAssets(doc).then(function () {
                     if (token !== navToken) return null;
 
                     runCleanups();
@@ -386,6 +483,10 @@ document.addEventListener('DOMContentLoaded', function () {
         if (hashIdx !== -1 && href.slice(0, hashIdx).split('?')[0] === location.pathname) return;
 
         e.preventDefault();
+
+        /* instant "liquid glass" feedback: move the pill right away */
+        if (applyActive(href.split('?')[0].split('#')[0])) setIndicatorPosition(true);
+
         navigate(href, true);
     });
 

@@ -993,10 +993,18 @@ button.btn-primary:active {
         left: 0;
         width: 0;
         border-radius: 18px;
-        background: color-mix(in srgb, var(--accent) 12%, transparent);
-        transition:
-            left .38s cubic-bezier(.34, 1.4, .5, 1),
-            width .38s cubic-bezier(.34, 1.4, .5, 1);
+        background:
+            linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.08)),
+            color-mix(in srgb, var(--accent) 16%, transparent);
+        border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+        box-shadow:
+            0 6px 16px -7px color-mix(in srgb, var(--accent) 55%, transparent),
+            inset 0 1px 0 rgba(255, 255, 255, 0.6),
+            inset 0 -1px 0 rgba(0, 0, 0, 0.05);
+        backdrop-filter: blur(14px) saturate(180%);
+        -webkit-backdrop-filter: blur(14px) saturate(180%);
+        will-change: transform, width;
+        transform: translate3d(0, 0, 0);
         pointer-events: none;
         z-index: 0;
     }
@@ -1022,7 +1030,14 @@ button.btn-primary:active {
     }
 
     [data-theme="dark"] .bottom-nav-indicator {
-        background: rgba(10, 132, 255, .16);
+        background:
+            linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02)),
+            rgba(10, 132, 255, .18);
+        border-color: rgba(10, 132, 255, .35);
+        box-shadow:
+            0 6px 16px -7px rgba(10, 132, 255, .6),
+            inset 0 1px 0 rgba(255, 255, 255, 0.14),
+            inset 0 -1px 0 rgba(0, 0, 0, 0.25);
     }
 
     [data-theme="dark"] .bottom-nav a.active {
@@ -1084,6 +1099,15 @@ button.btn-primary:active {
 .sidebar a.active svg,
 .bottom-nav a.active svg {
     animation: navIconEnter .55s cubic-bezier(.22, 1, .36, 1) backwards;
+}
+
+@keyframes navLabelEnter {
+    0%   { opacity: 0; transform: translateY(6px); }
+    100% { opacity: 1; transform: none; }
+}
+
+.bottom-nav a.active span {
+    animation: navLabelEnter .4s cubic-bezier(.22, 1, .36, 1) backwards;
 }
 
 /* Активная иконка чуть крупнее */
