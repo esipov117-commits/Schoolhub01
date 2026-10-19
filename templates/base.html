@@ -212,16 +212,16 @@
         </a>
 
         <a
-            href="/feed/"
-            class="{% if request.path == '/feed/' or request.path|slice:':6' == '/feed/' %}active{% endif %}"
+            href="/community/"
+            class="{% if request.path == '/community/' or request.path|slice:':11' == '/community/' %}active{% endif %}"
         >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="7" height="7" rx="1"/>
-                <rect x="14" y="3" width="7" height="7" rx="1"/>
-                <rect x="3" y="14" width="7" height="7" rx="1"/>
-                <rect x="14" y="14" width="7" height="7" rx="1"/>
+                <circle cx="8" cy="7" r="4"/>
+                <path d="M1 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/>
+                <circle cx="16" cy="5" r="3"/>
+                <path d="M23 19v-1a3 3 0 0 0-3-3h-4"/>
             </svg>
-            Лента
+            Сообщество
         </a>
 
         <a
@@ -361,16 +361,16 @@
     </a>
 
     <a
-        href="/feed/"
-        class="{% if request.path == '/feed/' or request.path|slice:':6' == '/feed/' %}active{% endif %}"
+        href="/community/"
+        class="{% if request.path == '/community/' or request.path|slice:':11' == '/community/' %}active{% endif %}"
     >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="3" width="7" height="7" rx="1"/>
-            <rect x="14" y="3" width="7" height="7" rx="1"/>
-            <rect x="3" y="14" width="7" height="7" rx="1"/>
-            <rect x="14" y="14" width="7" height="7" rx="1"/>
+            <circle cx="8" cy="7" r="4"/>
+            <path d="M1 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/>
+            <circle cx="16" cy="5" r="3"/>
+            <path d="M23 19v-1a3 3 0 0 0-3-3h-4"/>
         </svg>
-        <span>Лента</span>
+        <span>Сообщество</span>
     </a>
 
     <a

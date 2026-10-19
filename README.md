@@ -77,7 +77,7 @@ events/     — школьные события (только для орган�
 stories/    — фото/видео на 24 часа (+ команда cleanup_stories)
 tasks/      — личные задачи (живут на главной)
 planner/    — календарь событий (templates/calendar.html в корне)
-templates/  — base.html, home.html, welcome.html + папки приложений
+templates/  — base.html, welcome.html + папки приложений
 static/js/  — feed.js, main.js (infinite scroll, лайки, сторис, чат)
 ```
 

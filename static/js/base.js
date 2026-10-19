@@ -1,52 +1,62 @@
-/* SchoolHub base scripts (extracted from base.html) */
+/* SchoolHub base scripts (static/js/base.js)
+ *
+ * Contains: mobile search, notifications, SPA-style navigation.
+ *
+ * Contract for page scripts (feed.js etc.):
+ *   window.__pageInits.push(fn)     - fn() is called after every SPA navigation
+ *   window.__pageCleanups.push(fn)  - fn() is called BEFORE the page content is swapped
+ */
 
-document.addEventListener("DOMContentLoaded", function () {
-    const searchButton = document.getElementById("mobileSearchButton");
-    const searchPanel = document.getElementById("mobileSearchPanel");
-    const searchInput = document.getElementById("mobileSearchInput");
+window.__pageInits = window.__pageInits || [];
+window.__pageCleanups = window.__pageCleanups || [];
 
-    if (!searchButton || !searchPanel) {
-        return;
-    }
+/* ====================== Mobile search ====================== */
+document.addEventListener('DOMContentLoaded', function () {
+    var searchButton = document.getElementById('mobileSearchButton');
+    var searchPanel = document.getElementById('mobileSearchPanel');
+    var searchInput = document.getElementById('mobileSearchInput');
 
-    searchButton.addEventListener("click", function (event) {
+    if (!searchButton || !searchPanel) return;
+
+    searchButton.addEventListener('click', function (event) {
         event.preventDefault();
         event.stopPropagation();
 
-        const isOpen = searchPanel.classList.contains("open");
-
-        searchPanel.classList.toggle("open", !isOpen);
-        searchButton.setAttribute("aria-expanded", String(!isOpen));
+        var isOpen = searchPanel.classList.contains('open');
+        searchPanel.classList.toggle('open', !isOpen);
+        searchButton.setAttribute('aria-expanded', String(!isOpen));
 
         if (!isOpen && searchInput) {
-            setTimeout(function () {
-                searchInput.focus();
-            }, 50);
+            setTimeout(function () { searchInput.focus(); }, 50);
         }
     });
 
-    document.addEventListener("click", function (event) {
+    document.addEventListener('click', function (event) {
         if (
-            searchPanel.classList.contains("open") &&
+            searchPanel.classList.contains('open') &&
             !searchPanel.contains(event.target) &&
             !searchButton.contains(event.target)
         ) {
-            searchPanel.classList.remove("open");
-            searchButton.setAttribute("aria-expanded", "false");
+            searchPanel.classList.remove('open');
+            searchButton.setAttribute('aria-expanded', 'false');
         }
     });
 
-    searchPanel.addEventListener("click", function (event) {
+    searchPanel.addEventListener('click', function (event) {
         event.stopPropagation();
     });
 });
 
+/* ====================== Notifications ====================== */
 (function () {
-    const btn = document.getElementById('notifBtn');
+    var btn = document.getElementById('notifBtn');
     if (!btn) return;
 
-    const panel = document.getElementById('notifPanel');
-    const badge = document.getElementById('notifBadge');
+    var panel = document.getElementById('notifPanel');
+    var badge = document.getElementById('notifBadge');
+    var prevCount = -1;
+    var toastEl = null;
+    var toastTimer = null;
 
     function esc(value) {
         return String(value == null ? '' : value)
@@ -58,15 +68,15 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function render(items) {
-        if (!items.length) {
+        if (!items || !items.length) {
             panel.innerHTML = '<div class="notif-empty">Новых сообщений нет</div>';
             return;
         }
         panel.innerHTML = items.map(function (i) {
-            const avatar = i.avatar
+            var avatar = i.avatar
                 ? '<img src="' + esc(i.avatar) + '" alt="">'
                 : '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>';
-            const count = i.count > 1
+            var count = i.count > 1
                 ? ' <span style="color:var(--muted);font-weight:400;">· ' + i.count + '</span>'
                 : '';
             return '<a class="notif-item" href="/chat/' + i.chat_id + '/">' +
@@ -80,42 +90,10 @@ document.addEventListener("DOMContentLoaded", function () {
         }).join('');
     }
 
-    async function refresh() {
-        try {
-            const r = await fetch('/chat/api/unread/', {
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            });
-            if (!r.ok) return;
-            const data = await r.json();
-            const count = data.count || 0;
-            if (count > 0) {
-                badge.textContent = count > 99 ? '99+' : String(count);
-                badge.style.display = 'flex';
-            } else {
-                badge.style.display = 'none';
-            }
-            document.querySelectorAll('.chat-badge').forEach(function (b) {
-                if (count > 0) {
-                    b.textContent = count > 99 ? '99+' : String(count);
-                    b.style.display = 'flex';
-                } else {
-                    b.style.display = 'none';
-                }
-            });
-            if (prevCount >= 0 && count > prevCount && data.items && data.items.length) {
-                const top = data.items[0];
-                if (location.pathname !== '/chat/' + top.chat_id + '/') showToast(top);
-            }
-            prevCount = count;
-            render(data.items);
-        } catch (e) { /* нет сети — пропускаем цикл */ }
-    }
-
-    let toastEl = null;
-    let toastTimer = null;
     function hideToast() {
         if (toastEl) toastEl.classList.remove('show');
     }
+
     function showToast(item) {
         if (!toastEl) {
             toastEl = document.createElement('a');
@@ -132,7 +110,42 @@ document.addEventListener("DOMContentLoaded", function () {
         toastTimer = setTimeout(hideToast, 4000);
     }
 
-    let prevCount = -1;
+    function setBadges(count) {
+        var text = count > 99 ? '99+' : String(count);
+        if (count > 0) {
+            badge.textContent = text;
+            badge.style.display = 'flex';
+        } else {
+            badge.style.display = 'none';
+        }
+        document.querySelectorAll('.chat-badge').forEach(function (b) {
+            if (count > 0) {
+                b.textContent = text;
+                b.style.display = 'flex';
+            } else {
+                b.style.display = 'none';
+            }
+        });
+    }
+
+    async function refresh() {
+        try {
+            var r = await fetch('/chat/api/unread/', {
+                credentials: 'same-origin',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            if (!r.ok) return;
+            var data = await r.json();
+            var count = data.count || 0;
+            setBadges(count);
+            if (prevCount >= 0 && count > prevCount && data.items && data.items.length) {
+                var top = data.items[0];
+                if (location.pathname !== '/chat/' + top.chat_id + '/') showToast(top);
+            }
+            prevCount = count;
+            render(data.items);
+        } catch (e) { /* offline: skip this cycle */ }
+    }
 
     btn.addEventListener('click', function (event) {
         event.stopPropagation();
@@ -157,6 +170,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 })();
 
+/* ====================== Disable pinch zoom (iOS) ====================== */
 (function () {
     function block(e) { e.preventDefault(); }
     document.addEventListener('gesturestart', block, { passive: false });
@@ -164,43 +178,52 @@ document.addEventListener("DOMContentLoaded", function () {
     document.addEventListener('gestureend', block, { passive: false });
 })();
 
+/* ====================== Bottom nav indicator + SPA navigation ====================== */
 (function () {
     var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
+    var layout = document.querySelector('.layout');
     var bottomNav = document.querySelector('.bottom-nav');
     var indicator = null;
-    var activeLink = null;
+    var navToken = 0;
+
+    /* ---- bottom nav sliding indicator ---- */
+    function placeIndicator(animate) {
+        if (!bottomNav || !indicator) return;
+        var el = bottomNav.querySelector('a.active') || bottomNav.querySelector('a');
+        if (!el) return;
+        if (!animate) indicator.style.transition = 'none';
+        indicator.style.left = el.offsetLeft + 'px';
+        indicator.style.width = el.offsetWidth + 'px';
+        if (!animate) {
+            void indicator.offsetWidth;
+            indicator.style.transition = '';
+        }
+    }
 
     if (bottomNav && !reduce) {
-        activeLink = bottomNav.querySelector('a.active') || bottomNav.querySelector('a');
-
         indicator = document.createElement('span');
         indicator.className = 'bottom-nav-indicator';
         bottomNav.insertBefore(indicator, bottomNav.firstChild);
-
-        function place(el, animate) {
-            if (!el) return;
-            if (!animate) indicator.style.transition = 'none';
-            indicator.style.left = el.offsetLeft + 'px';
-            indicator.style.width = el.offsetWidth + 'px';
-            if (!animate) {
-                void indicator.offsetWidth;
-                indicator.style.transition = '';
-            }
-        }
-
-        if (window.requestAnimationFrame) {
-            window.requestAnimationFrame(function () { place(activeLink, false); });
-        } else {
-            place(activeLink, false);
-        }
-
-        window.addEventListener('resize', function () { place(activeLink, false); });
+        requestAnimationFrame(function () { placeIndicator(false); });
+        window.addEventListener('resize', function () { placeIndicator(false); });
     }
 
-    var layout = document.querySelector('.layout');
+    /* Keep sidebar / bottom nav "active" state in sync with the URL.
+       The bottom nav lives outside .layout, so it is not replaced on navigation. */
+    function syncActiveLinks() {
+        var path = location.pathname;
+        document.querySelectorAll('.sidebar a[href], .bottom-nav a[href]').forEach(function (a) {
+            var href = a.getAttribute('href');
+            if (!href || href.charAt(0) !== '/') return;
+            var active = href === '/' ? path === '/' : path.indexOf(href) === 0;
+            a.classList.toggle('active', active);
+        });
+        placeIndicator(true);
+    }
+
     if (!layout) return;
 
+    /* ---- script loader ---- */
     if (!window.__loadedScripts) {
         window.__loadedScripts = {};
         document.querySelectorAll('script[src]').forEach(function (s) {
@@ -208,56 +231,162 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    function activate(root) {
-        root.querySelectorAll('script:not([src])').forEach(function (old) {
-            var s = document.createElement('script');
-            s.textContent = old.textContent;
-            old.replaceWith(s);
+    /* Runs the scripts inside `root` in document order.
+       - inline scripts are re-executed every time (they set page config)
+       - external scripts are loaded only once per session */
+    function activateScripts(root) {
+        var scripts = Array.prototype.slice.call(root.querySelectorAll('script'));
+        return scripts.reduce(function (chain, old) {
+            return chain.then(function () {
+                return new Promise(function (resolve) {
+                    var type = old.getAttribute('type');
+                    if (type && type !== 'text/javascript') { resolve(); return; }
+
+                    var src = old.getAttribute('src');
+                    var s = document.createElement('script');
+                    if (src) {
+                        if (window.__loadedScripts[src]) { old.remove(); resolve(); return; }
+                        window.__loadedScripts[src] = true;
+                        s.onload = s.onerror = function () { resolve(); };
+                        s.src = src;
+                        old.replaceWith(s);
+                    } else {
+                        s.textContent = old.textContent;
+                        old.replaceWith(s);
+                        resolve();
+                    }
+                });
+            });
+        }, Promise.resolve());
+    }
+
+    /* ---- stylesheets: add the ones the new page needs (e.g. feed.css) ---- */
+    function syncStylesheets(doc) {
+        var waits = [];
+        doc.querySelectorAll('link[rel="stylesheet"]').forEach(function (l) {
+            var href = l.getAttribute('href');
+            if (!href) return;
+            var exists = Array.prototype.some.call(
+                document.querySelectorAll('link[rel="stylesheet"]'),
+                function (x) { return x.getAttribute('href') === href; }
+            );
+            if (exists) return;
+            var clone = l.cloneNode(true);
+            waits.push(new Promise(function (resolve) {
+                clone.onload = clone.onerror = function () { resolve(); };
+                setTimeout(resolve, 3000);
+            }));
+            document.head.appendChild(clone);
         });
-        root.querySelectorAll('script[src]').forEach(function (old) {
-            var src = old.getAttribute('src');
-            if (window.__loadedScripts[src]) return;
-            window.__loadedScripts[src] = true;
-            var s = document.createElement('script');
-            s.setAttribute('src', src);
-            old.replaceWith(s);
+        return Promise.all(waits);
+    }
+
+    function runCleanups() {
+        (window.__pageCleanups || []).forEach(function (fn) {
+            try { fn(); } catch (e) { /* ignore */ }
         });
+    }
+
+    function runInits() {
+        (window.__pageInits || []).forEach(function (fn) {
+            try { fn(); } catch (e) { console.error(e); }
+        });
+    }
+
+    function fullLoad(url, push) {
+        if (push) window.location.href = url;
+        else window.location.reload();
     }
 
     function navigate(url, push) {
-        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-            .then(function (r) { return r.text(); })
-            .then(function (html) {
-                var doc = new DOMParser().parseFromString(html, 'text/html');
-                var newLayout = doc.querySelector('.layout');
-                if (!newLayout) { window.location.href = url; return; }
-                layout.innerHTML = newLayout.innerHTML;
-                activate(layout);
+        var token = ++navToken;
 
-                var pageScripts = document.getElementById('pageScripts');
-                var newScripts = doc.getElementById('pageScripts');
-                if (pageScripts && newScripts) {
-                    pageScripts.innerHTML = newScripts.innerHTML;
-                    activate(pageScripts);
-                }
-
-                document.title = doc.title;
-                if (push) history.pushState({ spa: true }, '', url);
-
-                if (window.__pageInits) window.__pageInits.forEach(function (init) { init(); });
+        fetch(url, {
+            credentials: 'same-origin',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+            .then(function (r) {
+                var ct = r.headers.get('content-type') || '';
+                if (!r.ok || ct.indexOf('text/html') === -1) throw new Error('fallback');
+                return r.text().then(function (html) { return { html: html, finalUrl: r.url }; });
             })
-            .catch(function () { window.location.href = url; });
+            .then(function (res) {
+                if (token !== navToken) return null;
+
+                var doc = new DOMParser().parseFromString(res.html, 'text/html');
+                var newLayout = doc.querySelector('.layout');
+                if (!newLayout) throw new Error('fallback');
+
+                var finalPath = url;
+                try {
+                    var u = new URL(res.finalUrl, location.href);
+                    if (u.origin !== location.origin) throw new Error('fallback');
+                    finalPath = u.pathname + u.search + u.hash;
+                } catch (e) { throw new Error('fallback'); }
+
+                return syncStylesheets(doc).then(function () {
+                    if (token !== navToken) return null;
+
+                    runCleanups();
+
+                    var theme = doc.documentElement.getAttribute('data-theme');
+                    if (theme) document.documentElement.setAttribute('data-theme', theme);
+                    else document.documentElement.removeAttribute('data-theme');
+
+                    document.title = doc.title;
+                    layout.setAttribute('style', newLayout.getAttribute('style') || '');
+                    layout.innerHTML = newLayout.innerHTML;
+
+                    if (push) {
+                        history.pushState({ spa: true }, '', finalPath);
+                        window.scrollTo(0, 0);
+                    }
+
+                    var pageScripts = document.getElementById('pageScripts');
+                    var newScripts = doc.getElementById('pageScripts');
+
+                    return activateScripts(layout)
+                        .then(function () {
+                            if (pageScripts && newScripts) {
+                                pageScripts.innerHTML = newScripts.innerHTML;
+                                return activateScripts(pageScripts);
+                            }
+                        })
+                        .then(function () {
+                            if (token !== navToken) return;
+                            syncActiveLinks();
+                            runInits();
+                        });
+                });
+            })
+            .catch(function () {
+                if (token === navToken) fullLoad(url, push);
+            });
     }
 
+    /* ---- link interception ---- */
+    var FULL_LOAD_PREFIX = /^\/(admin|media|static|accounts)(\/|$)/;
+
     document.addEventListener('click', function (e) {
+        if (e.defaultPrevented) return;
+        if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+
         var a = e.target.closest('a');
         if (!a) return;
+
         var href = a.getAttribute('href');
         if (!href || href.charAt(0) !== '/' || href.charAt(1) === '/') return;
         if (a.target === '_blank') return;
+        if (a.hasAttribute('download') || a.hasAttribute('data-no-spa')) return;
         if (a.closest('form')) return;
+        if (FULL_LOAD_PREFIX.test(href)) return;
+
+        /* same-page anchor: let the browser scroll */
+        var hashIdx = href.indexOf('#');
+        if (hashIdx !== -1 && href.slice(0, hashIdx).split('?')[0] === location.pathname) return;
+
         e.preventDefault();
-        navigate(a.getAttribute('href'), true);
+        navigate(href, true);
     });
 
     window.addEventListener('popstate', function () {

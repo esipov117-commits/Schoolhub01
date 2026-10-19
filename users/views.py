@@ -95,7 +95,8 @@ def home(request):
 
     Profile.objects.get_or_create(user=request.user)
 
-    return render(request, 'home.html')
+    from posts.views import feed
+    return feed(request)
 
 
 @login_required

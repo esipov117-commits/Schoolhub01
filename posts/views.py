@@ -180,6 +180,31 @@ def feed(request):
  
 
 @login_required
+def community(request):
+    from django.contrib.auth.models import User
+    from users.models import Follow
+    users = (
+        User.objects
+        .select_related('profile')
+        .order_by('username')
+    )
+    following_ids = set(
+        Follow.objects.filter(follower=request.user).values_list('following_id', flat=True)
+    )
+    is_friend = set()  # simplified: treat following each other as friends? or just not used; keep simple
+    # detect mutual follows
+    friend_ids = set()
+    my_following = set(Follow.objects.filter(follower=request.user).values_list('following_id', flat=True))
+    followers_me = set(Follow.objects.filter(following=request.user).values_list('follower_id', flat=True))
+    friend_ids = my_following & followers_me
+    return render(request, 'posts/community.html', {
+        'users': users,
+        'following_ids': following_ids,
+        'friend_ids': friend_ids,
+    })
+
+
+@login_required
 def toggle_like(request, post_id):
     post = get_object_or_404(Post, id=post_id)
     like, created = Like.objects.get_or_create(user=request.user, post=post)
