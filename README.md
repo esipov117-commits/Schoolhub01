@@ -38,6 +38,14 @@ DB_USER=postgres
 DB_PASSWORD=postgres
 DB_HOST=localhost
 DB_PORT=5432
+
+# Почта для подтверждения регистрации (Gmail — пароль приложения, Yandex — пароль приложения):
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+EMAIL_HOST_USER=you@gmail.com
+EMAIL_HOST_PASSWORD=xxxx-xxxx-xxxx-xxxx
+DEFAULT_FROM_EMAIL=you@gmail.com
 EOF
 
 # Мастер-ключ для шифрования чата (по желанию, иначе выводится из SECRET_KEY):
@@ -62,6 +70,10 @@ EOF
 | `DEBUG` | нет | `False` | `True` только для локальной разработки |
 | `DB_NAME`, `DB_USER`, `DB_PASSWORD` | да | — | Подключение к PostgreSQL |
 | `DB_HOST`, `DB_PORT` | нет | `localhost`, `5432` | Хост/порт БД |
+| `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USE_TLS` | нет | `smtp.gmail.com`, `587`, `True` | SMTP для писем подтверждения |
+| `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD` | нет | — | Логин/пароль SMTP (для Gmail — пароль приложения) |
+| `DEFAULT_FROM_EMAIL` | нет | = `EMAIL_HOST_USER` | Адрес отправителя |
+| `EMAIL_RESEND_COOLDOWN` | нет | `60` | Пауза (сек) между повторными письмами |
 | `CHAT_MASTER_KEY` | нет | вывод из `SECRET_KEY` | Мастер-ключ шифрования чата (Fernet) |
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | для push | — | Ключи Web Push (генерирует `manage.py webpush_vapid`) |
 | `VAPID_ADMIN_EMAIL` | нет | `mailto:admin@example.com` | Контакт в VAPID-подписи; для продакшена указать реальный |
@@ -84,6 +96,19 @@ templates/  — base.html, welcome.html + папки приложений
 static/js/  — feed.js, main.js (infinite scroll, лайки, сторис, чат)
 webpush/    — PWA-манифест, service worker, Web Push (VAPID) и подписки
 ```
+
+## Регистрация и подтверждение почты
+
+При регистрации (`/register/`) пользователь указывает `username`, `email` и пароль.
+Аккаунт создаётся неактивным: на почту уходит ссылка `/activate/<uidb64>/<token>/`.
+Войти можно только после перехода по ссылке.
+
+- Страница «Проверьте почту» — `/activation-sent/`, там же повторная отправка.
+- Вход по `username` и паролю (`/accounts/login/`).
+- Для **существующих** пользователей (мягкий гейт): аккаунт остаётся рабочим, но
+  в шапке сайта показывается баннер «Подтвердите почту» со ссылкой на `/verify-email/`,
+  где можно указать/изменить адрес и получить ссылку подтверждения.
+- Повторная отправка ограничена `EMAIL_RESEND_COOLDOWN` секундами.
 
 ## Полезные команды
 

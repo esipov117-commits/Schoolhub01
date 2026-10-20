@@ -4,6 +4,10 @@ from . import views
 urlpatterns = [
     path("", views.home, name="home"),
     path("register/", views.register, name="register"),
+    path("activate/<uidb64>/<token>/", views.activate, name="activate"),
+    path("activation-sent/", views.activation_sent, name="activation_sent"),
+    path("resend-activation/", views.resend_activation, name="resend_activation"),
+    path("verify-email/", views.verify_email, name="verify_email"),
     path("profile/edit/", views.edit_profile, name="edit_profile"),
     path("profile/", views.profile, name="profile"),
     path("profile/<str:username>/follow/", views.toggle_follow, name="toggle_follow"),
@@ -16,4 +20,5 @@ urlpatterns = [
     path("search/", views.search_users, name="search_users"),
     path("profile/<str:username>/followers/", views.followers_list, name="followers_list"),
     path("profile/<str:username>/following/", views.following_list, name="following_list"),
+    path("manage/delete-user/<int:user_id>/", views.delete_user, name="delete_user"),
 ]

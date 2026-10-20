@@ -201,7 +201,10 @@ def story_stats(request, story_id):
 def delete_story(request, story_id):
     """Удаление своей истории (AJAX + HTML)."""
     if request.method == 'POST':
-        story = get_object_or_404(Story, id=story_id, author=request.user)
+        is_moderator = request.user.profile.is_moderator or request.user.is_staff
+        story = get_object_or_404(Story, id=story_id)
+        if story.author != request.user and not is_moderator:
+            return redirect('feed')
 
         for field in (story.image, story.video):
             if field:

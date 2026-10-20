@@ -834,7 +834,8 @@
         }
         var isOwn = String(group.author_id) === String(CFG.meId);
         this.isOwn = isOwn;
-        this.deleteBtn.style.display = isOwn ? 'flex' : 'none';
+        var canDelete = isOwn || CFG.isModerator;
+        this.deleteBtn.style.display = canDelete ? 'flex' : 'none';
         this.statsBtn.style.display = isOwn ? 'flex' : 'none';
         this.likeBtn.style.display = isOwn ? 'none' : 'flex';
         this.renderProgress();

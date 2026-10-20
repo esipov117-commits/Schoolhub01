@@ -19,16 +19,18 @@
             </div>
         </div>
 
-        {% if post.author == user %}
+        {% if post.author == user or user.profile.is_moderator or user.is_staff %}
         <div class="post-owner-actions">
+            {% if post.author == user %}
             <button
                 type="button"
                 class="edit-post-btn post-ctrl-btn"
                 data-post-id="{{ post.id }}"
                 title="{% trans 'Редактировать' %}"
                 aria-label="{% trans 'Редактировать' %}">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
             </button>
+            {% endif %}
             <button
                 type="button"
                 class="delete-post-btn post-ctrl-btn danger"
