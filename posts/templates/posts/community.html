@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static i18n %}
 
-{% block title %}Сообщество — SchoolHub{% endblock %}
+{% block title %}{% trans "Сообщество" %} — SchoolHub{% endblock %}
 
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'css/feed.css' %}">
@@ -102,28 +102,28 @@
         <div class="community-actions">
             {% if u != user %}
             {% if u.id in friend_ids %}
-            <span class="btn-comm muted">Друзья</span>
+            <span class="btn-comm muted">{% trans "Друзья" %}</span>
             {% elif u.id in following_ids %}
             <form method="POST" action="{% url 'toggle_follow' u.username %}" style="margin:0;">
                 {% csrf_token %}
-                <button type="submit" class="btn-comm">Подписан</button>
+                <button type="submit" class="btn-comm">{% trans "Подписан" %}</button>
             </form>
             {% else %}
             <form method="POST" action="{% url 'toggle_follow' u.username %}" style="margin:0;">
                 {% csrf_token %}
-                <button type="submit" class="btn-comm primary">Подписаться</button>
+                <button type="submit" class="btn-comm primary">{% trans "Подписаться" %}</button>
             </form>
             {% endif %}
             <form method="POST" action="{% url 'start_chat' %}" style="margin:0;">
                 {% csrf_token %}
                 <input type="hidden" name="username" value="{{ u.username }}">
-                <button type="submit" class="btn-comm ghost">Написать</button>
+                <button type="submit" class="btn-comm ghost">{% trans "Написать" %}</button>
             </form>
             {% endif %}
         </div>
     </div>
     {% empty %}
-    <div class="card">Пока никого нет</div>
+    <div class="card">{% trans "Пока никого нет" %}</div>
     {% endfor %}
 </div>
 {% endblock %}

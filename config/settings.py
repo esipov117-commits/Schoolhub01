@@ -28,10 +28,12 @@ CHAT_MASTER_KEY = config('CHAT_MASTER_KEY', default='')
 # По умолчанию DEBUG=False — безопаснее. Локально явно ставь DEBUG=True в .env
 DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = ['129.101.113.88', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['129.101.113.88', 'schoolhubapp.ru', 'www.schoolhubapp.ru', 'localhost', '127.0.0.1']
 
 CSRF_TRUSTED_ORIGINS = [
     'http://129.101.113.88',
+    'https://schoolhubapp.ru',
+    'https://www.schoolhubapp.ru',
 ]
 
 
@@ -75,18 +77,21 @@ INSTALLED_APPS = [
     'posts',
     'events',
     'chat',
-    'planner',
     'tasks',
-    'stories'
+    'stories',
+    'webpush',
 ]
  
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    # Активирует язык из профиля пользователя (после аутентификации).
+    'users.middleware.LanguageMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -103,6 +108,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'webpush.context_processors.webpush',
             ],
         },
     },
@@ -148,13 +154,21 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
  
-LANGUAGE_CODE = 'en-us'
- 
+LANGUAGE_CODE = 'ru'
+
 TIME_ZONE = 'UTC'
- 
+
 USE_I18N = True
- 
+
 USE_TZ = True
+
+# Языки, доступные для выбора в настройках профиля.
+LANGUAGES = [
+    ('ru', 'Русский'),
+    ('en', 'English'),
+]
+
+LOCALE_PATHS = [BASE_DIR / 'locale']
  
  
 # Static files (CSS, JavaScript, Images)
@@ -169,6 +183,15 @@ LOGOUT_REDIRECT_URL = '/accounts/login/'
  
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+
+# --- Web Push / PWA ---------------------------------------------------------
+# Ключи генерируются командой: python manage.py webpush_vapid
+# (VAPID_PRIVATE_KEY — base64url 32-байтного ключа или путь к PEM-файлу).
+VAPID_PUBLIC_KEY = config('VAPID_PUBLIC_KEY', default='')
+VAPID_PRIVATE_KEY = config('VAPID_PRIVATE_KEY', default='')
+VAPID_ADMIN_EMAIL = config('VAPID_ADMIN_EMAIL', default='mailto:admin@example.com')
+WEBPUSH_ENABLED = bool(VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY)
  
  
 # Безопасность для продакшена (HTTPS).

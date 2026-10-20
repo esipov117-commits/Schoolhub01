@@ -13,9 +13,9 @@ urlpatterns = [
     path('', include('posts.urls')),
     path('', include('events.urls')),
     path('', include('chat.urls')),
-    path("calendar/", include("planner.urls")),
     path("tasks/", include("tasks.urls")),
     path('stories/', include('stories.urls')),
+    path('', include('webpush.urls')),
 ]
 
 # static() отдаёт /media/ только при DEBUG — в продакшене загруженные фото

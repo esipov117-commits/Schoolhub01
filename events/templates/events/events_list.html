@@ -1,13 +1,14 @@
 {% extends 'base.html' %}
 
-{% block title %}События — SchoolHub{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "События" %} — SchoolHub{% endblock %}
 
 {% block content %}
 <div class="card">
     <div class="card-header" style="margin-bottom: 0;">
-        <div class="card-title">Ближайшие события</div>
+        <div class="card-title">{% trans "Ближайшие события" %}</div>
         {% if user.profile.is_organizer %}
-            <a href="{% url 'create_event' %}" class="card-link">+ Добавить событие</a>
+            <a href="{% url 'create_event' %}" class="card-link">+ {% trans "Добавить событие" %}</a>
         {% endif %}
     </div>
 </div>
@@ -23,11 +24,11 @@
 
             {% if user.profile.is_organizer %}
             <div class="event-actions">
-                <a href="{% url 'edit_event' event.id %}" class="event-btn" title="Редактировать" aria-label="Редактировать"><svg class="i"><use href="#i-edit"></use></svg></a>
+                <a href="{% url 'edit_event' event.id %}" class="event-btn" title="{% trans 'Редактировать' %}" aria-label="{% trans 'Редактировать' %}"><svg class="i"><use href="#i-edit"></use></svg></a>
                 <form method="POST" action="{% url 'delete_event' event.id %}"
-                      onsubmit="return confirm('Удалить событие «{{ event.title|escapejs }}»?');">
+                      onsubmit="return confirm('{% blocktrans with t=event.title|escapejs %}Удалить событие «{{ t }}»?{% endblocktrans %}');">
                     {% csrf_token %}
-                    <button type="submit" class="event-btn event-btn-danger" title="Удалить" aria-label="Удалить"><svg class="i"><use href="#i-trash"></use></svg></button>
+                    <button type="submit" class="event-btn event-btn-danger" title="{% trans 'Удалить' %}" aria-label="{% trans 'Удалить' %}"><svg class="i"><use href="#i-trash"></use></svg></button>
                 </form>
             </div>
             {% endif %}
@@ -45,7 +46,7 @@
         {% endif %}
     </div>
     {% empty %}
-    <div class="card">Пока нет запланированных событий.</div>
+    <div class="card">{% trans "Пока нет запланированных событий." %}</div>
     {% endfor %}
 </div>
 

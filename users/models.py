@@ -5,6 +5,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
+from django.utils.translation import gettext_lazy as _
 from PIL import Image, ImageOps
 
 
@@ -70,7 +71,7 @@ def validate_image_size(image):
     max_size_mb = 5
     if image.size > max_size_mb * 1024 * 1024:
         raise ValidationError(
-            f"Размер файла не должен превышать {max_size_mb}MB"
+            _("Размер файла не должен превышать %(n)sMB") % {"n": max_size_mb}
         )
 
 
@@ -78,7 +79,7 @@ def validate_video_size(video):
     max_size_mb = 3000
     if video.size > max_size_mb * 1024 * 1024:
         raise ValidationError(
-            f"Размер видео не должен превышать {max_size_mb} MB"
+            _("Размер видео не должен превышать %(n)s MB") % {"n": max_size_mb}
         )
 
 
@@ -115,7 +116,7 @@ class Profile(models.Model):
     language = models.CharField(
         max_length=10,
         choices=[
-            ("ru", "Русский"),
+            ("ru", _("Русский")),
             ("en", "English"),
         ],
         default="ru",
@@ -123,6 +124,13 @@ class Profile(models.Model):
 
     def __str__(self):
         return self.user.username
+
+
+def default_language():
+    """Язык по умолчанию для новых профилей — текущий язык проекта."""
+    from django.conf import settings
+
+    return settings.LANGUAGE_CODE
 
 
 class Follow(models.Model):

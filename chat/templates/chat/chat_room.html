@@ -1,6 +1,7 @@
 {% extends "base.html" %}
+{% load i18n %}
 
-{% block title %}Чат с {{ other.username }} — SchoolHub{% endblock %}
+{% block title %}{% blocktrans with name=other.username %}Чат с {{ name }}{% endblocktrans %} — SchoolHub{% endblock %}
 {% block grid_columns %}240px 1fr{% endblock %}
 {% block rightbar %}{% endblock %}
 
@@ -124,7 +125,7 @@
 {% block content %}
 <div class="card chat-room">
     <div class="chat-head">
-        <a class="chat-back" href="{% url 'chat' %}" aria-label="Назад">
+        <a class="chat-back" href="{% url 'chat' %}" aria-label="{% trans 'Назад' %}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="m15 18-6-6 6-6"/>
             </svg>
@@ -151,14 +152,14 @@
             </div>
             {% endfor %}
         {% else %}
-            <div class="chat-empty">Напишите первое сообщение <svg class="i"><use href="#i-hand"></use></svg></div>
+            <div class="chat-empty">{% trans "Напишите первое сообщение" %} <svg class="i"><use href="#i-hand"></use></svg></div>
         {% endif %}
     </div>
 
     <form class="chat-form" id="chatForm">
         {% csrf_token %}
-        <input type="text" id="chatInput" placeholder="Сообщение…" autocomplete="off" maxlength="2000">
-        <button type="submit" aria-label="Отправить">
+        <input type="text" id="chatInput" placeholder="{% trans 'Сообщение…' %}" autocomplete="off" maxlength="2000">
+        <button type="submit" aria-label="{% trans 'Отправить' %}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="m22 2-7 20-4-9-9-4Z"/>
                 <path d="M22 2 11 13"/>

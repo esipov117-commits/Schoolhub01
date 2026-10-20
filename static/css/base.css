@@ -245,6 +245,84 @@ img {
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+/* Push-уведомления: пункт в меню пользователя + подсказка про iOS */
+.user-dropdown button[data-push-toggle]:not([hidden]):before {
+    content: "";
+    display: block;
+    height: 1px;
+    margin: 6px 4px;
+    background: var(--border);
+}
+
+.msg-toast.push-toast {
+    width: auto;
+    max-width: 300px;
+    font-size: 13.5px;
+    font-weight: 600;
+}
+
+.ios-install-hint {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 20px;
+    background: color-mix(in srgb, var(--panel) 84%, transparent);
+    border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, .18);
+    z-index: 1400;
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity .3s ease, transform .3s ease;
+    pointer-events: none;
+}
+.ios-install-hint.show {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+}
+.ios-install-text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+.ios-install-text strong {
+    font-size: 14px;
+}
+.ios-install-text span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+    font-size: 12.5px;
+    color: var(--muted);
+}
+.ios-install-text svg {
+    width: 15px;
+    height: 15px;
+    vertical-align: -2px;
+}
+.ios-install-close {
+    flex: 0 0 auto;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: none;
+    background: var(--sidebar-active-bg);
+    color: var(--text);
+    font-size: 19px;
+    line-height: 1;
+    cursor: pointer;
+}
 .notif-panel {
     position: absolute;
     right: 0;
@@ -919,6 +997,8 @@ button.btn-primary:active {
         padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
     }
 
+    /* iOS "Liquid Glass": почти прозрачное тело + сильный blur,
+       блики по краям и отражение света сверху */
     .bottom-nav {
         display: flex;
         align-items: center;
@@ -930,14 +1010,69 @@ button.btn-primary:active {
         height: 66px;
         padding: 7px;
         border-radius: 24px;
-        background: color-mix(in srgb, var(--panel) 78%, transparent);
-        border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
-        backdrop-filter: blur(24px) saturate(180%);
-        -webkit-backdrop-filter: blur(24px) saturate(180%);
+        isolation: isolate;
+        overflow: hidden;
+        background:
+            linear-gradient(180deg,
+                rgba(255, 255, 255, 0.26) 0%,
+                rgba(255, 255, 255, 0.09) 46%,
+                rgba(255, 255, 255, 0.18) 100%);
+        border: 1px solid rgba(255, 255, 255, 0.42);
+        backdrop-filter: blur(34px) saturate(210%) brightness(1.06);
+        -webkit-backdrop-filter: blur(34px) saturate(210%) brightness(1.06);
         box-shadow:
-            0 12px 35px rgba(0,0,0,.14),
-            0 2px 8px rgba(0,0,0,.08);
+            inset 0 1px 0 rgba(255, 255, 255, 0.75),
+            inset 0 -1px 0 rgba(255, 255, 255, 0.22),
+            inset 1px 0 0 rgba(255, 255, 255, 0.35),
+            inset -1px 0 0 rgba(255, 255, 255, 0.35),
+            inset 0 0 24px rgba(255, 255, 255, 0.14),
+            0 10px 30px rgba(0, 0, 0, 0.12),
+            0 2px 6px rgba(0, 0, 0, 0.06);
         z-index: 1000;
+    }
+
+    /* тонкая световая кайма по контуру (refraction rim) */
+    .bottom-nav::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        padding: 1px;
+        background:
+            conic-gradient(from 210deg at 50% 0%,
+                rgba(255, 255, 255, 0.95),
+                rgba(255, 255, 255, 0.25) 25%,
+                rgba(255, 255, 255, 0.05) 55%,
+                rgba(255, 255, 255, 0.18) 78%,
+                rgba(255, 255, 255, 0.75) 100%);
+        -webkit-mask:
+            linear-gradient(#000 0 0) content-box,
+            linear-gradient(#000 0 0);
+        -webkit-mask-composite: xor;
+        mask:
+            linear-gradient(#000 0 0) content-box,
+            linear-gradient(#000 0 0);
+        mask-composite: exclude;
+        pointer-events: none;
+        z-index: 2;
+    }
+
+    /* верхний блик — «стекло» ловит свет */
+    .bottom-nav::after {
+        content: "";
+        position: absolute;
+        left: 8%;
+        right: 8%;
+        top: -46px;
+        height: 62px;
+        border-radius: 50%;
+        background: radial-gradient(closest-side,
+            rgba(255, 255, 255, 0.75),
+            rgba(255, 255, 255, 0) 72%);
+        filter: blur(6px);
+        opacity: 0.7;
+        pointer-events: none;
+        z-index: 1;
     }
 
     .bottom-nav a {
@@ -994,23 +1129,24 @@ button.btn-primary:active {
         width: 0;
         border-radius: 18px;
         background:
-            linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.08)),
-            color-mix(in srgb, var(--accent) 16%, transparent);
-        border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+            linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.12)),
+            color-mix(in srgb, var(--accent) 14%, transparent);
+        border: 1px solid rgba(255, 255, 255, 0.45);
         box-shadow:
-            0 6px 16px -7px color-mix(in srgb, var(--accent) 55%, transparent),
-            inset 0 1px 0 rgba(255, 255, 255, 0.6),
-            inset 0 -1px 0 rgba(0, 0, 0, 0.05);
-        backdrop-filter: blur(14px) saturate(180%);
-        -webkit-backdrop-filter: blur(14px) saturate(180%);
+            0 6px 18px -8px color-mix(in srgb, var(--accent) 60%, transparent),
+            inset 0 1px 0 rgba(255, 255, 255, 0.7),
+            inset 0 -1px 0 rgba(255, 255, 255, 0.18),
+            inset 0 0 12px rgba(255, 255, 255, 0.25);
+        backdrop-filter: blur(18px) saturate(200%) brightness(1.05);
+        -webkit-backdrop-filter: blur(18px) saturate(200%) brightness(1.05);
         will-change: transform, width;
         transform: translate3d(0, 0, 0);
         pointer-events: none;
-        z-index: 0;
+        z-index: 1;
     }
 
     .bottom-nav a {
-        z-index: 1;
+        z-index: 3;
     }
 
     .bottom-nav a.active svg {
@@ -1023,21 +1159,48 @@ button.btn-primary:active {
     }
 
     [data-theme="dark"] .bottom-nav {
-        background: rgba(30,31,35,.78);
+        background:
+            linear-gradient(180deg,
+                rgba(255, 255, 255, 0.14) 0%,
+                rgba(255, 255, 255, 0.05) 46%,
+                rgba(255, 255, 255, 0.09) 100%);
+        border-color: rgba(255, 255, 255, 0.16);
+        backdrop-filter: blur(34px) saturate(200%) brightness(1.2);
+        -webkit-backdrop-filter: blur(34px) saturate(200%) brightness(1.2);
         box-shadow:
-            0 12px 35px rgba(0,0,0,.35),
-            0 2px 8px rgba(0,0,0,.2);
+            inset 0 1px 0 rgba(255, 255, 255, 0.30),
+            inset 0 -1px 0 rgba(255, 255, 255, 0.06),
+            inset 1px 0 0 rgba(255, 255, 255, 0.10),
+            inset -1px 0 0 rgba(255, 255, 255, 0.10),
+            inset 0 0 24px rgba(255, 255, 255, 0.05),
+            0 10px 30px rgba(0, 0, 0, 0.45),
+            0 2px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    [data-theme="dark"] .bottom-nav::before {
+        background:
+            conic-gradient(from 210deg at 50% 0%,
+                rgba(255, 255, 255, 0.55),
+                rgba(255, 255, 255, 0.14) 25%,
+                rgba(255, 255, 255, 0.03) 55%,
+                rgba(255, 255, 255, 0.10) 78%,
+                rgba(255, 255, 255, 0.40) 100%);
+    }
+
+    [data-theme="dark"] .bottom-nav::after {
+        opacity: 0.35;
     }
 
     [data-theme="dark"] .bottom-nav-indicator {
         background:
-            linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02)),
-            rgba(10, 132, 255, .18);
-        border-color: rgba(10, 132, 255, .35);
+            linear-gradient(180deg, rgba(255, 255, 255, 0.20), rgba(255, 255, 255, 0.05)),
+            rgba(10, 132, 255, .22);
+        border-color: rgba(255, 255, 255, 0.28);
         box-shadow:
-            0 6px 16px -7px rgba(10, 132, 255, .6),
-            inset 0 1px 0 rgba(255, 255, 255, 0.14),
-            inset 0 -1px 0 rgba(0, 0, 0, 0.25);
+            0 6px 18px -8px rgba(10, 132, 255, .7),
+            inset 0 1px 0 rgba(255, 255, 255, 0.28),
+            inset 0 -1px 0 rgba(0, 0, 0, 0.25),
+            inset 0 0 12px rgba(255, 255, 255, 0.08);
     }
 
     [data-theme="dark"] .bottom-nav a.active {
