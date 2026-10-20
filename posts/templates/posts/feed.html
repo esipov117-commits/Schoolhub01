@@ -303,6 +303,7 @@
 <script>
 window.FEED_CONFIG = {
     meId: {{ user.id|default:"null" }},
+    isModerator: {{ user.profile.is_moderator|yesno:"true,false" }},
     meAvatar: "{% if user.profile.avatar %}{{ user.profile.avatar.url }}{% endif %}",
     meName: "{{ user.username|default:''|escapejs }}",
     profileBase: "{% url 'profile_user' 'PLACEHOLDER' %}".replace('PLACEHOLDER', ''),

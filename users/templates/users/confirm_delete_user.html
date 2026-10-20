@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}Удаление аккаунта — SchoolHub{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 480px; margin: 40px auto;">
+    <h2 style="margin-top:0;">Удалить аккаунт?</h2>
+    <p>Вы уверены, что хотите удалить пользователя <b>{{ target_user.username }}</b>?</p>
+    <p style="color:var(--muted); font-size:14px;">Все посты, истории, комментарии и сообщения будут удалены безвозвратно.</p>
+    <form method="post" style="display:flex; gap:12px; margin-top:20px;">
+        {% csrf_token %}
+        <button type="submit" style="flex:1; padding:12px; border:none; border-radius:12px; background:#e0245e; color:#fff; font-size:15px; font-weight:600; cursor:pointer;">Удалить</button>
+        <a href="{% url 'profile_user' target_user.username %}" style="flex:1; padding:12px; border-radius:12px; background:var(--bg); color:var(--text); text-align:center; text-decoration:none; font-size:15px; font-weight:600;">Отмена</a>
+    </form>
+</div>
+{% endblock %}

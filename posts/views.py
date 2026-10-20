@@ -198,7 +198,8 @@ def toggle_like(request, post_id):
 @login_required
 def delete_post(request, post_id):
     post = get_object_or_404(Post, id=post_id)
-    if post.author == request.user:
+    is_moderator = request.user.profile.is_moderator or request.user.is_staff
+    if post.author == request.user or is_moderator:
         post.delete()
         return JsonResponse({'deleted': True})
     return JsonResponse({'deleted': False, 'error': 'Not your post'}, status=403)

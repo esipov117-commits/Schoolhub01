@@ -134,6 +134,16 @@
                             </button>
                         </form>
                     {% endif %}
+
+                    {% if not is_own_profile and not profile_user.is_superuser %}
+                        {% if request.user.is_staff or request.user.profile.is_moderator %}
+                        <a
+                            class="profile-btn danger"
+                            href="{% url 'delete_user' profile_user.id %}">
+                            <svg class="i"><use href="#i-trash"></use></svg> Удалить аккаунт
+                        </a>
+                        {% endif %}
+                    {% endif %}
                 </div>
             </div>
             <div class="profile-meta">
