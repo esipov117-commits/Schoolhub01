@@ -103,6 +103,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'users.context_processors.email_verification',
             ],
         },
     },
@@ -166,7 +167,27 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
  
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
- 
+
+# Почта: подтверждение регистрации по email.
+# Gmail: smtp.gmail.com:587 + TLS + пароль приложения.
+# Yandex: smtp.yandex.ru:587 + TLS + пароль приложения.
+EMAIL_BACKEND = config(
+    'EMAIL_BACKEND',
+    default='django.core.mail.backends.smtp.EmailBackend',
+)
+EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
+EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
+EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
+EMAIL_USE_SSL = config('EMAIL_USE_SSL', default=False, cast=bool)
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+EMAIL_TIMEOUT = config('EMAIL_TIMEOUT', default=15, cast=int)
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default=EMAIL_HOST_USER)
+# Сколько секунд ждать перед повторной отправкой ссылки подтверждения.
+EMAIL_RESEND_COOLDOWN = config('EMAIL_RESEND_COOLDOWN', default=60, cast=int)
+# Базовый URL сайта — фолбэк для ссылок в письмах, если Host запроса невалиден.
+SITE_URL = config('SITE_URL', default='http://localhost:8000')
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
  

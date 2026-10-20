@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ru" id="html-root">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Проверьте почту — SchoolHub</title>
+    <style>
+        :root {
+            --panel: #ffffff;
+            --text: #1c1c1e;
+            --muted: #8e8e93;
+            --border: rgba(60, 60, 67, 0.12);
+            --accent: #007aff;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: #f4f5f7;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 24px;
+            color: var(--text);
+        }
+        .page { width: min(420px, 100%); }
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 0 4px;
+        }
+        .brand {
+            font-weight: 800;
+            font-size: 22px;
+            letter-spacing: -0.02em;
+            color: var(--text);
+        }
+        .lang-switch {
+            display: flex;
+            gap: 2px;
+            background: #eceef1;
+            border-radius: 999px;
+            padding: 3px;
+        }
+        .lang-btn {
+            border: none;
+            background: transparent;
+            padding: 6px 14px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--muted);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .lang-btn.active {
+            background: #ffffff;
+            color: var(--text);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .login-card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 36px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.04);
+        }
+        .icon-circle {
+            width: 72px;
+            height: 72px;
+            margin: 0 auto 20px;
+            border-radius: 50%;
+            background: #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .icon-circle svg { width: 34px; height: 34px; color: #9ca3af; }
+        .login-title { text-align: center; margin: 0; font-size: 22px; font-weight: 700; }
+        .subtitle {
+            text-align: center;
+            color: var(--muted);
+            margin: 10px 0 8px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .email {
+            text-align: center;
+            font-weight: 600;
+            word-break: break-all;
+            margin: 0 0 22px;
+        }
+        .messages { margin-bottom: 16px; }
+        .message {
+            font-size: 13px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            margin-bottom: 6px;
+        }
+        .message.success { background: #ecfdf5; color: #047857; }
+        .message.warning { background: #fffbeb; color: #b45309; }
+        .message.error { background: #fef2f2; color: #b91c1c; }
+        button[type="submit"], .link-btn {
+            width: 100%;
+            padding: 13px;
+            border: none;
+            border-radius: 12px;
+            background: var(--accent);
+            color: #fff;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: background 0.15s ease;
+            text-decoration: none;
+            text-align: center;
+            display: inline-block;
+        }
+        button[type="submit"]:hover, .link-btn:hover { background: #0071e3; }
+        .link-btn.secondary {
+            background: transparent;
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+        .link-btn.secondary:hover { background: #f9fafb; }
+        .footer { margin-top: 22px; text-align: center; color: var(--muted); font-size: 13px; }
+        .footer a { color: var(--text); font-weight: 600; text-decoration: none; }
+        .footer a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+<div class="page">
+    <div class="topbar">
+        <div class="brand">SchoolHub</div>
+        <div class="lang-switch">
+            <button type="button" class="lang-btn active" data-lang="ru" onclick="setLang('ru')">RU</button>
+            <button type="button" class="lang-btn" data-lang="en" onclick="setLang('en')">EN</button>
+        </div>
+    </div>
+    <div class="login-card">
+        <div class="icon-circle">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="4" width="20" height="16" rx="2"/>
+                <path d="m22 7-10 6L2 7"/>
+            </svg>
+        </div>
+        <h1 class="login-title" data-i18n="title">Проверьте почту</h1>
+        <p class="subtitle" data-i18n="subtitle">
+            Мы отправили ссылку подтверждения на вашу почту. Перейдите по ней, чтобы активировать аккаунт.
+        </p>
+        {% if email %}
+        <p class="email" data-i18n-email>{{ email }}</p>
+        {% endif %}
+
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="message {{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <form method="post" action="{% url 'resend_activation' %}">
+            {% csrf_token %}
+            <input type="hidden" name="email" value="{{ email }}">
+            <button type="submit" data-i18n="resend">Отправить ещё раз</button>
+        </form>
+
+        <div class="footer">
+            <a href="{% url 'login' %}" class="link-btn secondary" data-i18n="back">Вернуться ко входу</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    const translations = {
+        ru: {
+            title: "Проверьте почту",
+            subtitle: "Мы отправили ссылку подтверждения на вашу почту. Перейдите по ней, чтобы активировать аккаунт.",
+            resend: "Отправить ещё раз",
+            back: "Вернуться ко входу",
+            page_title: "Проверьте почту | SchoolHub"
+        },
+        en: {
+            title: "Check your email",
+            subtitle: "We sent a confirmation link to your email. Open it to activate your account.",
+            resend: "Resend email",
+            back: "Back to sign in",
+            page_title: "Check your email | SchoolHub"
+        }
+    };
+
+    function setLang(lang) {
+        const dict = translations[lang];
+        if (!dict) return;
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (dict[key] !== undefined) el.textContent = dict[key];
+        });
+        document.getElementById('page-title').textContent = dict.page_title;
+        document.getElementById('html-root').setAttribute('lang', lang);
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
+        });
+        localStorage.setItem('preferredLang', lang);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        setLang(localStorage.getItem('preferredLang') || 'ru');
+    });
+</script>
+</body>
+</html>
