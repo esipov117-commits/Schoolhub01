@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static i18n %}
 
-{% block title %}Главная — SchoolHub{% endblock %}
+{% block title %}{% trans "Главная" %} — SchoolHub{% endblock %}
 
 {% block extra_head %}
     <link rel="stylesheet" href="{% static 'css/feed.css' %}">
@@ -12,7 +12,7 @@
     <!-- Истории -->
     <section class="stories-card">
         <div class="stories-bar" id="storiesBar">
-            <button class="story-item" id="addStoryBtn" type="button" title="Добавить историю">
+            <button class="story-item" id="addStoryBtn" type="button" title="{% trans 'Добавить историю' %}">
                 <span class="story-avatar story-add-avatar">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
                          stroke-linecap="round" stroke-linejoin="round">
@@ -20,7 +20,7 @@
                         <line x1="5" y1="12" x2="19" y2="12"></line>
                     </svg>
                 </span>
-                <span class="story-label">Моя история</span>
+                <span class="story-label">{% trans "Моя история" %}</span>
             </button>
 
             {% for author, stories, viewed in other_stories %}
@@ -38,14 +38,14 @@
             </button>
             {% empty %}
             <span class="story-label" style="color: var(--muted); max-width: none; align-self: center;">
-                Пока нет историй
+                {% trans "Пока нет историй" %}
             </span>
             {% endfor %}
         </div>
     </section>
 
     <!-- Композер: создание поста (как в Threads) -->
-    <button class="composer-row" id="openPostModal" type="button" aria-label="Создать публикацию">
+    <button class="composer-row" id="openPostModal" type="button" aria-label="{% trans 'Создать публикацию' %}">
         <span class="composer-avatar">
             {% if user.profile.avatar %}
             <img src="{{ user.profile.avatar.url }}" alt="{{ user.username }}" loading="lazy" decoding="async">
@@ -53,7 +53,7 @@
             <span class="composer-avatar-ph">{{ user.username|first|upper }}</span>
             {% endif %}
         </span>
-        <span class="composer-placeholder">Что нового, {{ user.username }}?</span>
+        <span class="composer-placeholder">{% blocktrans with name=user.username %}Что нового, {{ name }}?{% endblocktrans %}</span>
         <span class="composer-plus" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -76,9 +76,9 @@
                 <path d="M21 15l-5-5L5 21"></path>
             </svg>
         </div>
-        <div class="feed-empty-title">Здесь пока пусто</div>
-        <div class="feed-empty-text">Создайте первую публикацию и поделитесь новостями.</div>
-        <button class="feed-empty-btn" type="button">Создать публикацию</button>
+        <div class="feed-empty-title">{% trans "Здесь пока пусто" %}</div>
+        <div class="feed-empty-text">{% trans "Создайте первую публикацию и поделитесь новостями." %}</div>
+        <button class="feed-empty-btn" type="button">{% trans "Создать публикацию" %}</button>
     </div>
     {% endfor %}
     </div>
@@ -108,8 +108,8 @@
 <!-- Модалка: создание истории -->
 <dialog class="app-modal" id="storyCreateModal">
     <div class="modal-head">
-        <span class="modal-title">Новая история</span>
-        <button class="modal-head-btn" type="button" data-close-story>Отмена</button>
+        <span class="modal-title">{% trans "Новая история" %}</span>
+        <button class="modal-head-btn" type="button" data-close-story>{% trans "Отмена" %}</button>
     </div>
     <div class="modal-body">
         <label class="picker-area" id="storyPickerArea">
@@ -119,15 +119,15 @@
                 <circle cx="8.5" cy="8.5" r="1.5"></circle>
                 <path d="M21 15l-5-5L5 21"></path>
             </svg>
-            <span class="picker-hint">Выберите фото или видео</span>
-            <span class="picker-sub">История исчезнет через 24 часа</span>
+            <span class="picker-hint">{% trans "Выберите фото или видео" %}</span>
+            <span class="picker-sub">{% trans "История исчезнет через 24 часа" %}</span>
         </label>
         <div class="preview-grid" id="storyPreview" style="display:none;"></div>
         <div class="modal-error" id="storyError"></div>
     </div>
     <div class="modal-foot">
-        <button class="btn-ghost" type="button" data-close-story>Отмена</button>
-        <button class="modal-head-btn primary" type="button" id="storySubmitBtn" disabled>Опубликовать</button>
+        <button class="btn-ghost" type="button" data-close-story>{% trans "Отмена" %}</button>
+        <button class="modal-head-btn primary" type="button" id="storySubmitBtn" disabled>{% trans "Опубликовать" %}</button>
     </div>
     <input type="file" id="storyFileInput" accept="image/*,video/*" hidden>
 </dialog>
@@ -142,8 +142,8 @@
                 <path d="M12 19l-7-7 7-7"></path>
             </svg>
         </button>
-        <span class="modal-title">Новая публикация</span>
-        <button class="modal-head-btn primary" type="button" id="postSubmitBtn" disabled>Далее</button>
+        <span class="modal-title">{% trans "Новая публикация" %}</span>
+        <button class="modal-head-btn primary" type="button" id="postSubmitBtn" disabled>{% trans "Далее" %}</button>
     </div>
     <div class="modal-body">
         <label class="picker-area" id="postPickerArea">
@@ -153,15 +153,15 @@
                 <circle cx="8.5" cy="8.5" r="1.5"></circle>
                 <path d="M21 15l-5-5L5 21"></path>
             </svg>
-            <span class="picker-hint">Перетащите фото сюда</span>
-            <span class="picker-sub">или нажмите, чтобы выбрать с устройства</span>
+            <span class="picker-hint">{% trans "Перетащите фото сюда" %}</span>
+            <span class="picker-sub">{% trans "или нажмите, чтобы выбрать с устройства" %}</span>
         </label>
         <button class="picker-text-btn" type="button" id="textOnlyPostBtn">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                  stroke-linecap="round" stroke-linejoin="round">
                 <path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"></path>
             </svg>
-            Написать текст
+            {% trans "Написать текст" %}
         </button>
         <button class="picker-more-btn" type="button" id="addMoreMediaBtn" style="display:none;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -169,7 +169,7 @@
                 <line x1="12" y1="5" x2="12" y2="19"></line>
                 <line x1="5" y1="12" x2="19" y2="12"></line>
             </svg>
-            Добавить ещё
+            {% trans "Добавить ещё" %}
         </button>
         <div class="preview-grid" id="postPreview" style="display:none;"></div>
 
@@ -181,7 +181,7 @@
                     <path d="M9 3v18"></path>
                     <path d="M15 3v18"></path>
                 </svg>
-                Карусель
+                {% trans "Карусель" %}
             </button>
             <button type="button" data-mode="grid">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -191,13 +191,13 @@
                     <rect x="3" y="14" width="7" height="7"></rect>
                     <rect x="14" y="14" width="7" height="7"></rect>
                 </svg>
-                Сетка
+                {% trans "Сетка" %}
             </button>
         </div>
 
-        <div class="field-label" id="captionLabel" style="display:none;">Подпись</div>
+        <div class="field-label" id="captionLabel" style="display:none;">{% trans "Подпись" %}</div>
         <textarea id="postCaption" rows="3" style="display:none; resize:vertical; font-family:inherit;"
-                  placeholder="Напишите подпись…"></textarea>
+                  placeholder="{% trans 'Напишите подпись…' %}"></textarea>
         <div class="modal-error" id="postError"></div>
     </div>
     <input type="file" id="postFileInput" accept="image/*,video/*" multiple hidden>
@@ -216,7 +216,7 @@
         <div class="story-tap-left" id="storyPrevZone"></div>
         <div class="story-tap-right" id="storyNextZone"></div>
         <div class="viewer-caption-text" id="viewer-caption" style="display:none;"></div>
-        <button class="viewer-icon-btn" id="storySoundBtn" type="button" title="Выключить звук"
+        <button class="viewer-icon-btn" id="storySoundBtn" type="button" title="{% trans 'Выключить звук' %}"
                 style="display:none;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                  stroke-linecap="round" stroke-linejoin="round">
@@ -225,7 +225,7 @@
                 <path d="M18.5 5.5a9 9 0 0 1 0 13"></path>
             </svg>
         </button>
-        <button class="viewer-icon-btn" id="storyDeleteBtn" type="button" title="Удалить историю">
+        <button class="viewer-icon-btn" id="storyDeleteBtn" type="button" title="{% trans 'Удалить историю' %}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                  stroke-linecap="round" stroke-linejoin="round">
                 <path d="M4 7h16"></path>
@@ -233,21 +233,21 @@
                 <path d="M6 7l1 13h10l1-13"></path>
             </svg>
         </button>
-        <button class="viewer-icon-btn" id="storyStatsBtn" type="button" title="Статистика истории">
+        <button class="viewer-icon-btn" id="storyStatsBtn" type="button" title="{% trans 'Статистика истории' %}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                  stroke-linecap="round" stroke-linejoin="round">
                 <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
                 <circle cx="12" cy="12" r="3"></circle>
             </svg>
         </button>
-        <button class="viewer-icon-btn" id="storyLikeBtn" type="button" title="Нравится" style="display:none;">
+        <button class="viewer-icon-btn" id="storyLikeBtn" type="button" title="{% trans 'Нравится' %}" style="display:none;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                  stroke-linecap="round" stroke-linejoin="round">
                 <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z"></path>
             </svg>
         </button>
     </div>
-    <button class="story-close" id="storyViewerClose" type="button" title="Закрыть">
+    <button class="story-close" id="storyViewerClose" type="button" title="{% trans 'Закрыть' %}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
              stroke-linecap="round" stroke-linejoin="round">
             <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -259,8 +259,8 @@
 <!-- Модалка: статистика истории -->
 <dialog class="app-modal" id="storyStatsModal">
     <div class="modal-head">
-        <span class="modal-title">Статистика истории</span>
-        <button class="modal-head-btn" type="button" id="storyStatsClose">Закрыть</button>
+        <span class="modal-title">{% trans "Статистика истории" %}</span>
+        <button class="modal-head-btn" type="button" id="storyStatsClose">{% trans "Закрыть" %}</button>
     </div>
     <div class="modal-body">
         <div class="story-stats-summary" id="storyStatsSummary"></div>
@@ -270,21 +270,21 @@
 
 <!-- Лайтбокс -->
 <div id="lightboxOverlay">
-    <button id="lightboxClose" title="Закрыть">
+    <button id="lightboxClose" title="{% trans 'Закрыть' %}">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
         </svg>
     </button>
-    <button id="lightboxPrev" class="lightbox-arrow" style="left: 20px;" title="Назад">
+    <button id="lightboxPrev" class="lightbox-arrow" style="left: 20px;" title="{% trans 'Назад' %}">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M15 18l-6-6 6-6"></path>
         </svg>
     </button>
     <div id="lightboxTrack"></div>
-    <button id="lightboxNext" class="lightbox-arrow" style="right: 20px;" title="Вперёд">
+    <button id="lightboxNext" class="lightbox-arrow" style="right: 20px;" title="{% trans 'Вперёд' %}">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M9 18l6-6-6-6"></path>
@@ -296,14 +296,14 @@
 <!-- Подтверждение удаления -->
 <div id="confirmOverlay">
     <div>
-        <p id="confirmText" style="margin: 0 0 16px; font-weight: 600;">Удалить публикацию?</p>
-        <p style="margin: 0 0 20px; font-size: 14px; color: var(--muted);">Это действие нельзя отменить.</p>
+        <p id="confirmText" style="margin: 0 0 16px; font-weight: 600;">{% trans "Удалить публикацию?" %}</p>
+        <p style="margin: 0 0 20px; font-size: 14px; color: var(--muted);">{% trans "Это действие нельзя отменить." %}</p>
         <div style="display: flex; gap: 10px; justify-content: flex-end;">
-            <button class="btn-ghost" id="confirmCancel" type="button">Отмена</button>
+            <button class="btn-ghost" id="confirmCancel" type="button">{% trans "Отмена" %}</button>
             <button id="confirmDelete" type="button"
                     style="background: #e0245e; color: #fff; border: none; border-radius: 10px;
                            padding: 9px 16px; font-family: inherit; font-size: 14px; cursor: pointer;">
-                Удалить
+                {% trans "Удалить" %}
             </button>
         </div>
     </div>

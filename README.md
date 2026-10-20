@@ -63,6 +63,8 @@ EOF
 | `DB_NAME`, `DB_USER`, `DB_PASSWORD` | да | — | Подключение к PostgreSQL |
 | `DB_HOST`, `DB_PORT` | нет | `localhost`, `5432` | Хост/порт БД |
 | `CHAT_MASTER_KEY` | нет | вывод из `SECRET_KEY` | Мастер-ключ шифрования чата (Fernet) |
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | для push | — | Ключи Web Push (генерирует `manage.py webpush_vapid`) |
+| `VAPID_ADMIN_EMAIL` | нет | `mailto:admin@example.com` | Контакт в VAPID-подписи; для продакшена указать реальный |
 | `COOKIE_SECURE`, `SECURE_SSL_REDIRECT` | нет | `not DEBUG` | Принудительный HTTPS в проде |
 | `TRUST_PROXY`, `USE_X_FORWARDED_HOST` | нет | `True`, `False` | Работа за nginx/прокси с TLS |
 
@@ -70,6 +72,7 @@ EOF
 
 ```
 config/     — настройки, корневой urls, wsgi/asgi
+locale/     — переводы интерфейса (gettext .po/.mo, язык en)
 users/      — регистрация/логин, профили, подписки, настройки темы
 posts/      — лента, лайки, комментарии (render + JSON для AJAX)
 chat/       — диалоги, шифрование (crypto.py), опрос новых сообщений
@@ -79,6 +82,7 @@ tasks/      — личные задачи (живут на главной)
 planner/    — календарь событий (templates/calendar.html в корне)
 templates/  — base.html, welcome.html + папки приложений
 static/js/  — feed.js, main.js (infinite scroll, лайки, сторис, чат)
+webpush/    — PWA-манифест, service worker, Web Push (VAPID) и подписки
 ```
 
 ## Полезные команды
@@ -90,7 +94,50 @@ static/js/  — feed.js, main.js (infinite scroll, лайки, сторис, ч�
 .venv/bin/python manage.py test               # тесты
 .venv/bin/python manage.py collectstatic      # сбор статики для продакшена
 .venv/bin/python manage.py cleanup_stories    # удалить просроченные сторис
+.venv/bin/python manage.py webpush_vapid      # сгенерировать VAPID-ключи для push
+.venv/bin/python manage.py makemessages -l en # собрать строки для перевода
+.venv/bin/python manage.py compilemessages    # скомпилировать .po → .mo
 ```
+
+## Язык интерфейса
+
+Язык хранится в `Profile.language` (`ru` по умолчанию, `en`), применяется
+через `users.middleware.LanguageMiddleware` (после `LocaleMiddleware`).
+Переключение — в «Настройках» → «Язык»; выбор сразу сохраняется и перезагружает
+страницу (эндпоинт `set_language`, JSON). Строки интерфейса оборачиваются в
+`{% trans %}`/`{% blocktrans %}`, переводы — в `locale/<код>/LC_MESSAGES/`.
+
+Чтобы добавить новый язык: внести код в `LANGUAGES` (`config/settings.py`),
+добавить вариант в `Profile.language`, затем
+`makemessages -l <код>` → перевести `locale/<код>/LC_MESSAGES/django.po` →
+`compilemessages`.
+
+## Уведомления как в приложении (PWA / Web Push)
+
+Проект устанавливается на телефон как PWA и шлёт push-уведомления о новых
+сообщениях чата — даже когда вкладка закрыта.
+
+Как это работает:
+
+- `/manifest.webmanifest` и `/sw.js` (service worker со scope `/`) отдаёт
+  приложение `webpush/`; на iPhone сайт добавляется на экран «Домой» и
+  открывается без адресной строки;
+- подписки устройств хранятся в модели `PushSubscription` (админка `/admin/`);
+- при отправке сообщения `chat.views.send_message` вызывает
+  `webpush.push.notify_new_message`, который в фоновом потоке рассылает push
+  через `pywebpush` с VAPID-подписью.
+
+Требования: **HTTPS** (push API не работает по http, кроме `localhost`) и
+VAPID-ключи в `.env`:
+
+```bash
+.venv/bin/python manage.py webpush_vapid   # выведет строки для .env
+```
+
+Пользователь включает уведомления в «Настройках» → «Уведомления на телефон»
+или в меню профиля. Ограничения Apple: на iOS уведомления приходят только
+после добавления сайта на экран «Домой» (iOS 16.4+); при первом запуске
+на iPhone показывается подсказка, как это сделать.
 
 ## Продакшен-заметки
 

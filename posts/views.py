@@ -8,6 +8,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.utils import timezone
+from django.utils.translation import gettext as _
 from .models import Post, PostImage, Like, Comment
 from stories.models import Story, StoryView
 from users.models import downscale_image
@@ -118,7 +119,7 @@ def feed(request):
                     'created_at': post.created_at.isoformat(),
                 })
         elif is_ajax:
-            return JsonResponse({'error': 'Добавьте текст или выберите фото'}, status=400)
+            return JsonResponse({'error': _('Добавьте текст или выберите фото')}, status=400)
         return redirect('feed')
     liked_post_ids = set(Like.objects.filter(user=request.user).values_list('post_id', flat=True))
     posts_qs = _post_queryset()
@@ -250,7 +251,7 @@ def add_comment(request, post_id):
     text = request.POST.get('text', '').strip()
 
     if not text:
-        return JsonResponse({'error': 'Комментарий не может быть пустым'}, status=400)
+        return JsonResponse({'error': _('Комментарий не может быть пустым')}, status=400)
 
     parent = None
     parent_id = request.POST.get('parent_id', '').strip()
@@ -258,9 +259,9 @@ def add_comment(request, post_id):
         try:
             parent = Comment.objects.get(id=parent_id)
         except (Comment.DoesNotExist, ValueError):
-            return JsonResponse({'error': 'Комментарий не найден'}, status=400)
+            return JsonResponse({'error': _('Комментарий не найден')}, status=400)
         if parent.post_id != post.id:
-            return JsonResponse({'error': 'Комментарий не найден'}, status=400)
+            return JsonResponse({'error': _('Комментарий не найден')}, status=400)
         # Одноуровневая вложенность: ответ на ответ прикрепляем к корневому.
         if parent.parent_id:
             parent = parent.parent

@@ -1,38 +1,39 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
-{% block title %}Новое событие — SchoolHub{% endblock %}
+{% block title %}{% trans "Новое событие" %} — SchoolHub{% endblock %}
 
 {% block content %}
 <div class="card event-form-card">
-    <h2 style="margin-bottom: 4px;">Создать событие</h2>
-    <p class="event-form-sub">Заполни детали — событие появится в общем списке</p>
+    <h2 style="margin-bottom: 4px;">{% trans "Создать событие" %}</h2>
+    <p class="event-form-sub">{% trans "Заполни детали — событие появится в общем списке" %}</p>
 
     <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
         <div class="field-group">
-            <label class="field-label" for="id_title">Название</label>
-            <input type="text" id="id_title" name="title" placeholder="Например, Контрольная работа" required>
+            <label class="field-label" for="id_title">{% trans "Название" %}</label>
+            <input type="text" id="id_title" name="title" placeholder="{% trans 'Например, Контрольная работа' %}" required>
         </div>
 
         <div class="field-group">
-            <label class="field-label" for="id_description">Описание</label>
-            <textarea id="id_description" name="description" placeholder="Дополнительные детали (необязательно)"></textarea>
+            <label class="field-label" for="id_description">{% trans "Описание" %}</label>
+            <textarea id="id_description" name="description" placeholder="{% trans 'Дополнительные детали (необязательно)' %}"></textarea>
         </div>
 
         <div class="field-group">
-            <label class="field-label" for="id_date">Дата и время</label>
+            <label class="field-label" for="id_date">{% trans "Дата и время" %}</label>
             <input type="datetime-local" id="id_date" name="date" required>
         </div>
 
         <div class="field-group">
-            <label class="field-label" for="id_location">Место</label>
-            <input type="text" id="id_location" name="location" placeholder="Например, Актовый зал">
+            <label class="field-label" for="id_location">{% trans "Место" %}</label>
+            <input type="text" id="id_location" name="location" placeholder="{% trans 'Например, Актовый зал' %}">
         </div>
 
         <div class="field-group">
-            <label class="field-label" for="id_image">Фото / афиша</label>
+            <label class="field-label" for="id_image">{% trans "Фото / афиша" %}</label>
             <label class="upload-btn">
-                <svg class="i"><use href="#i-image"></use></svg> Загрузить фото
+                <svg class="i"><use href="#i-image"></use></svg> {% trans "Загрузить фото" %}
                 <input type="file" id="id_image" name="image" accept="image/*" style="display:none;" onchange="previewEventImage(this)">
             </label>
             <div id="imagePreviewBox" style="margin-top:10px; display:none;">
@@ -41,8 +42,8 @@
         </div>
 
         <div class="form-actions">
-            <button type="submit" class="btn-primary">Создать</button>
-            <a href="{% url 'events_list' %}" class="btn-secondary">Отмена</a>
+            <button type="submit" class="btn-primary">{% trans "Создать" %}</button>
+            <a href="{% url 'events_list' %}" class="btn-secondary">{% trans "Отмена" %}</a>
         </div>
     </form>
 </div>

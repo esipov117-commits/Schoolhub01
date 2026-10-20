@@ -1,4 +1,5 @@
 from django import forms
+from django.utils.translation import gettext_lazy as _
 from .models import Profile
 
 
@@ -13,6 +14,6 @@ class UserSettingsForm(forms.ModelForm):
         }
 
         labels = {
-            "language": "Язык",
-            "dark_mode": "Тёмная тема",
+            "language": _("Язык"),
+            "dark_mode": _("Тёмная тема"),
         }

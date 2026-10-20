@@ -1,17 +1,18 @@
 {% extends "users/profile.html" %}
+{% load i18n %}
 
 {% block profile_content %}
 <div class="profile-section-card card">
     <div class="section-header">
-        <h3>Фото</h3>
-        <span>{{ photos_count|default:0 }} фото</span>
+        <h3>{% trans "Фото" %}</h3>
+        <span>{% blocktrans count n=photos_count|default:0 %}{{ n }} фото{% plural %}{{ n }} фото{% endblocktrans %}</span>
     </div>
     {% if photos %}
         <div class="photo-grid">
             {% for photo in photos %}
                 <div class="photo-card">
                     {% if photo.image %}
-                        <img src="{{ photo.image.url }}" alt="Фото" loading="lazy" decoding="async">
+                        <img src="{{ photo.image.url }}" alt="{% trans 'Фото' %}" loading="lazy" decoding="async">
                     {% elif photo.video %}
                         <video controls src="{{ photo.video.url }}"></video>
                     {% endif %}
@@ -21,16 +22,16 @@
         {% if page_obj and page_obj.paginator.num_pages > 1 %}
         <div class="profile-pagination">
             {% if page_obj.has_previous %}
-                <a class="profile-btn" href="?page={{ page_obj.previous_page_number }}">Назад</a>
+                <a class="profile-btn" href="?page={{ page_obj.previous_page_number }}">{% trans "Назад" %}</a>
             {% endif %}
-            <span class="pagination-info">Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+            <span class="pagination-info">{% blocktrans with num=page_obj.number total=page_obj.paginator.num_pages %}Страница {{ num }} из {{ total }}{% endblocktrans %}</span>
             {% if page_obj.has_next %}
-                <a class="profile-btn" href="?page={{ page_obj.next_page_number }}">Вперёд</a>
+                <a class="profile-btn" href="?page={{ page_obj.next_page_number }}">{% trans "Вперёд" %}</a>
             {% endif %}
         </div>
         {% endif %}
     {% else %}
-        <p class="empty-state">Пока нет фото</p>
+        <p class="empty-state">{% trans "Пока нет фото" %}</p>
     {% endif %}
 </div>
 {% endblock %}

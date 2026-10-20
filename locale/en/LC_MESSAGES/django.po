@@ -1,0 +1,759 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-20 15:45+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: chat/templates/chat/chat_list.html:4 chat/templates/chat/coming_soon.html:5
+#: templates/base.html:254 templates/base.html:406
+msgid "Чат"
+msgstr "Chat"
+
+#: chat/templates/chat/chat_list.html:94
+msgid "Новый чат"
+msgstr "New chat"
+
+#: chat/templates/chat/chat_list.html:98
+msgid "Имя пользователя для нового чата…"
+msgstr "Username for a new chat…"
+
+#: chat/templates/chat/chat_list.html:99
+msgid "Начать"
+msgstr "Start"
+
+#: chat/templates/chat/chat_list.html:107
+msgid "Все чаты"
+msgstr "All chats"
+
+#: chat/templates/chat/chat_list.html:127
+msgid "Вы:"
+msgstr "You:"
+
+#: chat/templates/chat/chat_list.html:127
+msgid "Нет сообщений"
+msgstr "No messages"
+
+#: chat/templates/chat/chat_list.html:143
+msgid "Чатов пока нет — начните новый выше"
+msgstr "No chats yet — start a new one above"
+
+#: chat/templates/chat/chat_room.html:4
+#, python-format
+msgid "Чат с %(name)s"
+msgstr "Chat with %(name)s"
+
+#: chat/templates/chat/chat_room.html:128 posts/templates/posts/feed.html:280
+#: users/templates/users/photos.html:25 users/templates/users/profile.html:218
+msgid "Назад"
+msgstr "Back"
+
+#: chat/templates/chat/chat_room.html:155
+msgid "Напишите первое сообщение"
+msgstr "Write the first message"
+
+#: chat/templates/chat/chat_room.html:161
+msgid "Сообщение…"
+msgstr "Message…"
+
+#: chat/templates/chat/chat_room.html:162
+#: posts/templates/posts/_post_card.html:150
+msgid "Отправить"
+msgstr "Send"
+
+#: chat/templates/chat/coming_soon.html:10
+msgid "Чат скоро появится"
+msgstr "Chat is coming soon"
+
+#: chat/templates/chat/coming_soon.html:11
+msgid "Чат скоро появится!"
+msgstr "Chat is coming soon!"
+
+#: chat/templates/chat/coming_soon.html:12
+msgid "Мы уже работаем над этим"
+msgstr "We're already working on it"
+
+#: chat/views.py:138
+msgid "Пустое сообщение"
+msgstr "Empty message"
+
+#: events/templates/events/create_event.html:4 templates/calendar.html:274
+msgid "Новое событие"
+msgstr "New event"
+
+#: events/templates/events/create_event.html:8
+msgid "Создать событие"
+msgstr "Create event"
+
+#: events/templates/events/create_event.html:9
+msgid "Заполни детали — событие появится в общем списке"
+msgstr "Fill in the details — the event will appear in the common list"
+
+#: events/templates/events/create_event.html:14
+#: events/templates/events/edit_event.html:14 planner/forms.py:22
+msgid "Название"
+msgstr "Title"
+
+#: events/templates/events/create_event.html:15
+msgid "Например, Контрольная работа"
+msgstr "e.g. Test paper"
+
+#: events/templates/events/create_event.html:19
+#: events/templates/events/edit_event.html:19 planner/forms.py:23
+msgid "Описание"
+msgstr "Description"
+
+#: events/templates/events/create_event.html:20
+msgid "Дополнительные детали (необязательно)"
+msgstr "Additional details (optional)"
+
+#: events/templates/events/create_event.html:24
+#: events/templates/events/edit_event.html:24
+msgid "Дата и время"
+msgstr "Date and time"
+
+#: events/templates/events/create_event.html:29
+#: events/templates/events/edit_event.html:30
+msgid "Место"
+msgstr "Location"
+
+#: events/templates/events/create_event.html:30
+msgid "Например, Актовый зал"
+msgstr "e.g. Assembly hall"
+
+#: events/templates/events/create_event.html:34
+#: events/templates/events/edit_event.html:35
+msgid "Фото / афиша"
+msgstr "Photo / poster"
+
+#: events/templates/events/create_event.html:36
+#: events/templates/events/edit_event.html:41
+msgid "Загрузить фото"
+msgstr "Upload photo"
+
+#: events/templates/events/create_event.html:45 templates/calendar.html:298
+msgid "Создать"
+msgstr "Create"
+
+#: events/templates/events/create_event.html:46
+#: events/templates/events/edit_event.html:48
+#: posts/templates/posts/feed.html:112 posts/templates/posts/feed.html:129
+#: posts/templates/posts/feed.html:302
+#: users/templates/users/edit_profile.html:217
+msgid "Отмена"
+msgstr "Cancel"
+
+#: events/templates/events/edit_event.html:4
+#: events/templates/events/edit_event.html:8
+msgid "Редактировать событие"
+msgstr "Edit event"
+
+#: events/templates/events/edit_event.html:9
+msgid "Измени детали и сохрани"
+msgstr "Change the details and save"
+
+#: events/templates/events/edit_event.html:41
+msgid "Заменить фото"
+msgstr "Replace photo"
+
+#: events/templates/events/edit_event.html:47
+#: users/templates/users/edit_profile.html:216
+msgid "Сохранить"
+msgstr "Save"
+
+#: events/templates/events/events_list.html:4 templates/base.html:267
+#: templates/base.html:419
+msgid "События"
+msgstr "Events"
+
+#: events/templates/events/events_list.html:9
+msgid "Ближайшие события"
+msgstr "Upcoming events"
+
+#: events/templates/events/events_list.html:11
+msgid "Добавить событие"
+msgstr "Add event"
+
+#: events/templates/events/events_list.html:27
+#: posts/templates/posts/_post_card.html:28
+#: posts/templates/posts/_post_card.html:29
+#: users/templates/users/profile.html:107
+msgid "Редактировать"
+msgstr "Edit"
+
+#: events/templates/events/events_list.html:29
+#, python-format
+msgid "Удалить событие «%(t)s»?"
+msgstr "Delete event “%(t)s”?"
+
+#: events/templates/events/events_list.html:31
+#: posts/templates/posts/_comment.html:49
+#: posts/templates/posts/_comment.html:66
+#: posts/templates/posts/_post_card.html:36
+#: posts/templates/posts/_post_card.html:37 posts/templates/posts/feed.html:306
+msgid "Удалить"
+msgstr "Delete"
+
+#: events/templates/events/events_list.html:49
+msgid "Пока нет запланированных событий."
+msgstr "No scheduled events yet."
+
+#: planner/forms.py:24
+msgid "Дата"
+msgstr "Date"
+
+#: planner/forms.py:25
+msgid "Начало"
+msgstr "Start"
+
+#: planner/forms.py:26
+msgid "Окончание"
+msgstr "End"
+
+#: planner/forms.py:27
+msgid "Тип события"
+msgstr "Event type"
+
+#: planner/models.py:9
+msgid "Личное"
+msgstr "Personal"
+
+#: planner/models.py:10
+msgid "Школа"
+msgstr "School"
+
+#: planner/models.py:11
+msgid "Репетитор"
+msgstr "Tutor"
+
+#: posts/templates/posts/_comment.html:21
+msgid "Ответить"
+msgstr "Reply"
+
+#: posts/templates/posts/_post_card.html:18
+msgid "изменено"
+msgstr "edited"
+
+#: posts/templates/posts/_post_card.html:87 posts/templates/posts/feed.html:243
+#: posts/templatetags/post_extras.py:35
+msgid "Нравится"
+msgstr "Like"
+
+#: posts/templates/posts/_post_card.html:100
+msgid "Комментарии"
+msgstr "Comments"
+
+#: posts/templates/posts/_post_card.html:107
+msgid "Поделиться"
+msgstr "Share"
+
+#: posts/templates/posts/_post_card.html:123
+msgid "Пока нет комментариев — напишите первый."
+msgstr "No comments yet — write the first one."
+
+#: posts/templates/posts/_post_card.html:130
+msgid "Показать ещё"
+msgstr "Show more"
+
+#: posts/templates/posts/_post_card.html:147
+msgid "Добавьте комментарий…"
+msgstr "Add a comment…"
+
+#: posts/templates/posts/community.html:4 templates/base.html:244
+#: templates/base.html:393
+msgid "Сообщество"
+msgstr "Community"
+
+#: posts/templates/posts/community.html:105 templates/base.html:346
+#: users/templates/users/friends.html:6 users/templates/users/profile.html:19
+#: users/templates/users/profile.html:176
+msgid "Друзья"
+msgstr "Friends"
+
+#: posts/templates/posts/community.html:109
+#: users/templates/users/follow_list.html:22
+#: users/templates/users/profile.html:119 users/templates/users/search.html:20
+msgid "Подписан"
+msgstr "Following"
+
+#: posts/templates/posts/community.html:114
+#: users/templates/users/follow_list.html:22
+#: users/templates/users/profile.html:121 users/templates/users/search.html:20
+msgid "Подписаться"
+msgstr "Follow"
+
+#: posts/templates/posts/community.html:120
+#: users/templates/users/profile.html:134
+msgid "Написать"
+msgstr "Message"
+
+#: posts/templates/posts/community.html:126
+msgid "Пока никого нет"
+msgstr "No one here yet"
+
+#: posts/templates/posts/feed.html:4 templates/base.html:231
+#: templates/base.html:380
+msgid "Главная"
+msgstr "Home"
+
+#: posts/templates/posts/feed.html:15
+msgid "Добавить историю"
+msgstr "Add story"
+
+#: posts/templates/posts/feed.html:23
+msgid "Моя история"
+msgstr "My story"
+
+#: posts/templates/posts/feed.html:41
+msgid "Пока нет историй"
+msgstr "No stories yet"
+
+#: posts/templates/posts/feed.html:48 posts/templates/posts/feed.html:81
+msgid "Создать публикацию"
+msgstr "Create post"
+
+#: posts/templates/posts/feed.html:56
+#, python-format
+msgid "Что нового, %(name)s?"
+msgstr "What's new, %(name)s?"
+
+#: posts/templates/posts/feed.html:79
+msgid "Здесь пока пусто"
+msgstr "Nothing here yet"
+
+#: posts/templates/posts/feed.html:80
+msgid "Создайте первую публикацию и поделитесь новостями."
+msgstr "Create your first post and share the news."
+
+#: posts/templates/posts/feed.html:111
+msgid "Новая история"
+msgstr "New story"
+
+#: posts/templates/posts/feed.html:122
+msgid "Выберите фото или видео"
+msgstr "Choose a photo or video"
+
+#: posts/templates/posts/feed.html:123
+msgid "История исчезнет через 24 часа"
+msgstr "The story disappears after 24 hours"
+
+#: posts/templates/posts/feed.html:130
+msgid "Опубликовать"
+msgstr "Publish"
+
+#: posts/templates/posts/feed.html:145
+msgid "Новая публикация"
+msgstr "New post"
+
+#: posts/templates/posts/feed.html:146
+msgid "Далее"
+msgstr "Next"
+
+#: posts/templates/posts/feed.html:156
+msgid "Перетащите фото сюда"
+msgstr "Drag a photo here"
+
+#: posts/templates/posts/feed.html:157
+msgid "или нажмите, чтобы выбрать с устройства"
+msgstr "or click to choose from your device"
+
+#: posts/templates/posts/feed.html:164
+msgid "Написать текст"
+msgstr "Write text"
+
+#: posts/templates/posts/feed.html:172
+msgid "Добавить ещё"
+msgstr "Add more"
+
+#: posts/templates/posts/feed.html:184
+msgid "Карусель"
+msgstr "Carousel"
+
+#: posts/templates/posts/feed.html:194
+msgid "Сетка"
+msgstr "Grid"
+
+#: posts/templates/posts/feed.html:198
+msgid "Подпись"
+msgstr "Caption"
+
+#: posts/templates/posts/feed.html:200
+msgid "Напишите подпись…"
+msgstr "Write a caption…"
+
+#: posts/templates/posts/feed.html:219
+msgid "Выключить звук"
+msgstr "Mute"
+
+#: posts/templates/posts/feed.html:228
+msgid "Удалить историю"
+msgstr "Delete story"
+
+#: posts/templates/posts/feed.html:236 posts/templates/posts/feed.html:262
+msgid "Статистика истории"
+msgstr "Story stats"
+
+#: posts/templates/posts/feed.html:250 posts/templates/posts/feed.html:263
+#: posts/templates/posts/feed.html:273
+msgid "Закрыть"
+msgstr "Close"
+
+#: posts/templates/posts/feed.html:287 users/templates/users/photos.html:29
+#: users/templates/users/profile.html:222
+msgid "Вперёд"
+msgstr "Next"
+
+#: posts/templates/posts/feed.html:299
+msgid "Удалить публикацию?"
+msgstr "Delete post?"
+
+#: posts/templates/posts/feed.html:300
+msgid "Это действие нельзя отменить."
+msgstr "This action cannot be undone."
+
+#: posts/templatetags/post_extras.py:34
+msgid "отметка"
+msgstr "like"
+
+#: posts/templatetags/post_extras.py:34
+msgid "отметки"
+msgstr "likes"
+
+#: posts/templatetags/post_extras.py:34
+msgid "отметок"
+msgstr "likes"
+
+#: posts/templatetags/post_extras.py:41
+msgid "комментарий"
+msgstr "comment"
+
+#: posts/templatetags/post_extras.py:41
+msgid "комментария"
+msgstr "comments"
+
+#: posts/templatetags/post_extras.py:41
+msgid "комментариев"
+msgstr "comments"
+
+#: posts/templatetags/post_extras.py:59
+msgid "только что"
+msgstr "just now"
+
+#: posts/templatetags/post_extras.py:62
+#, python-format
+msgid "%(n)s мин."
+msgstr "%(n)s min."
+
+#: posts/templatetags/post_extras.py:65
+#, python-format
+msgid "%(n)s ч."
+msgstr "%(n)s h."
+
+#: posts/templatetags/post_extras.py:68
+#, python-format
+msgid "%(n)s дн."
+msgstr "%(n)s d."
+
+#: posts/views.py:122
+msgid "Добавьте текст или выберите фото"
+msgstr "Add text or choose a photo"
+
+#: posts/views.py:254
+msgid "Комментарий не может быть пустым"
+msgstr "Comment can't be empty"
+
+#: posts/views.py:262 posts/views.py:264
+msgid "Комментарий не найден"
+msgstr "Comment not found"
+
+#: stories/views.py:34
+msgid "Нет файла"
+msgstr "No file"
+
+#: stories/views.py:157
+msgid "Нельзя лайкать свою историю"
+msgstr "You can't like your own story"
+
+#: stories/views.py:177
+msgid "Статистика доступна только автору"
+msgstr "Stats are available only to the author"
+
+#: templates/base.html:9
+msgid "SchoolHub — школьная соцсеть: лента, чаты, события, задачи и календарь."
+msgstr ""
+"SchoolHub — a school social network: feed, chats, events, tasks and a "
+"calendar."
+
+#: templates/base.html:65 templates/base.html:100 templates/base.html:209
+#: users/templates/users/search.html:3
+msgid "Поиск"
+msgstr "Search"
+
+#: templates/base.html:109 templates/base.html:179
+msgid "Уведомления"
+msgstr "Notifications"
+
+#: templates/base.html:119
+msgid "Сообщения"
+msgstr "Messages"
+
+#: templates/base.html:175 templates/base.html:278 templates/base.html:430
+#: users/templates/users/profile.html:4
+msgid "Профиль"
+msgstr "Profile"
+
+#: templates/base.html:176 users/templates/users/settings.html:4
+#: users/templates/users/settings.html:10
+msgid "Настройки"
+msgstr "Settings"
+
+#: templates/base.html:184
+msgid "Выйти"
+msgstr "Log out"
+
+#: templates/base.html:295
+msgid "Мой профиль"
+msgstr "My profile"
+
+#: templates/base.html:329 users/templates/users/profile.html:142
+msgid "Группа не указана"
+msgstr "No group specified"
+
+#: templates/base.html:339 users/templates/users/profile.html:15
+#: users/templates/users/profile.html:163
+#: users/templates/users/profile.html:194
+msgid "Посты"
+msgstr "Posts"
+
+#: templates/base.html:353
+msgid "Группы"
+msgstr "Groups"
+
+#: templates/calendar.html:9
+msgid "Календарь"
+msgstr "Calendar"
+
+#: templates/calendar.html:221
+msgid "Мой календарь"
+msgstr "My calendar"
+
+#: users/forms.py:17 users/templates/users/settings.html:31
+#: users/templates/users/settings.html:35
+msgid "Язык"
+msgstr "Language"
+
+#: users/forms.py:18 users/templates/users/settings.html:15
+msgid "Тёмная тема"
+msgstr "Dark theme"
+
+#: users/models.py:74
+#, python-format
+msgid "Размер файла не должен превышать %(n)sMB"
+msgstr "File size must not exceed %(n)sMB"
+
+#: users/models.py:82
+#, python-format
+msgid "Размер видео не должен превышать %(n)s MB"
+msgstr "Video size must not exceed %(n)s MB"
+
+#: users/models.py:119
+msgid "Русский"
+msgstr "Russian"
+
+#: users/templates/users/edit_profile.html:3
+#: users/templates/users/edit_profile.html:129
+msgid "Редактировать профиль"
+msgstr "Edit profile"
+
+#: users/templates/users/edit_profile.html:130
+msgid "Изменения сразу отразятся на твоей странице профиля"
+msgstr "Changes will show immediately on your profile page"
+
+#: users/templates/users/edit_profile.html:137
+msgid "Баннер профиля"
+msgstr "Profile banner"
+
+#: users/templates/users/edit_profile.html:145
+msgid "Баннер не загружен"
+msgstr "No banner uploaded"
+
+#: users/templates/users/edit_profile.html:150
+msgid "Загрузить баннер"
+msgstr "Upload banner"
+
+#: users/templates/users/edit_profile.html:155
+msgid "Положение по вертикали"
+msgstr "Vertical position"
+
+#: users/templates/users/edit_profile.html:166
+msgid "Фото профиля"
+msgstr "Profile photo"
+
+#: users/templates/users/edit_profile.html:178
+msgid "Сменить фото"
+msgstr "Change photo"
+
+#: users/templates/users/edit_profile.html:186
+msgid "Отображаемое имя"
+msgstr "Display name"
+
+#: users/templates/users/edit_profile.html:188
+msgid "Как тебя видят другие"
+msgstr "How others see you"
+
+#: users/templates/users/edit_profile.html:193
+msgid "Группа / класс"
+msgstr "Group / class"
+
+#: users/templates/users/edit_profile.html:195
+msgid "Например, 10-А"
+msgstr "e.g. 10-A"
+
+#: users/templates/users/edit_profile.html:200
+#: users/templates/users/profile.html:34
+msgid "Статус"
+msgstr "Status"
+
+#: users/templates/users/edit_profile.html:202
+msgid "Например, «Готовлюсь к ЕГЭ» или «На созвоне»"
+msgstr "e.g. “Studying for exams” or “On a call”"
+
+#: users/templates/users/edit_profile.html:208
+#: users/templates/users/profile.html:188
+msgid "О себе"
+msgstr "About"
+
+#: users/templates/users/edit_profile.html:210
+msgid "Расскажи немного о себе"
+msgstr "Tell a little about yourself"
+
+#: users/templates/users/follow_list.html:28
+msgid "Пусто"
+msgstr "Empty"
+
+#: users/templates/users/friends.html:18
+msgid "Пользователь"
+msgstr "User"
+
+#: users/templates/users/friends.html:24
+msgid "Пока нет друзей"
+msgstr "No friends yet"
+
+#: users/templates/users/photos.html:7 users/templates/users/photos.html:15
+#: users/templates/users/profile.html:23 users/templates/users/profile.html:181
+#: users/templates/users/profile.html:234
+msgid "Фото"
+msgstr "Photo"
+
+#: users/templates/users/photos.html:8
+#, python-format
+msgid "%(n)s фото"
+msgid_plural "%(n)s фото"
+msgstr[0] "%(n)s photo"
+msgstr[1] "%(n)s photos"
+
+#: users/templates/users/photos.html:27 users/templates/users/profile.html:220
+#, python-format
+msgid "Страница %(num)s из %(total)s"
+msgstr "Page %(num)s of %(total)s"
+
+#: users/templates/users/photos.html:34
+msgid "Пока нет фото"
+msgstr "No photos yet"
+
+#: users/templates/users/profile.html:11
+msgid "Статистика"
+msgstr "Statistics"
+
+#: users/templates/users/profile.html:28
+msgid "Информация"
+msgstr "Information"
+
+#: users/templates/users/profile.html:30
+msgid "Группа"
+msgstr "Group"
+
+#: users/templates/users/profile.html:31
+msgid "Не указана"
+msgstr "Not specified"
+
+#: users/templates/users/profile.html:35
+msgid "Нет статуса"
+msgstr "No status"
+
+#: users/templates/users/profile.html:38
+msgid "Регистрация"
+msgstr "Joined"
+
+#: users/templates/users/profile.html:47
+msgid "Поделиться профилем"
+msgstr "Share profile"
+
+#: users/templates/users/profile.html:50
+msgid "Ссылка скопирована"
+msgstr "Link copied"
+
+#: users/templates/users/profile.html:89
+msgid "Подтверждённый профиль"
+msgstr "Verified profile"
+
+#: users/templates/users/profile.html:155 users/views.py:308
+msgid "Подписчики"
+msgstr "Followers"
+
+#: users/templates/users/profile.html:159 users/views.py:329
+msgid "Подписки"
+msgstr "Following"
+
+#: users/templates/users/profile.html:171
+msgid "Стена"
+msgstr "Wall"
+
+#: users/templates/users/profile.html:190
+msgid "Пользователь пока ничего не рассказал о себе."
+msgstr "This user hasn't written anything about themselves yet."
+
+#: users/templates/users/profile.html:212
+msgid "Пока нет постов"
+msgstr "No posts yet"
+
+#: users/templates/users/search.html:25
+#, python-format
+msgid "Никого не найдено по запросу \"%(q)s\""
+msgstr "No one found for \"%(q)s\""
+
+#: users/templates/users/settings.html:16
+msgid "Использовать тёмное оформление сайта."
+msgstr "Use the site's dark appearance."
+
+#: users/templates/users/settings.html:32
+msgid "Язык интерфейса SchoolHub."
+msgstr "SchoolHub interface language."
+
+#: users/templates/users/settings.html:51
+msgid "Уведомления на телефон"
+msgstr "Phone notifications"
+
+#: users/templates/users/settings.html:52
+msgid "Push-уведомления работают как в обычном приложении."
+msgstr "Push notifications work like in a regular app."
+
+#: webpush/push.py:118
+msgid "Новое сообщение"
+msgstr "New message"
+
+#: webpush/views.py:29 webpush/views.py:57
+msgid "Некорректный JSON"
+msgstr "Invalid JSON"

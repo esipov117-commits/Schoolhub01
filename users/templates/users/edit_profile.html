@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
-{% block title %}Редактировать профиль — SchoolHub{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Редактировать профиль" %} — SchoolHub{% endblock %}
 {% block grid_columns %}240px 1fr{% endblock %}
 {% block rightbar %}{% endblock %}
 
@@ -125,15 +126,15 @@
 </style>
 
 <div class="card edit-card">
-    <h2>Редактировать профиль</h2>
-    <p class="edit-sub">Изменения сразу отразятся на твоей странице профиля</p>
+    <h2>{% trans "Редактировать профиль" %}</h2>
+    <p class="edit-sub">{% trans "Изменения сразу отразятся на твоей странице профиля" %}</p>
 
     <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
 
         <!-- Баннер -->
         <div class="field-group">
-            <span class="field-label">Баннер профиля</span>
+            <span class="field-label">{% trans "Баннер профиля" %}</span>
 
             <div class="banner-edit" id="bannerPreviewBox">
                 {% if profile.banner %}
@@ -141,17 +142,17 @@
                          style="object-position: center {{ profile.banner_position|default:50 }}%;">
                 {% else %}
                     <img id="bannerPreviewImg" src="" style="display:none;">
-                    <div class="banner-empty-hint" id="bannerEmptyHint">Баннер не загружен</div>
+                    <div class="banner-empty-hint" id="bannerEmptyHint">{% trans "Баннер не загружен" %}</div>
                 {% endif %}
             </div>
 
             <label class="upload-btn">
-                <svg class="i"><use href="#i-image"></use></svg> Загрузить баннер
+                <svg class="i"><use href="#i-image"></use></svg> {% trans "Загрузить баннер" %}
                 <input type="file" name="banner" accept="image/*" style="display:none;" id="bannerInput">
             </label>
 
             <div class="banner-position-row">
-                <span>Положение по вертикали</span>
+                <span>{% trans "Положение по вертикали" %}</span>
                 <input type="range" min="0" max="100"
                        value="{{ profile.banner_position|default:50 }}"
                        id="bannerPositionSlider">
@@ -162,7 +163,7 @@
 
         <!-- Аватар -->
         <div class="field-group">
-            <span class="field-label">Фото профиля</span>
+            <span class="field-label">{% trans "Фото профиля" %}</span>
             <div class="avatar-edit-row">
                 <div class="avatar-edit-preview" id="avatarPreviewBox">
                     {% if profile.avatar %}
@@ -174,7 +175,7 @@
                     {% endif %}
                 </div>
                 <label class="upload-btn">
-                    <svg class="i"><use href="#i-camera"></use></svg> Сменить фото
+                    <svg class="i"><use href="#i-camera"></use></svg> {% trans "Сменить фото" %}
                     <input type="file" name="avatar" accept="image/*" style="display:none;" id="avatarInput">
                 </label>
             </div>
@@ -182,38 +183,38 @@
 
         <!-- Имя -->
         <div class="field-group">
-            <label class="field-label" for="id_display_name">Отображаемое имя</label>
+            <label class="field-label" for="id_display_name">{% trans "Отображаемое имя" %}</label>
             <input type="text" id="id_display_name" name="display_name"
-                   value="{{ profile.display_name }}" placeholder="Как тебя видят другие">
+                   value="{{ profile.display_name }}" placeholder="{% trans 'Как тебя видят другие' %}">
         </div>
 
         <!-- Класс -->
         <div class="field-group">
-            <label class="field-label" for="id_group_name">Группа / класс</label>
+            <label class="field-label" for="id_group_name">{% trans "Группа / класс" %}</label>
             <input type="text" id="id_group_name" name="group_name"
-                   value="{{ profile.group_name }}" placeholder="Например, 10-А">
+                   value="{{ profile.group_name }}" placeholder="{% trans 'Например, 10-А' %}">
         </div>
 
         <!-- Статус -->
         <div class="field-group">
-            <label class="field-label" for="id_status">Статус</label>
+            <label class="field-label" for="id_status">{% trans "Статус" %}</label>
             <input type="text" id="id_status" name="status"
-                value="{{ profile.status }}" placeholder="Например, «Готовлюсь к ЕГЭ» или «На созвоне»"
+                value="{{ profile.status }}" placeholder="{% trans 'Например, «Готовлюсь к ЕГЭ» или «На созвоне»' %}"
                 maxlength="100">
         </div>
 
         <!-- О себе -->
         <div class="field-group">
-            <label class="field-label" for="id_bio">О себе</label>
+            <label class="field-label" for="id_bio">{% trans "О себе" %}</label>
             <textarea id="id_bio" name="bio" rows="4"
-                placeholder="Расскажи немного о себе"
+                placeholder="{% trans 'Расскажи немного о себе' %}"
                 maxlength="500"
                 style="width:100%; resize:vertical; padding:10px 12px; border-radius:10px; border:1px solid var(--border); background:var(--bg); color:var(--text); font-family:inherit; font-size:14px;">{{ profile.bio }}</textarea>
         </div>
 
         <div class="form-actions">
-            <button type="submit" class="btn-primary">Сохранить</button>
-            <a href="{% url 'profile' %}" class="btn-secondary">Отмена</a>
+            <button type="submit" class="btn-primary">{% trans "Сохранить" %}</button>
+            <a href="{% url 'profile' %}" class="btn-secondary">{% trans "Отмена" %}</a>
         </div>
     </form>
 </div>
