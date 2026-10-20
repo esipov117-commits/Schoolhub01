@@ -224,6 +224,32 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    function syncHead(doc) {
+        var newHead = doc.querySelector('head');
+        if (!newHead) return;
+
+        var links = new Set();
+        document.querySelectorAll('link[rel="stylesheet"]').forEach(function (l) {
+            links.add(l.getAttribute('href'));
+        });
+        var styles = new Set();
+        document.querySelectorAll('head style').forEach(function (s) {
+            styles.add(s.textContent);
+        });
+
+        newHead.querySelectorAll('link[rel="stylesheet"]').forEach(function (link) {
+            var href = link.getAttribute('href');
+            if (!links.has(href)) {
+                document.head.appendChild(link.cloneNode(true));
+            }
+        });
+        newHead.querySelectorAll('style').forEach(function (style) {
+            if (!styles.has(style.textContent)) {
+                document.head.appendChild(style.cloneNode(true));
+            }
+        });
+    }
+
     function navigate(url, push) {
         fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
             .then(function (r) { return r.text(); })
@@ -231,6 +257,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 var doc = new DOMParser().parseFromString(html, 'text/html');
                 var newLayout = doc.querySelector('.layout');
                 if (!newLayout) { window.location.href = url; return; }
+                syncHead(doc);
                 layout.innerHTML = newLayout.innerHTML;
                 activate(layout);
 
