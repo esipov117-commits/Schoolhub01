@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% load static i18n %}
+
+{% block title %}{% trans "Сообщество" %} — SchoolHub{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/feed.css' %}">
+{% endblock %}
+
+{% block content %}
+<style>
+.community-card {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:14px;
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+.community-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 24px -14px rgba(0,0,0,.4);
+    border-color: color-mix(in srgb, var(--border) 50%, transparent);
+}
+.community-actions {
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-wrap:wrap;
+    justify-content:flex-end;
+}
+.btn-comm {
+    position:relative;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    min-height:36px;
+    padding:8px 14px;
+    border-radius:999px;
+    font-family:inherit;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+    text-decoration:none;
+    border:1px solid var(--border);
+    background:var(--sidebar-active-bg);
+    color:var(--text);
+    transition: transform .15s ease, box-shadow .15s ease, background .15s ease, color .15s ease, border-color .15s ease;
+    will-change: transform;
+    overflow:hidden;
+}
+.btn-comm::after {
+    content:"";
+    position:absolute;
+    inset:0;
+    background:radial-gradient(circle at 50% 0, rgba(255,255,255,.18), transparent 70%);
+    pointer-events:none;
+    opacity:0;
+    transition:opacity .15s ease;
+}
+.btn-comm:hover {
+    transform: translateY(-1px) scale(1.01);
+    box-shadow: 0 4px 18px -12px rgba(0,0,0,.5);
+}
+.btn-comm:hover::after {
+    opacity:1;
+}
+.btn-comm:active {
+    transform: translateY(0) scale(.995);
+}
+.btn-comm:focus-visible {
+    outline:2px solid color-mix(in srgb, var(--accent) 40%, transparent);
+    outline-offset:2px;
+}
+.btn-comm.ghost {
+    background:transparent;
+}
+.btn-comm.primary {
+    background:var(--accent);
+    border-color:color-mix(in srgb, var(--accent) 40%, transparent);
+    color:#fff;
+}
+.btn-comm.muted {
+    background:var(--panel);
+    cursor:default;
+}
+</style>
+<div class="feed-main" style="display:flex; flex-direction:column; gap:12px; max-width:640px; margin:0 auto; width:100%;">
+    {% for u in users %}
+    <div class="card community-card">
+        <a href="{% url 'profile_user' u.username %}" style="display:flex; align-items:center; gap:12px; text-decoration:none; color:inherit; flex:1; min-width:0;">
+            {% if u.profile.avatar %}
+            <img src="{{ u.profile.avatar.url }}" class="avatar avatar-medium" loading="lazy" decoding="async">
+            {% else %}
+            <div class="avatar avatar-medium"></div>
+            {% endif %}
+            <div style="min-width:0;">
+                <div style="font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; align-items:center; gap:4px;">{{ u.profile.display_name|default:u.username }}{% if u.profile.is_verified %}{% include 'partials/verified.html' %}{% endif %}</div>
+                <div style="color:var(--muted); font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">@{{ u.username }}</div>
+            </div>
+        </a>
+        <div class="community-actions">
+            {% if u != user %}
+            {% if u.id in friend_ids %}
+            <span class="btn-comm muted">{% trans "Друзья" %}</span>
+            {% elif u.id in following_ids %}
+            <form method="POST" action="{% url 'toggle_follow' u.username %}" style="margin:0;">
+                {% csrf_token %}
+                <button type="submit" class="btn-comm">{% trans "Подписан" %}</button>
+            </form>
+            {% else %}
+            <form method="POST" action="{% url 'toggle_follow' u.username %}" style="margin:0;">
+                {% csrf_token %}
+                <button type="submit" class="btn-comm primary">{% trans "Подписаться" %}</button>
+            </form>
+            {% endif %}
+            <form method="POST" action="{% url 'start_chat' %}" style="margin:0;">
+                {% csrf_token %}
+                <input type="hidden" name="username" value="{{ u.username }}">
+                <button type="submit" class="btn-comm ghost">{% trans "Написать" %}</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+    {% empty %}
+    <div class="card">{% trans "Пока никого нет" %}</div>
+    {% endfor %}
+</div>
+{% endblock %}

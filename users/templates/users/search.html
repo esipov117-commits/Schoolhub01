@@ -1,5 +1,6 @@
 {% extends "base.html" %}
-{% block title %}Поиск — SchoolHub{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Поиск" %} — SchoolHub{% endblock %}
 
 {% block content %}
 {% if query %}
@@ -11,17 +12,17 @@
             {% else %}
                 <div class="avatar avatar-medium"></div>
             {% endif %}
-            <div style="font-weight:600;">{{ u.profile.display_name|default:u.username }}</div>
+            <div style="font-weight:600; display:flex; align-items:center; gap:4px;">{{ u.profile.display_name|default:u.username }}{% if u.profile.is_verified %}{% include 'partials/verified.html' %}{% endif %}</div>
         </a>
         <form method="POST" action="{% url 'toggle_follow' u.username %}" style="margin:0;">
             {% csrf_token %}
             <button type="submit" class="profile-btn" style="background:var(--sidebar-active-bg); border:1px solid var(--border); padding:8px 14px; border-radius:10px; cursor:pointer; font-family:inherit; font-size:13.5px; font-weight:600; color:var(--text);">
-                {% if u.id in following_ids %}<svg class="i"><use href="#i-user-check"></use></svg> Подписан{% else %}<svg class="i"><use href="#i-user-plus"></use></svg> Подписаться{% endif %}
+                {% if u.id in following_ids %}<svg class="i"><use href="#i-user-check"></use></svg> {% trans "Подписан" %}{% else %}<svg class="i"><use href="#i-user-plus"></use></svg> {% trans "Подписаться" %}{% endif %}
             </button>
         </form>
     </div>
     {% empty %}
-    <div class="card">Никого не найдено по запросу "{{ query }}"</div>
+    <div class="card">{% blocktrans with q=query %}Никого не найдено по запросу "{{ q }}"{% endblocktrans %}</div>
     {% endfor %}
 {% endif %}
 {% endblock %}

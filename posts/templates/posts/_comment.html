@@ -1,4 +1,4 @@
-{% load post_extras %}
+{% load i18n post_extras %}
 <div class="comment" id="comment-{{ comment.id }}">
     <a class="comment-avatar" href="{% url 'profile_user' comment.author.username %}">
         {% if comment.author.profile.avatar %}
@@ -18,7 +18,7 @@
                 class="reply-btn"
                 data-comment-id="{{ comment.id }}"
                 data-author="{{ comment.author.username }}">
-                Ответить
+                {% trans "Ответить" %}
             </button>
         </div>
         {% if comment.replies.all %}
@@ -46,7 +46,7 @@
                     class="delete-comment-btn"
                     data-comment-id="{{ reply.id }}"
                     data-post-id="{{ post.id }}"
-                    title="Удалить">
+                    title="{% trans 'Удалить' %}">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
                 </button>
                 {% endif %}
@@ -63,7 +63,7 @@
         class="delete-comment-btn"
         data-comment-id="{{ comment.id }}"
         data-post-id="{{ post.id }}"
-        title="Удалить">
+        title="{% trans 'Удалить' %}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
     </button>
     {% endif %}

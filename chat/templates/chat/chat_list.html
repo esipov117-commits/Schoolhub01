@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
-{% block title %}Чат — SchoolHub{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Чат" %} — SchoolHub{% endblock %}
 
 {% block extra_head %}
 <style>
@@ -90,12 +91,12 @@
 {% block content %}
 <div class="card">
     <div class="card-header">
-        <div class="card-title"><svg class="i"><use href="#i-chat"></use></svg> Новый чат</div>
+        <div class="card-title"><svg class="i"><use href="#i-chat"></use></svg> {% trans "Новый чат" %}</div>
     </div>
     <form method="post" action="{% url 'chat' %}" class="chat-new-form">
         {% csrf_token %}
-        <input type="text" name="username" placeholder="Имя пользователя для нового чата…" required autocomplete="off">
-        <button type="submit">Начать</button>
+        <input type="text" name="username" placeholder="{% trans 'Имя пользователя для нового чата…' %}" required autocomplete="off">
+        <button type="submit">{% trans "Начать" %}</button>
     </form>
 </div>
 
@@ -103,7 +104,7 @@
 
 <div class="card">
     <div class="card-header">
-        <div class="card-title">Все чаты</div>
+        <div class="card-title">{% trans "Все чаты" %}</div>
     </div>
 
     {% if dialogs %}
@@ -123,7 +124,7 @@
             <div class="dialog-body">
                 <div class="dialog-name">{{ d.other.username }}</div>
                 <div class="dialog-preview">
-                    {% if d.last and d.last.sender_id == user.pk %}Вы: {% endif %}{{ d.last_text|default:"Нет сообщений" }}
+                    {% if d.last and d.last.sender_id == user.pk %}{% trans 'Вы:' %} {% endif %}{{ d.last_text|default:_("Нет сообщений") }}
                 </div>
             </div>
             <div class="dialog-side">
@@ -139,7 +140,7 @@
     </div>
     {% else %}
     <div style="text-align:center; padding:28px; color:var(--muted);">
-        Чатов пока нет — начните новый выше <svg class="i"><use href="#i-arrow-up"></use></svg>
+        {% trans "Чатов пока нет — начните новый выше" %} <svg class="i"><use href="#i-arrow-up"></use></svg>
     </div>
     {% endif %}
 </div>

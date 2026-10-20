@@ -1,40 +1,41 @@
 {% extends "base.html" %}
 
-{% block title %}Профиль — SchoolHub{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Профиль" %} — SchoolHub{% endblock %}
 {% block grid_columns %}240px 1fr 320px{% endblock %}
 
 {% block rightbar %}
 
 <aside class="profile-side-card card">
     <div class="profile-side-card__header">
-        <h3><svg class="i"><use href="#i-chart"></use></svg> Статистика</h3>
+        <h3><svg class="i"><use href="#i-chart"></use></svg> {% trans "Статистика" %}</h3>
     </div>
 <div class="profile-side-list">
     <div class="profile-side-item">
-        <span>Посты</span>
+        <span>{% trans "Посты" %}</span>
         <strong>{{ posts_count|default:"0" }}</strong>
     </div>
     <div class="profile-side-item">
-        <span>Друзья</span>
+        <span>{% trans "Друзья" %}</span>
         <strong>{{ following_count|default:"0" }}</strong>
     </div>
     <div class="profile-side-item">
-        <span>Фото</span>
+        <span>{% trans "Фото" %}</span>
         <strong>0</strong>
     </div>
 </div>
 <div class="profile-side-section">
-    <h4><svg class="i"><use href="#i-user"></use></svg> Информация</h4>
+    <h4><svg class="i"><use href="#i-user"></use></svg> {% trans "Информация" %}</h4>
     <div class="profile-side-item compact">
-        <span>Группа</span>
-        <strong>{{ profile.group_name|default:"Не указана" }}</strong>
+        <span>{% trans "Группа" %}</span>
+        <strong>{{ profile.group_name|default:_("Не указана") }}</strong>
     </div>
     <div class="profile-side-item compact">
-        <span>Статус</span>
-        <strong>{{ profile.status|default:"Нет статуса" }}</strong>
+        <span>{% trans "Статус" %}</span>
+        <strong>{{ profile.status|default:_("Нет статуса") }}</strong>
     </div>
     <div class="profile-side-item compact">
-        <span>Регистрация</span>
+        <span>{% trans "Регистрация" %}</span>
         <strong>{{ profile_user.date_joined|date:"d.m.Y" }}</strong>
     </div>
 </div>
@@ -43,10 +44,10 @@
     class="share-btn"
     onclick="copyProfileLink()"
     data-profile-url="{{ request.scheme }}://{{ request.get_host }}{% url 'profile_user' profile_user.username %}">
-    <svg class="i"><use href="#i-link"></use></svg> Поделиться профилем
+    <svg class="i"><use href="#i-link"></use></svg> {% trans "Поделиться профилем" %}
 </button>
 <div id="profile-copy-toast" class="copy-toast">
-    Ссылка скопирована
+    {% trans "Ссылка скопирована" %}
 </div>
 </aside>
 {% endblock %}
@@ -85,7 +86,7 @@
                         <svg
                             class="verified-icon"
                             viewBox="0 0 24 24"
-                            aria-label="Подтверждённый профиль">
+                            aria-label="{% trans 'Подтверждённый профиль' %}">
                             <circle cx="12" cy="12" r="10" fill="#3b82f6"></circle>
                             <path
                                 d="M8.5 12.5l2.5 2.5 4.5-5"
@@ -103,7 +104,7 @@
                         <a
                             class="profile-btn"
                             href="{% url 'edit_profile' %}">
-                            <svg class="i"><use href="#i-edit"></use></svg> Редактировать
+                            <svg class="i"><use href="#i-edit"></use></svg> {% trans "Редактировать" %}
                         </a>
                     {% else %}
                         <form
@@ -115,9 +116,9 @@
                                 type="submit"
                                 class="profile-btn">
                                 {% if is_following %}
-                                    <svg class="i"><use href="#i-user-check"></use></svg> Подписан
+                                    <svg class="i"><use href="#i-user-check"></use></svg> {% trans "Подписан" %}
                                 {% else %}
-                                    <svg class="i"><use href="#i-user-plus"></use></svg> Подписаться
+                                    <svg class="i"><use href="#i-user-plus"></use></svg> {% trans "Подписаться" %}
                                 {% endif %}
                             </button>
                         </form>
@@ -130,7 +131,7 @@
                             <button
                                 type="submit"
                                 class="profile-btn">
-                                <svg class="i"><use href="#i-chat"></use></svg> Написать
+                                <svg class="i"><use href="#i-chat"></use></svg> {% trans "Написать" %}
                             </button>
                         </form>
                     {% endif %}
@@ -148,7 +149,7 @@
             </div>
             <div class="profile-meta">
                 <span class="meta-badge">
-                    <svg class="i"><use href="#i-cap"></use></svg> {{ profile.group_name|default:"Группа не указана" }}
+                    <svg class="i"><use href="#i-cap"></use></svg> {{ profile.group_name|default:_("Группа не указана") }}
                 </span>
                 {% if profile.status %}
                     <span class="meta-badge status-badge">
@@ -161,15 +162,15 @@
     <div class="stats">
         <a href="{% url 'followers_list' profile_user.username %}">
             <b>{{ followers_count|default:"0" }}</b>
-            <span>Подписчики</span>
+            <span>{% trans "Подписчики" %}</span>
         </a>
         <a href="{% url 'following_list' profile_user.username %}">
             <b>{{ following_count|default:"0" }}</b>
-            <span>Подписки</span>
+            <span>{% trans "Подписки" %}</span>
         </a>
         <div>
             <b>{{ posts_count|default:"0" }}</b>
-            <span>Посты</span>
+            <span>{% trans "Посты" %}</span>
         </div>
     </div>
 </div>
@@ -177,30 +178,30 @@
     <a
         href="{% if profile_user == request.user %}{% url 'profile' %}{% else %}{% url 'profile_user' profile_user.username %}{% endif %}"
         class="{% if active_section == 'wall' %}active{% endif %}">
-        <svg class="i"><use href="#i-note"></use></svg> Стена
+        <svg class="i"><use href="#i-note"></use></svg> {% trans "Стена" %}
     </a>
     <a
         href="{% url 'profile_friends' profile_user.username %}"
         class="{% if active_section == 'friends' %}active{% endif %}">
-        <svg class="i"><use href="#i-users"></use></svg> Друзья
+        <svg class="i"><use href="#i-users"></use></svg> {% trans "Друзья" %}
     </a>
     <a
         href="{% url 'profile_photos' profile_user.username %}"
         class="{% if active_section == 'photos' %}active{% endif %}">
-        <svg class="i"><use href="#i-image"></use></svg> Фото
+        <svg class="i"><use href="#i-image"></use></svg> {% trans "Фото" %}
     </a>
 </div>
 {% block profile_content %}
 <div class="profile-columns">
     <div class="profile-left-column">
         <div class="card profile-about-card">
-<h3><svg class="i"><use href="#i-user"></use></svg> О себе</h3>
+<h3><svg class="i"><use href="#i-user"></use></svg> {% trans "О себе" %}</h3>
 <p>
-{{ profile.bio|default:"Пользователь пока ничего не рассказал о себе." }}</p>
+{{ profile.bio|default:_("Пользователь пока ничего не рассказал о себе.") }}</p>
         </div>
     </div>
     <div class="profile-main-column">
-        <h3 class="section-title">Посты</h3>
+        <h3 class="section-title">{% trans "Посты" %}</h3>
         {% for post in user_posts %}
             <div class="card post">
                 {{ post.content|linebreaksbr }}
@@ -218,17 +219,17 @@
             </div>
         {% empty %}
             <div class="card empty-feed">
-                Пока нет постов
+                {% trans "Пока нет постов" %}
             </div>
         {% endfor %}
         {% if page_obj and page_obj.paginator.num_pages > 1 %}
         <div class="profile-pagination">
             {% if page_obj.has_previous %}
-                <a class="profile-btn" href="?page={{ page_obj.previous_page_number }}">Назад</a>
+                <a class="profile-btn" href="?page={{ page_obj.previous_page_number }}">{% trans "Назад" %}</a>
             {% endif %}
-            <span class="pagination-info">Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+            <span class="pagination-info">{% blocktrans with num=page_obj.number total=page_obj.paginator.num_pages %}Страница {{ num }} из {{ total }}{% endblocktrans %}</span>
             {% if page_obj.has_next %}
-                <a class="profile-btn" href="?page={{ page_obj.next_page_number }}">Вперёд</a>
+                <a class="profile-btn" href="?page={{ page_obj.next_page_number }}">{% trans "Вперёд" %}</a>
             {% endif %}
         </div>
         {% endif %}
@@ -240,7 +241,7 @@
     id="lightbox-overlay"
     class="lightbox-overlay"
     onclick="closeLightbox()">
-<img id="lightbox-image" src="" alt="Фото">
+<img id="lightbox-image" src="" alt="{% trans 'Фото' %}">
 </div>
 <script>
 function copyProfileLink() {

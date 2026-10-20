@@ -1,18 +1,19 @@
 {% extends "base.html" %}
+{% load i18n %}
 
-{% block title %}Настройки — SchoolHub{% endblock %}
+{% block title %}{% trans "Настройки" %} — SchoolHub{% endblock %}
 
 {% block content %}
 
 <div class="settings-page">
 <div class="card">
-    <h2>Настройки</h2>
-    <form method="post">
+    <h2>{% trans "Настройки" %}</h2>
+    <form method="post" id="settingsForm">
         {% csrf_token %}
         <div class="setting-row">
             <div>
-                <strong><svg class="i"><use href="#i-moon"></use></svg> Тёмная тема</strong>
-                <p>Использовать тёмное оформление сайта.</p>
+                <strong><svg class="i"><use href="#i-moon"></use></svg> {% trans "Тёмная тема" %}</strong>
+                <p>{% trans "Использовать тёмное оформление сайта." %}</p>
             </div>
             <label class="toggle">
                 <input
@@ -24,7 +25,37 @@
                 <span class="toggle-slider"></span>
             </label>
         </div>
+
+        <div class="setting-row">
+            <div>
+                <strong><svg class="i"><use href="#i-news"></use></svg> {% trans "Язык" %}</strong>
+                <p>{% trans "Язык интерфейса SchoolHub." %}</p>
+            </div>
+            <label class="select-wrap">
+                <select name="language" id="languageSelect" aria-label="{% trans 'Язык' %}">
+                    {% get_current_language as CURRENT_LANGUAGE %}
+                    {% for code, name in languages %}
+                        <option value="{{ code }}" {% if code == CURRENT_LANGUAGE %}selected{% endif %}>{{ name }}</option>
+                    {% endfor %}
+                </select>
+                <svg class="select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m6 9 6 6 6-6"/>
+                </svg>
+            </label>
+        </div>
     </form>
+
+    {% if vapid_public_key %}
+    <div class="setting-row">
+        <div>
+            <strong><svg class="i"><use href="#i-inbox"></use></svg> {% trans "Уведомления на телефон" %}</strong>
+            <p data-push-status>{% trans "Push-уведомления работают как в обычном приложении." %}</p>
+        </div>
+        <label class="toggle" data-push-toggle role="switch" aria-checked="false" tabindex="0" hidden>
+            <span class="toggle-slider"></span>
+        </label>
+    </div>
+    {% endif %}
 </div>
 </div>
 <style>
@@ -94,6 +125,87 @@
 .toggle-slider::before {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
+label.toggle[data-push-toggle] {
+    cursor: pointer;
+}
+label.toggle.on .toggle-slider {
+    background: #34c759;
+}
+label.toggle.on .toggle-slider::before {
+    transform: translateX(20px);
+}
+label.toggle[hidden] {
+    display: none;
+}
+label.toggle[disabled] .toggle-slider {
+    cursor: default;
+    opacity: .6;
+}
+.select-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+.select-wrap select {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 40px;
+    min-width: 150px;
+    padding: 0 38px 0 14px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.select-wrap select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+.select-chevron {
+    position: absolute;
+    right: 12px;
+    width: 16px;
+    height: 16px;
+    color: var(--muted);
+    pointer-events: none;
+}
 </style>
+
+<script>
+(function () {
+    var select = document.getElementById('languageSelect');
+    if (!select) return;
+
+    select.addEventListener('change', function () {
+        var csrf = document.querySelector('#settingsForm [name=csrfmiddlewaretoken]');
+        select.disabled = true;
+        fetch('{% url "set_language" %}', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrf ? csrf.value : '',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ language: select.value })
+        }).then(function (r) {
+            if (r.ok) {
+                window.location.reload();
+            } else {
+                select.disabled = false;
+            }
+        }).catch(function () {
+            select.disabled = false;
+            document.getElementById('settingsForm').submit();
+        });
+    });
+})();
+</script>
 
 {% endblock %}

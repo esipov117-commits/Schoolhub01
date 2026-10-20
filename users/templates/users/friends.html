@@ -1,8 +1,9 @@
 {% extends "users/profile.html" %}
+{% load i18n %}
 
 {% block profile_content %}
 <div class="profile-section-card card">
-    <h3>Друзья</h3>
+    <h3>{% trans "Друзья" %}</h3>
     {% if friends %}
         <div class="friend-list">
             {% for friend in friends %}
@@ -14,13 +15,13 @@
                     {% endif %}
                     <div>
                         <div class="friend-name">{{ friend.profile.display_name|default:friend.username }}</div>
-                        <div class="friend-meta">{{ friend.profile.group_name|default:"Пользователь" }}</div>
+                        <div class="friend-meta">{{ friend.profile.group_name|default:_("Пользователь") }}</div>
                     </div>
                 </a>
             {% endfor %}
         </div>
     {% else %}
-        <p class="empty-state">Пока нет друзей</p>
+        <p class="empty-state">{% trans "Пока нет друзей" %}</p>
     {% endif %}
 </div>
 {% endblock %}

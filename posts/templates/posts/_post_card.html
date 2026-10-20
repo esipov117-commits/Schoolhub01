@@ -1,4 +1,4 @@
-{% load post_extras %}
+{% load i18n post_extras %}
 <div class="card post-card" id="post-{{ post.id }}" data-post-id="{{ post.id }}">
     <div class="post-head-row">
         <div class="post-head-left">
@@ -13,9 +13,9 @@
             </a>
             <div class="post-author-wrap">
                 <a href="{% url 'profile_user' post.author.username %}" style="text-decoration:none; color:inherit;">
-                    <span class="post-author">{{ post.author.username }}</span>
+                    <span class="post-author">{{ post.author.username }}{% if post.author.profile.is_verified %}{% include 'partials/verified.html' %}{% endif %}</span>
                 </a>
-                <span class="post-time" title="{{ post.created_at|fulldate }}">{{ post.created_at|timeago }}<span class="post-edited" {% if not post.edited_at %}style="display:none;"{% endif %}> · изменено</span></span>
+                <span class="post-time" title="{{ post.created_at|fulldate }}">{{ post.created_at|timeago }}<span class="post-edited" {% if not post.edited_at %}style="display:none;"{% endif %}> · {% trans "изменено" %}</span></span>
             </div>
         </div>
 
@@ -26,17 +26,17 @@
                 type="button"
                 class="edit-post-btn post-ctrl-btn"
                 data-post-id="{{ post.id }}"
-                title="Редактировать"
-                aria-label="Редактировать">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                title="{% trans 'Редактировать' %}"
+                aria-label="{% trans 'Редактировать' %}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
             </button>
             {% endif %}
             <button
                 type="button"
                 class="delete-post-btn post-ctrl-btn danger"
                 data-post-id="{{ post.id }}"
-                title="Удалить"
-                aria-label="Удалить">
+                title="{% trans 'Удалить' %}"
+                aria-label="{% trans 'Удалить' %}">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/></svg>
             </button>
         </div>
@@ -86,7 +86,7 @@
             class="like-btn{% if post.id in liked_post_ids %} liked{% endif %}"
             data-post-id="{{ post.id }}"
             data-liked="{% if post.id in liked_post_ids %}true{% else %}false{% endif %}"
-            aria-label="Нравится">
+            aria-label="{% trans 'Нравится' %}">
             <span class="like-icon">
                 {% if post.id in liked_post_ids %}
                 <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-.4-.3-1-.8C6.7 16.9 3 13.5 3 9.6 3 6.9 5.1 5 7.7 5c1.5 0 3 .7 3.9 1.9C12.5 5.7 14 5 15.5 5 18.1 5 20.2 6.9 20.2 9.6c0 3.9-3.7 7.3-8 10.6-.6.5-1 .8-1 .8z"/></svg>
@@ -99,14 +99,14 @@
             type="button"
             class="toggle-comments-btn"
             data-post-id="{{ post.id }}"
-            aria-label="Комментарии">
+            aria-label="{% trans 'Комментарии' %}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
         </button>
         <button
             type="button"
             class="share-post-btn"
             data-post-id="{{ post.id }}"
-            aria-label="Поделиться">
+            aria-label="{% trans 'Поделиться' %}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
         </button>
     </div>
@@ -122,14 +122,14 @@
             {% for comment in post.roots|slice:":2" %}
             {% include "posts/_comment.html" %}
             {% empty %}
-            <div class="comments-empty">Пока нет комментариев — напишите первый.</div>
+            <div class="comments-empty">{% trans "Пока нет комментариев — напишите первый." %}</div>
             {% endfor %}
         </div>
 
         {% with cc=post.roots_total %}
         {% if cc > 2 %}
         <button type="button" class="show-more-comments" data-post-id="{{ post.id }}" data-offset="2">
-            Показать ещё {{ cc|add:"-2"|comments_text }}
+            {% trans "Показать ещё" %} {{ cc|add:"-2"|comments_text }}
         </button>
         {% endif %}
         {% endwith %}
@@ -146,10 +146,10 @@
                 <input
                     type="text"
                     name="text"
-                    placeholder="Добавьте комментарий…"
+                    placeholder="{% trans 'Добавьте комментарий…' %}"
                     maxlength="500"
                     autocomplete="off">
-                <button type="submit" class="comment-send-btn" title="Отправить" disabled>
+                <button type="submit" class="comment-send-btn" title="{% trans 'Отправить' %}" disabled>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
                 </button>
             </div>

@@ -1,7 +1,9 @@
+import json
 import logging
 
 from django.conf import settings
 from django.core.paginator import Paginator
+from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.forms import AuthenticationForm
@@ -12,9 +14,11 @@ from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.urls import reverse
-from django.utils import timezone
+from django.utils import timezone, translation
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.translation import gettext as _
+from django.views.decorators.http import require_POST
 from .forms import RegisterForm, EmailVerifyForm
 from .models import Profile, Follow, downscale_image
 from posts.models import Post, PostImage
@@ -304,7 +308,8 @@ def home(request):
 
     Profile.objects.get_or_create(user=request.user)
 
-    return render(request, 'home.html')
+    from posts.views import feed
+    return feed(request)
 
 
 @login_required
@@ -397,13 +402,54 @@ def settings_page(request):
     profile_obj, _ = Profile.objects.get_or_create(user=request.user)
 
     if request.method == "POST":
-        profile_obj.dark_mode = request.POST.get("dark_mode") == "on"
-        profile_obj.save(update_fields=["dark_mode"])
+        changed = []
+
+        dark_mode = request.POST.get("dark_mode") == "on"
+        if dark_mode != profile_obj.dark_mode:
+            profile_obj.dark_mode = dark_mode
+            changed.append("dark_mode")
+
+        language = request.POST.get("language")
+        if language and language != profile_obj.language and language in dict(settings.LANGUAGES):
+            profile_obj.language = language
+            changed.append("language")
+
+        if changed:
+            profile_obj.save(update_fields=changed)
+        if "language" in changed:
+            translation.activate(profile_obj.language)
+
         return redirect("settings")
 
     return render(request, "users/settings.html", {
         "profile": profile_obj,
+        "languages": settings.LANGUAGES,
     })
+
+
+@login_required
+@require_POST
+def set_language(request):
+    """Быстрая смена языка без перезагрузки формы настроек.
+
+    Ожидает JSON `{"language": "en"}` и возвращает актуальный код языка.
+    """
+    profile_obj, _ = Profile.objects.get_or_create(user=request.user)
+    try:
+        payload = json.loads(request.body.decode("utf-8") or "{}")
+    except (ValueError, UnicodeDecodeError):
+        payload = {}
+
+    language = payload.get("language")
+    if language not in dict(settings.LANGUAGES):
+        return JsonResponse({"ok": False, "error": "unsupported"}, status=400)
+
+    if language != profile_obj.language:
+        profile_obj.language = language
+        profile_obj.save(update_fields=["language"])
+
+    translation.activate(language)
+    return JsonResponse({"ok": True, "language": language})
 
 
 @login_required
@@ -466,7 +512,7 @@ def followers_list(request, username):
         'target_user': target_user,
         'people': followers,
         'following_ids': following_ids,
-        'list_title': 'Подписчики',
+        'list_title': _('Подписчики'),
     })
 
 
@@ -487,7 +533,7 @@ def following_list(request, username):
         'target_user': target_user,
         'people': following,
         'following_ids': following_ids,
-        'list_title': 'Подписки',
+        'list_title': _('Подписки'),
     })
 
 

@@ -4,6 +4,9 @@ from django.db.models import Count, Q, OuterRef, Subquery
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST
+from django.utils.translation import gettext as _
+
+from webpush.push import notify_new_message
 
 from .models import Chat, Message
 
@@ -132,10 +135,16 @@ def send_message(request, chat_id):
     text = request.POST.get('body', '').strip()
     if not text:
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return JsonResponse({'ok': False, 'error': 'Пустое сообщение'}, status=400)
+            return JsonResponse({'ok': False, 'error': _('Пустое сообщение')}, status=400)
         return redirect('chat_room', chat_id=chat.pk)
 
     message = Message.create_encrypted(chat, request.user, text)
+
+    try:
+        notify_new_message(message, request.user)
+    except Exception:
+        # Push — вспомогательная функция: сбой отправки не должен ломать чат.
+        pass
 
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse({
