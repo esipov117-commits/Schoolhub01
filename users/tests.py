@@ -11,6 +11,7 @@ from django.urls import reverse
 from posts.models import Post, PostImage
 
 from .models import Profile
+from .views import REMEMBERED_USER_COOKIE, _encode_cookie_username, _get_remembered_user
 
 
 def _make_image_file(name='wall.png'):
@@ -133,3 +134,39 @@ class RegisterTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(User.objects.filter(username='newuser').count(), 1)
         self.assertContains(response, 'уже существует')
+
+
+class RememberedUserCookieTests(TestCase):
+    """Куки sh_remembered_user не должны содержать не-ASCII значения,
+    иначе gunicorn/nginx отбрасывают запросы (502)."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='Владислав', password='secret123',
+        )
+
+    def test_encode_username_is_ascii(self):
+        self.assertTrue(any(ord(c) > 127 for c in self.user.username))
+        value = _encode_cookie_username(self.user.username)
+        self.assertTrue(all(ord(c) < 128 for c in value))
+
+    def test_roundtrip_encoded_cookie(self):
+        request = type('Request', (), {
+            'COOKIES': {REMEMBERED_USER_COOKIE: _encode_cookie_username(self.user.username)},
+        })()
+        self.assertEqual(_get_remembered_user(request), self.user)
+
+    def test_legacy_non_ascii_cookie_ignored(self):
+        request = type('Request', (), {
+            'COOKIES': {REMEMBERED_USER_COOKIE: 'Владислав'},
+        })()
+        self.assertIsNone(_get_remembered_user(request))
+
+    def test_login_sets_ascii_safe_cookie(self):
+        response = self.client.post(
+            reverse('login'),
+            {'username': 'Владислав', 'password': 'secret123'},
+        )
+        self.assertRedirects(response, reverse('home'))
+        value = response.cookies[REMEMBERED_USER_COOKIE].value
+        self.assertTrue(all(ord(c) < 128 for c in value))
