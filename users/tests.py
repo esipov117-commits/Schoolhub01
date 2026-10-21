@@ -150,6 +150,37 @@ class EmailRegistrationTests(TestCase):
         self.assertFalse(User.objects.filter(username='newuser').exists())
         self.assertContains(response, 'уже зарегистрирован')
 
+    def test_register_reuses_unconfirmed_username(self):
+        User.objects.create_user(
+            username='newuser', email='old@example.com',
+            password='SuperSecret123!', is_active=False,
+        )
+        response = self.client.post(reverse('register'), self.payload)
+
+        self.assertRedirects(response, reverse('activation_sent'))
+        self.assertFalse(User.objects.filter(email='old@example.com').exists())
+        self.assertEqual(User.objects.filter(username='newuser').count(), 1)
+
+    def test_register_reuses_unconfirmed_email(self):
+        User.objects.create_user(
+            username='other', email='newuser@example.com',
+            password='SuperSecret123!', is_active=False,
+        )
+        response = self.client.post(reverse('register'), self.payload)
+
+        self.assertRedirects(response, reverse('activation_sent'))
+        self.assertFalse(User.objects.filter(username='other').exists())
+        self.assertEqual(User.objects.filter(username='newuser').count(), 1)
+
+    def test_register_still_rejects_active_username(self):
+        User.objects.create_user(
+            username='newuser', email='active@example.com', password='x',
+        )
+        response = self.client.post(reverse('register'), self.payload)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(User.objects.filter(email='newuser@example.com').exists())
+
     def test_inactive_user_cannot_login(self):
         User.objects.create_user(
             username='newuser', email='newuser@example.com',

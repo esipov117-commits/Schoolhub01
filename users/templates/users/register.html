@@ -378,9 +378,22 @@
     }
     // --- конец нового ---
 
+    // Защита от двойной отправки: без неё второй быстрый клик попадает в базу
+    // раньше редиректа и показывает «уже зарегистрирован» вместо подтверждения.
+    function preventDoubleSubmit() {
+        const form = document.getElementById('register-form');
+        if (!form) return;
+        form.addEventListener('submit', () => {
+            if (!form.checkValidity()) return;
+            const btn = form.querySelector('button[type="submit"]');
+            if (btn) btn.disabled = true;
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
         translateKnownPhrases();
         addPasswordToggles();
+        preventDoubleSubmit();
         const saved = localStorage.getItem('preferredLang') || 'ru';
         setLang(saved);
     });
