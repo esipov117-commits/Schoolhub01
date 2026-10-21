@@ -114,12 +114,6 @@ class Profile(models.Model):
 
     dark_mode = models.BooleanField(default=False)
 
-    # Подтверждение почты: новые аккаунты создаются неактивными,
-    # существующие пользователи подтверждают адрес мягко (баннер).
-    email_verified = models.BooleanField(default=False)
-    email_verified_at = models.DateTimeField(null=True, blank=True)
-    verification_sent_at = models.DateTimeField(null=True, blank=True)
-
     language = models.CharField(
         max_length=10,
         choices=[

@@ -159,27 +159,6 @@
             padding: 10px 12px;
             border-radius: 10px;
         }
-        .pending-activation {
-            margin-top: 12px;
-            padding: 12px;
-            border-radius: 12px;
-            background: #fffbeb;
-            color: #b45309;
-            font-size: 13px;
-            text-align: center;
-        }
-        .resend-link {
-            margin-top: 6px;
-            background: none;
-            border: none;
-            padding: 0;
-            color: var(--text);
-            font-size: 13px;
-            font-weight: 600;
-            text-decoration: underline;
-            cursor: pointer;
-            width: auto;
-        }
         .footer {
             margin-top: 22px;
             text-align: center;
@@ -273,15 +252,6 @@
         <div class="footer">
             <span data-i18n="no_account">Нет аккаунта?</span> <a href="/register/" data-i18n="create">Создать</a>
         </div>
-        {% if pending_activation %}
-        <div class="pending-activation">
-            <span data-i18n="confirm_email">Подтвердите почту, чтобы войти.</span>
-            <form method="post" action="{% url 'resend_activation' %}" style="margin:0;">
-                {% csrf_token %}
-                <button type="submit" class="resend-link" data-i18n="resend">Отправить письмо снова</button>
-            </form>
-        </div>
-        {% endif %}
         {% if can_back %}
         <div class="footer">
             <a href="/accounts/login/"><svg class="i" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg> <span data-i18n="back">Назад к аккаунту</span></a>
@@ -303,8 +273,6 @@
             submit: "Войти",
             no_account: "Нет аккаунта?",
             create: "Создать",
-            confirm_email: "Подтвердите почту, чтобы войти.",
-            resend: "Отправить письмо снова",
             page_title: "Вход | SchoolHub",
             username_placeholder: "Имя пользователя",
             password_placeholder: "Пароль",
@@ -319,8 +287,6 @@
             submit: "Sign in",
             no_account: "Don't have an account?",
             create: "Create one",
-            confirm_email: "Confirm your email to sign in.",
-            resend: "Resend email",
             page_title: "Sign in | SchoolHub",
             username_placeholder: "Username",
             password_placeholder: "Password",

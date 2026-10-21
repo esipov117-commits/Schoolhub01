@@ -1304,39 +1304,3 @@ button.btn-primary:active {
         font-size: 16px !important;
     }
 }
-
-/* Баннер подтверждения почты */
-.verify-banner {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    flex-wrap: wrap;
-    padding: 10px 20px;
-    background: #fffbeb;
-    color: #b45309;
-    font-size: 14px;
-    border-bottom: 1px solid rgba(180, 83, 9, 0.18);
-}
-
-.verify-banner svg {
-    width: 18px;
-    height: 18px;
-    flex-shrink: 0;
-}
-
-.verify-banner a {
-    color: var(--accent, #007aff);
-    font-weight: 600;
-    text-decoration: none;
-}
-
-.verify-banner a:hover {
-    text-decoration: underline;
-}
-
-html[data-theme="dark"] .verify-banner {
-    background: #3a2f12;
-    color: #fbbf24;
-    border-bottom-color: rgba(251, 191, 36, 0.25);
-}
