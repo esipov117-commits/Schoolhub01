@@ -4,13 +4,9 @@ from pathlib import Path
 
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.contrib.auth.tokens import default_token_generator
-from django.core import mail
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
-from django.utils.encoding import force_bytes
-from django.utils.http import urlsafe_base64_encode
 
 from posts.models import Post, PostImage
 
@@ -105,156 +101,35 @@ class ProfileSectionPagesTests(TestCase):
         self.assertContains(response, 'word-break: break-word')
 
 
-def _activation_url(user):
-    uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
-    token = default_token_generator.make_token(user)
-    return reverse('activate', kwargs={'uidb64': uidb64, 'token': token})
-
-
-@override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
-class EmailRegistrationTests(TestCase):
+class RegisterTests(TestCase):
     def setUp(self):
         self.payload = {
             'username': 'newuser',
-            'email': 'newuser@example.com',
             'password1': 'SuperSecret123!',
             'password2': 'SuperSecret123!',
         }
 
-    def test_register_page_shows_email_field(self):
+    def test_register_page_shows_username_field(self):
         response = self.client.get(reverse('register'))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'name="email"')
         self.assertContains(response, 'name="username"')
 
-    def test_register_creates_inactive_user_and_sends_email(self):
+    def test_register_creates_active_user_and_logs_in(self):
         response = self.client.post(reverse('register'), self.payload)
-
-        self.assertRedirects(response, reverse('activation_sent'))
-        user = User.objects.get(username='newuser')
-        self.assertFalse(user.is_active)
-        self.assertEqual(user.email, 'newuser@example.com')
-        self.assertTrue(hasattr(user, 'profile'))
-
-        self.assertEqual(len(mail.outbox), 1)
-        self.assertIn('Подтвердите почту', mail.outbox[0].subject)
-
-    def test_register_rejects_duplicate_email(self):
-        User.objects.create_user(
-            username='existing', email='newuser@example.com', password='x',
-        )
-        response = self.client.post(reverse('register'), self.payload)
-
-        self.assertEqual(response.status_code, 200)
-        self.assertFalse(User.objects.filter(username='newuser').exists())
-        self.assertContains(response, 'уже зарегистрирован')
-
-    def test_register_reuses_unconfirmed_username(self):
-        User.objects.create_user(
-            username='newuser', email='old@example.com',
-            password='SuperSecret123!', is_active=False,
-        )
-        response = self.client.post(reverse('register'), self.payload)
-
-        self.assertRedirects(response, reverse('activation_sent'))
-        self.assertFalse(User.objects.filter(email='old@example.com').exists())
-        self.assertEqual(User.objects.filter(username='newuser').count(), 1)
-
-    def test_register_reuses_unconfirmed_email(self):
-        User.objects.create_user(
-            username='other', email='newuser@example.com',
-            password='SuperSecret123!', is_active=False,
-        )
-        response = self.client.post(reverse('register'), self.payload)
-
-        self.assertRedirects(response, reverse('activation_sent'))
-        self.assertFalse(User.objects.filter(username='other').exists())
-        self.assertEqual(User.objects.filter(username='newuser').count(), 1)
-
-    def test_register_still_rejects_active_username(self):
-        User.objects.create_user(
-            username='newuser', email='active@example.com', password='x',
-        )
-        response = self.client.post(reverse('register'), self.payload)
-
-        self.assertEqual(response.status_code, 200)
-        self.assertFalse(User.objects.filter(email='newuser@example.com').exists())
-
-    def test_inactive_user_cannot_login(self):
-        User.objects.create_user(
-            username='newuser', email='newuser@example.com',
-            password='SuperSecret123!', is_active=False,
-        )
-        self.assertFalse(self.client.login(username='newuser', password='SuperSecret123!'))
-
-    def test_activation_link_activates_and_verifies(self):
-        user = User.objects.create_user(
-            username='newuser', email='newuser@example.com',
-            password='SuperSecret123!', is_active=False,
-        )
-        Profile.objects.create(user=user)
-
-        response = self.client.get(_activation_url(user))
 
         self.assertRedirects(response, reverse('home'))
-        user.refresh_from_db()
-        user.profile.refresh_from_db()
+        user = User.objects.get(username='newuser')
         self.assertTrue(user.is_active)
-        self.assertTrue(user.profile.email_verified)
-        self.assertIsNotNone(user.profile.email_verified_at)
+        self.assertTrue(hasattr(user, 'profile'))
+        self.assertEqual(str(user.pk), self.client.session['_auth_user_id'])
 
-    def test_activation_invalid_token_rejected(self):
-        user = User.objects.create_user(
-            username='newuser', email='newuser@example.com',
-            password='SuperSecret123!', is_active=False,
-        )
-        url = reverse('activate', kwargs={'uidb64': 'abc', 'token': 'bad-token'})
-        response = self.client.get(url)
-
-        self.assertEqual(response.status_code, 400)
-        user.refresh_from_db()
-        self.assertFalse(user.is_active)
-
-    def test_legacy_user_verification_flow(self):
-        user = User.objects.create_user(
-            username='legacy', email='legacy@example.com',
-            password='SuperSecret123!', is_active=True,
-        )
-        Profile.objects.create(user=user)
-
-        self.client.force_login(user)
-        response = self.client.get(reverse('home'))
-        self.assertContains(response, 'verify-banner')
-
-        response = self.client.get(reverse('verify_email'))
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Подтвердите почту')
-
-        self.client.post(
-            reverse('verify_email'), {'email': 'legacy@example.com'},
-        )
-        self.assertEqual(len(mail.outbox), 1)
-
-        self.client.get(_activation_url(user))
-        user.profile.refresh_from_db()
-        self.assertTrue(user.profile.email_verified)
-
-    def test_verify_email_rejects_taken_address(self):
+    def test_register_rejects_duplicate_username(self):
         User.objects.create_user(
-            username='taken', email='taken@example.com', password='x',
+            username='newuser', password='x',
         )
-        user = User.objects.create_user(
-            username='legacy', email='legacy@example.com',
-            password='SuperSecret123!', is_active=True,
-        )
-        Profile.objects.create(user=user)
-
-        self.client.force_login(user)
-        response = self.client.post(
-            reverse('verify_email'), {'email': 'taken@example.com'},
-        )
+        response = self.client.post(reverse('register'), self.payload)
 
         self.assertEqual(response.status_code, 200)
-        user.refresh_from_db()
-        self.assertEqual(user.email, 'legacy@example.com')
+        self.assertEqual(User.objects.filter(username='newuser').count(), 1)
+        self.assertContains(response, 'уже существует')
