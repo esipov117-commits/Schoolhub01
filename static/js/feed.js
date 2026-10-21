@@ -411,35 +411,26 @@
     });
 
     /* ====================== Удаление (подтверждение) ====================== */
-    var confirmOverlay = document.getElementById('confirmOverlay');
-    var confirmTextEl = document.getElementById('confirmText');
     var confirmAction = null;
     var confirmCancelAction = null;
+
+    function confirmOverlayEl() { return document.getElementById('confirmOverlay'); }
 
     function openConfirm(message, action, cancel) {
         confirmAction = action;
         confirmCancelAction = cancel || null;
-        if (confirmTextEl && message) confirmTextEl.textContent = message;
-        if (confirmOverlay) confirmOverlay.style.display = 'flex';
+        var textEl = document.getElementById('confirmText');
+        if (textEl && message) textEl.textContent = message;
+        var ov = confirmOverlayEl();
+        if (ov) ov.style.display = 'flex';
     }
     function closeConfirm(runCancel) {
         var cb = confirmCancelAction;
         confirmAction = null;
         confirmCancelAction = null;
-        if (confirmOverlay) confirmOverlay.style.display = 'none';
+        var ov = confirmOverlayEl();
+        if (ov) ov.style.display = 'none';
         if (runCancel && cb) cb();
-    }
-
-    if (confirmOverlay) {
-        document.getElementById('confirmCancel').addEventListener('click', function () { closeConfirm(true); });
-        confirmOverlay.addEventListener('click', function (e) {
-            if (e.target === confirmOverlay) closeConfirm(true);
-        });
-        document.getElementById('confirmDelete').addEventListener('click', function () {
-            var act = confirmAction;
-            closeConfirm(false);
-            if (act) act();
-        });
     }
 
     document.addEventListener('click', function (e) {
@@ -570,16 +561,19 @@
     }
 
     /* ====================== Бесконечная прокрутка ====================== */
-    var feedPosts = document.getElementById('feedPosts');
-    var feedLoading = document.getElementById('feedLoading');
+    var feedPosts = null;
+    var feedLoading = null;
     var nextPage = 2;
     var loadingPosts = false;
-    var noMorePosts = !(CFG.hasMore === true || CFG.hasMore === undefined);
+    var noMorePosts = false;
 
-    var feedSkeleton = feedLoading ? feedLoading.querySelector('.feed-skeleton') : null;
+    function feedSkeletonEl() {
+        return feedLoading ? feedLoading.querySelector('.feed-skeleton') : null;
+    }
 
     function setFeedLoading(on) {
-        if (feedSkeleton) feedSkeleton.style.display = on ? 'block' : 'none';
+        var sk = feedSkeletonEl();
+        if (sk) sk.style.display = on ? 'block' : 'none';
     }
 
     function loadMorePosts() {
@@ -601,23 +595,34 @@
             .catch(function () { loadingPosts = false; setFeedLoading(false); });
     }
 
-    if (feedLoading && 'IntersectionObserver' in window && !window.__feedObserver) {
-        window.__feedObserver = new IntersectionObserver(function (entries) {
-            entries.forEach(function (en) { if (en.isIntersecting) loadMorePosts(); });
-        }, { rootMargin: '600px' });
-        window.__feedObserver.observe(feedLoading);
+    function initInfiniteScroll() {
+        feedPosts = document.getElementById('feedPosts');
+        feedLoading = document.getElementById('feedLoading');
+        nextPage = 2;
+        loadingPosts = false;
+        var cfg = window.FEED_CONFIG || {};
+        noMorePosts = !(cfg.hasMore === true || cfg.hasMore === undefined);
+        if (window.__feedObserver) { window.__feedObserver.disconnect(); window.__feedObserver = null; }
+        if (feedLoading && 'IntersectionObserver' in window) {
+            window.__feedObserver = new IntersectionObserver(function (entries) {
+                entries.forEach(function (en) { if (en.isIntersecting) loadMorePosts(); });
+            }, { rootMargin: '600px' });
+            window.__feedObserver.observe(feedLoading);
+        }
     }
 
     /* ====================== Лайтбокс ====================== */
-    var lightbox = document.getElementById('lightboxOverlay');
-    var lightboxTrack = document.getElementById('lightboxTrack');
     var lightboxIndex = 0;
     var lightboxItems = [];
 
+    function lightboxEl() { return document.getElementById('lightboxOverlay'); }
+    function lightboxTrackEl() { return document.getElementById('lightboxTrack'); }
+
     function updateLightboxCounter() {
         var el = document.getElementById('lightboxCounter');
-        if (!el || !lightboxItems.length) return;
-        var i = Math.round(lightboxTrack.scrollLeft / Math.max(lightboxTrack.clientWidth, 1));
+        var track = lightboxTrackEl();
+        if (!el || !track || !lightboxItems.length) return;
+        var i = Math.round(track.scrollLeft / Math.max(track.clientWidth, 1));
         el.textContent = lightboxItems.length > 1 ? ((i + 1) + ' / ' + lightboxItems.length) : '';
     }
 
@@ -632,7 +637,9 @@
     }
 
     function renderLightbox(items) {
-        lightboxTrack.innerHTML = '';
+        var track = lightboxTrackEl();
+        if (!track) return;
+        track.innerHTML = '';
         items.forEach(function (it) {
             var wrap = document.createElement('div');
             wrap.style.cssText =
@@ -652,48 +659,48 @@
                 img.style.cssText = 'max-width:100%;max-height:100%;object-fit:contain;';
                 wrap.appendChild(img);
             }
-            lightboxTrack.appendChild(wrap);
+            track.appendChild(wrap);
         });
     }
 
     function openLightbox(items, startIndex) {
-        if (!lightbox || !items.length) return;
+        var lb = lightboxEl();
+        var track = lightboxTrackEl();
+        if (!lb || !track || !items.length) return;
         lightboxItems = items;
         renderLightbox(items);
-        lightbox.style.display = 'flex';
+        lb.style.display = 'flex';
         document.body.style.overflow = 'hidden';
         lightboxIndex = startIndex || 0;
         requestAnimationFrame(function () {
-            lightboxTrack.scrollLeft = lightboxIndex * lightboxTrack.clientWidth;
+            track.scrollLeft = lightboxIndex * track.clientWidth;
             updateLightboxCounter();
         });
     }
 
     function closeLightbox() {
-        if (!lightbox) return;
-        lightboxTrack.pause && lightboxTrack.pause();
-        lightboxTrack.querySelectorAll('video').forEach(function (v) { v.pause(); });
-        lightbox.style.display = 'none';
-        lightboxTrack.innerHTML = '';
+        var lb = lightboxEl();
+        var track = lightboxTrackEl();
+        if (!lb) return;
+        if (track) {
+            track.querySelectorAll('video').forEach(function (v) { v.pause(); });
+            track.innerHTML = '';
+        }
+        lb.style.display = 'none';
         lightboxItems = [];
         document.body.style.overflow = '';
     }
 
-    if (lightbox) {
-        document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
-        lightbox.addEventListener('click', function (e) { if (e.target === lightbox) closeLightbox(); });
-        document.getElementById('lightboxPrev').addEventListener('click', function () {
-            lightboxTrack.scrollBy({ left: -lightboxTrack.clientWidth, behavior: 'smooth' });
-        });
-        document.getElementById('lightboxNext').addEventListener('click', function () {
-            lightboxTrack.scrollBy({ left: lightboxTrack.clientWidth, behavior: 'smooth' });
-        });
-        lightboxTrack.addEventListener('scroll', updateLightboxCounter, { passive: true });
-        lightboxTrack.addEventListener('dblclick', function (e) {
-            var img = e.target.closest && e.target.closest('img');
-            if (img) img.classList.toggle('lightbox-zoom');
-        });
+    function lightboxStep(dir) {
+        var track = lightboxTrackEl();
+        if (track) track.scrollBy({ left: dir * track.clientWidth, behavior: 'smooth' });
     }
+
+    document.addEventListener('scroll', updateLightboxCounter, true);
+    document.addEventListener('dblclick', function (e) {
+        var img = e.target.closest && e.target.closest('#lightboxTrack img');
+        if (img) img.classList.toggle('lightbox-zoom');
+    });
 
     document.addEventListener('click', function (e) {
         var media = e.target.closest && e.target.closest('.carousel-img, .grid-media');
@@ -708,93 +715,117 @@
     });
 
     /* ====================== Создание истории ====================== */
-    var storyModal = document.getElementById('storyCreateModal');
-    var storyInput = document.getElementById('storyFileInput');
-    var storyPicker = document.getElementById('storyPickerArea');
-    var storyPreview = document.getElementById('storyPreview');
-    var storySubmit = document.getElementById('storySubmitBtn');
-    var storyError = document.getElementById('storyError');
     var storyFile = null;
 
+    function storyModalEl() { return document.getElementById('storyCreateModal'); }
+    function storyInputEl() { return document.getElementById('storyFileInput'); }
+    function storyPickerEl() { return document.getElementById('storyPickerArea'); }
+    function storyPreviewEl() { return document.getElementById('storyPreview'); }
+    function storySubmitEl() { return document.getElementById('storySubmitBtn'); }
+    function storyErrorEl() { return document.getElementById('storyError'); }
+
     function setStoryError(msg) {
-        if (!storyError) return;
-        storyError.textContent = msg || '';
-        storyError.style.display = msg ? 'block' : 'none';
+        var el = storyErrorEl();
+        if (!el) return;
+        el.textContent = msg || '';
+        el.style.display = msg ? 'block' : 'none';
     }
 
     function renderStoryPreview() {
+        var preview = storyPreviewEl();
+        var picker = storyPickerEl();
+        var submit = storySubmitEl();
         if (!storyFile) {
-            storyPreview.style.display = 'none';
-            storyPreview.innerHTML = '';
-            storySubmit.disabled = true;
+            if (preview) { preview.style.display = 'none'; preview.innerHTML = ''; }
+            if (submit) submit.disabled = true;
             return;
         }
-        storyPreview.style.display = 'grid';
-        storyPreview.style.gridTemplateColumns = '1fr';
-        storyPreview.innerHTML = '';
-        var cell = document.createElement('div');
-        cell.className = 'preview-cell';
-        var url = URL.createObjectURL(storyFile);
-        if (storyFile.type.startsWith('video/')) {
-            var v = document.createElement('video');
-            v.src = url; v.muted = true; v.playsInline = true;
-            cell.appendChild(v);
-        } else {
-            var img = document.createElement('img');
-            img.src = url; img.alt = '';
-            cell.appendChild(img);
+        if (preview) {
+            preview.style.display = 'grid';
+            preview.style.gridTemplateColumns = '1fr';
+            preview.innerHTML = '';
+            var cell = document.createElement('div');
+            cell.className = 'preview-cell';
+            var url = URL.createObjectURL(storyFile);
+            if (storyFile.type.startsWith('video/')) {
+                var v = document.createElement('video');
+                v.src = url; v.muted = true; v.playsInline = true;
+                cell.appendChild(v);
+            } else {
+                var img = document.createElement('img');
+                img.src = url; img.alt = '';
+                cell.appendChild(img);
+            }
+            var rm = document.createElement('button');
+            rm.type = 'button';
+            rm.className = 'preview-remove-btn';
+            rm.title = 'Убрать';
+            rm.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+            rm.addEventListener('click', function () {
+                storyFile = null;
+                var inp = storyInputEl();
+                if (inp) inp.value = '';
+                renderStoryPreview();
+            });
+            cell.appendChild(rm);
+            preview.appendChild(cell);
         }
-        var rm = document.createElement('button');
-        rm.type = 'button';
-        rm.className = 'preview-remove-btn';
-        rm.title = 'Убрать';
-        rm.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
-        rm.addEventListener('click', function () { storyFile = null; storyInput.value = ''; renderStoryPreview(); });
-        cell.appendChild(rm);
-        storyPreview.appendChild(cell);
-        storyPicker.style.display = 'none';
-        storySubmit.disabled = false;
+        if (picker) picker.style.display = 'none';
+        if (submit) submit.disabled = false;
     }
 
-    if (storyModal) {
-        document.getElementById('addStoryBtn').addEventListener('click', function () {
-            storyFile = null;
-            storyInput.value = '';
-            setStoryError('');
-            renderStoryPreview();
-            storyPicker.style.display = 'flex';
-            storyModal.showModal();
-        });
-        storyPicker.addEventListener('click', function () { storyInput.click(); });
-        storyInput.addEventListener('change', function () {
-            storyFile = storyInput.files && storyInput.files[0] ? storyInput.files[0] : null;
-            setStoryError('');
-            renderStoryPreview();
-        });
-        storyModal.querySelectorAll('[data-close-story]').forEach(function (btn) {
-            btn.addEventListener('click', function () { storyModal.close(); });
-        });
-        storySubmit.addEventListener('click', function () {
-            if (!storyFile) return;
-            storySubmit.disabled = true;
-            var fd = new FormData();
-            fd.append('media', storyFile);
-            postForm(CFG.urls.uploadStory, fd)
-                .then(function (res) {
-                    if (!res.ok) { setStoryError(res.data.error || 'Не удалось загрузить'); storySubmit.disabled = false; return; }
-                    storyModal.close();
-                    toast('История опубликована');
-                    storyFile = null;
-                    storyInput.value = '';
-                    renderStoryPreview();
-                    refreshStoriesBar();
-                })
-                .catch(function () { setStoryError('Ошибка сети'); storySubmit.disabled = false; });
-        });
+    function openStoryModal() {
+        var m = storyModalEl();
+        if (!m) return;
+        storyFile = null;
+        var inp = storyInputEl();
+        if (inp) inp.value = '';
+        setStoryError('');
+        renderStoryPreview();
+        var picker = storyPickerEl();
+        if (picker) picker.style.display = 'flex';
+        m.showModal();
+    }
+
+    function closeStoryModal() {
+        var m = storyModalEl();
+        if (m && m.open) m.close();
+    }
+
+    function storyFileChange(input) {
+        storyFile = input && input.files && input.files[0] ? input.files[0] : null;
+        setStoryError('');
+        renderStoryPreview();
+    }
+
+    function submitStory() {
+        if (!storyFile) return;
+        var submit = storySubmitEl();
+        if (submit) submit.disabled = true;
+        var fd = new FormData();
+        fd.append('media', storyFile);
+        postForm(CFG.urls.uploadStory, fd)
+            .then(function (res) {
+                if (!res.ok) {
+                    setStoryError(res.data.error || 'Не удалось загрузить');
+                    if (submit) submit.disabled = false;
+                    return;
+                }
+                closeStoryModal();
+                toast('История опубликована');
+                storyFile = null;
+                var inp = storyInputEl();
+                if (inp) inp.value = '';
+                renderStoryPreview();
+                refreshStoriesBar();
+            })
+            .catch(function () {
+                setStoryError('Ошибка сети');
+                if (submit) submit.disabled = false;
+            });
     }
 
     /* ====================== Просмотрщик историй ====================== */
-    var viewer = document.getElementById('storyViewer');
     var viewerTimer = null;
 
     function stopViewerTimer() {
@@ -802,26 +833,34 @@
         viewerTimer = null;
     }
 
-    function StoryViewer(root) {
-        this.root = root;
+    function StoryViewer() {
         this.group = null;
         this.index = 0;
+        this.isOwn = false;
+        this.muted = false;
+        this._customMedia = null;
+        this.bindEls();
+    }
+
+    /* Перечитывает элементы DOM: после SPA-навигации старые ссылки протухают */
+    StoryViewer.prototype.bindEls = function () {
+        this.root = document.getElementById('storyViewer');
         this.track = document.getElementById('storyProgress');
         this.authorEl = document.getElementById('viewer-author');
         this.avatarEl = document.getElementById('viewer-avatar');
         this.captionEl = document.getElementById('viewer-caption');
-        this.mediaBox = root.querySelector('.story-viewer-media');
+        this.mediaBox = this.root ? this.root.querySelector('.story-viewer-media') : null;
         this.deleteBtn = document.getElementById('storyDeleteBtn');
         this.statsBtn = document.getElementById('storyStatsBtn');
         this.likeBtn = document.getElementById('storyLikeBtn');
         this.soundBtn = document.getElementById('storySoundBtn');
-        this.muted = false;
-        this._origAppend = null;
-    }
+    };
 
     StoryViewer.prototype.open = function (group) {
+        this.bindEls();
         this.group = group;
         this.index = 0;
+        if (!this.root) return;
         this.root.classList.add('open');
         document.body.style.overflow = 'hidden';
         this.authorEl.textContent = group.author_name;
@@ -1100,25 +1139,11 @@
     StoryViewer.prototype.next = function () { this.show(this.index + 1); };
     StoryViewer.prototype.prev = function () { this.show(this.index - 1); };
 
-    var storyViewer = viewer ? new StoryViewer(viewer) : null;
+    var storyViewer = new StoryViewer();
 
-    if (viewer) {
-        document.getElementById('storyViewerClose').addEventListener('click', function () { storyViewer.close(); });
-        document.getElementById('storyNextZone').addEventListener('click', function () { storyViewer.next(); });
-        document.getElementById('storyPrevZone').addEventListener('click', function () { storyViewer.prev(); });
-        document.getElementById('storyDeleteBtn').addEventListener('click', function () { storyViewer.deleteCurrent(); });
-        document.getElementById('storySoundBtn').addEventListener('click', function () { storyViewer.toggleSound(); });
-        document.getElementById('storyLikeBtn').addEventListener('click', function () { storyViewer.toggleLike(); });
-        document.getElementById('storyStatsBtn').addEventListener('click', function () { storyViewer.openStats(); });
-    }
-
-    var storyStatsModal = document.getElementById('storyStatsModal');
-    if (storyStatsModal) {
-        var storyStatsClose = document.getElementById('storyStatsClose');
-        storyStatsClose.addEventListener('click', function () { storyStatsModal.close(); });
-        storyStatsModal.addEventListener('click', function (e) {
-            if (e.target === storyStatsModal) storyStatsModal.close();
-        });
+    function closeStoryStatsModal() {
+        var m = document.getElementById('storyStatsModal');
+        if (m && m.open) m.close();
     }
 
     function openStoriesFor(authorId, authorName, authorAvatar) {
@@ -1226,83 +1251,152 @@
         if (changed) updateStoryBubble(group);
     }
 
-    /* ====================== Создание поста (FAB) ====================== */
-    var postModal = document.getElementById('postCreateModal');
-    var postInput = document.getElementById('postFileInput');
-    var postPicker = document.getElementById('postPickerArea');
-    var postPreview = document.getElementById('postPreview');
-    var addMoreBtn = document.getElementById('addMoreMediaBtn');
-    var viewMode = document.getElementById('postViewMode');
-    var captionLabel = document.getElementById('captionLabel');
-    var captionArea = document.getElementById('postCaption');
-    var postSubmit = document.getElementById('postSubmitBtn');
-    var postBack = document.getElementById('postModalBack');
-    var postError = document.getElementById('postError');
-    var textOnlyBtn = document.getElementById('textOnlyPostBtn');
+    /* ====================== Создание поста (стиль Threads) ====================== */
     var postFiles = [];
     var postLayout = 'carousel';
-    var postStep = 1;
+
+    function postModalEl() { return document.getElementById('postCreateModal'); }
+    function postInputEl() { return document.getElementById('postFileInput'); }
+    function postPickerEl() { return document.getElementById('postPickerArea'); }
+    function postPreviewEl() { return document.getElementById('postPreview'); }
+    function postPreviewCardEl() { return document.getElementById('postPreviewCard'); }
+    function addMoreEl() { return document.getElementById('addMoreMediaBtn'); }
+    function viewModeEl() { return document.getElementById('postViewMode'); }
+    function captionEl() { return document.getElementById('postCaption'); }
+    function postSubmitEl() { return document.getElementById('postSubmitBtn'); }
+    function postErrorEl() { return document.getElementById('postError'); }
 
     function setPostError(msg) {
-        if (!postError) return;
-        postError.textContent = msg || '';
-        postError.style.display = msg ? 'block' : 'none';
+        var el = postErrorEl();
+        if (!el) return;
+        el.textContent = msg || '';
+        el.style.display = msg ? 'block' : 'none';
     }
 
     function resetPostModal() {
         postFiles = [];
         postLayout = 'carousel';
-        postStep = 1;
-        postInput.value = '';
-        if (captionArea) captionArea.value = '';
+        var inp = postInputEl();
+        if (inp) inp.value = '';
+        var cap = captionEl();
+        if (cap) cap.value = '';
         setPostError('');
         renderPostModal();
     }
 
+    function syncPostSubmit() {
+        var submit = postSubmitEl();
+        if (!submit) return;
+        var cap = captionEl();
+        var hasText = cap ? (cap.value || '').trim() : false;
+        submit.disabled = !postFiles.length && !hasText;
+    }
+
     function renderPostModal() {
         var hasFiles = postFiles.length > 0;
-        var atCaption = postStep === 2;
+        var picker = postPickerEl();
+        var addMore = addMoreEl();
+        var vm = viewModeEl();
+        var preview = postPreviewEl();
 
-        postPicker.style.display = hasFiles || atCaption ? 'none' : 'flex';
-        if (textOnlyBtn) textOnlyBtn.style.display = !hasFiles && !atCaption ? 'flex' : 'none';
-        addMoreBtn.style.display = hasFiles ? 'inline-flex' : 'none';
-        viewMode.style.display = hasFiles && postFiles.length > 1 ? 'flex' : 'none';
-        captionLabel.style.display = atCaption ? 'block' : 'none';
-        captionLabel.textContent = hasFiles ? 'Подпись' : 'Текст';
-        captionArea.style.display = atCaption ? 'block' : 'none';
-        if (captionArea) captionArea.placeholder = hasFiles ? 'Напишите подпись…' : 'О чём думаете?';
-        postBack.style.visibility = atCaption ? 'visible' : 'hidden';
-        postSubmit.textContent = atCaption ? 'Опубликовать' : 'Далее';
-        postSubmit.disabled = atCaption ? false : !hasFiles;
-
-        postPreview.innerHTML = '';
-        postPreview.style.display = hasFiles ? 'grid' : 'none';
-        postFiles.forEach(function (f, idx) {
-            var cell = document.createElement('div');
-            cell.className = 'preview-cell';
-            var url = URL.createObjectURL(f);
-            if (f.type.startsWith('video/')) {
-                var v = document.createElement('video');
-                v.src = url; v.muted = true; v.playsInline = true;
-                cell.appendChild(v);
-            } else {
-                var img = document.createElement('img');
-                img.src = url; img.alt = '';
-                cell.appendChild(img);
-            }
-            var rm = document.createElement('button');
-            rm.type = 'button';
-            rm.className = 'preview-remove-btn';
-            rm.title = 'Убрать';
-            rm.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
-            rm.addEventListener('click', function () {
-                postFiles.splice(idx, 1);
-                if (!postFiles.length) postStep = 1;
-                renderPostModal();
+        if (picker) picker.style.display = hasFiles ? 'none' : 'flex';
+        if (addMore) addMore.style.display = hasFiles ? 'inline-flex' : 'none';
+        if (vm) {
+            vm.style.display = hasFiles && postFiles.length > 1 ? 'flex' : 'none';
+            vm.querySelectorAll('button').forEach(function (b) {
+                b.classList.toggle('active', b.getAttribute('data-mode') === postLayout);
             });
-            cell.appendChild(rm);
-            postPreview.appendChild(cell);
-        });
+        }
+
+        if (preview) {
+            preview.innerHTML = '';
+            preview.style.display = hasFiles ? 'grid' : 'none';
+            postFiles.forEach(function (f, idx) {
+                var cell = document.createElement('div');
+                cell.className = 'preview-cell';
+                var url = URL.createObjectURL(f);
+                if (f.type.startsWith('video/')) {
+                    var v = document.createElement('video');
+                    v.src = url; v.muted = true; v.playsInline = true;
+                    cell.appendChild(v);
+                } else {
+                    var img = document.createElement('img');
+                    img.src = url; img.alt = '';
+                    cell.appendChild(img);
+                }
+                var rm = document.createElement('button');
+                rm.type = 'button';
+                rm.className = 'preview-remove-btn';
+                rm.title = 'Убрать';
+                rm.setAttribute('data-index', idx);
+                rm.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+                cell.appendChild(rm);
+                preview.appendChild(cell);
+            });
+        }
+
+        renderPostPreviewCard();
+        syncPostSubmit();
+    }
+
+    /* Живой предпросмотр: как пост будет выглядеть в ленте */
+    function renderPostPreviewCard() {
+        var card = postPreviewCardEl();
+        if (!card) return;
+        var cfg = window.FEED_CONFIG || {};
+        var name = cfg.meName || '';
+        var avatar = cfg.meAvatar || '';
+        var avatarHtml = avatar
+            ? '<img src="' + esc(avatar) + '" alt="">'
+            : '<span class="comment-avatar-ph">' + esc((name || '?').charAt(0).toUpperCase()) + '</span>';
+
+        var cap = captionEl();
+        var text = cap ? (cap.value || '') : '';
+
+        var mediaHtml = '';
+        if (postFiles.length) {
+            if (postLayout === 'grid' && postFiles.length > 1) {
+                var gridItems = postFiles.map(function (f) {
+                    var url = URL.createObjectURL(f);
+                    return f.type.startsWith('video/')
+                        ? '<video src="' + url + '" class="grid-media" muted playsinline></video>'
+                        : '<img src="' + url + '" class="grid-media" alt="">';
+                });
+                mediaHtml = '<div class="post-grid">' + gridItems.join('') + '</div>';
+            } else {
+                var items = postFiles.map(function (f) {
+                    var url = URL.createObjectURL(f);
+                    return f.type.startsWith('video/')
+                        ? '<video src="' + url + '" class="carousel-img" muted playsinline></video>'
+                        : '<img src="' + url + '" class="carousel-img" alt="">';
+                });
+                mediaHtml = '<div class="post-carousel"><div class="carousel-track">' + items.join('') + '</div>';
+                if (items.length > 1) {
+                    mediaHtml += '<div class="carousel-dots">' + items.map(function (_, i) {
+                        return '<span class="carousel-dot' + (i === 0 ? ' active' : '') + '"></span>';
+                    }).join('') + '</div>';
+                }
+                mediaHtml += '</div>';
+            }
+        }
+
+        card.innerHTML =
+            '<div class="post-head-row">' +
+              '<div class="post-head-left">' +
+                '<span class="post-avatar">' + avatarHtml + '</span>' +
+                '<div class="post-author-wrap">' +
+                  '<span class="post-author">' + esc(name) + '</span>' +
+                  '<span class="post-time">сейчас</span>' +
+                '</div>' +
+              '</div>' +
+            '</div>' +
+            (text.trim() ? '<div class="post-content">' + esc(text) + '</div>' : '') +
+            (mediaHtml ? '<div class="post-media">' + mediaHtml + '</div>' : '') +
+            '<div class="post-actions">' +
+              '<span class="preview-action">' + LIKE_OUTLINE + '</span>' +
+              '<span class="preview-action">' + BUBBLE_SVG + '</span>' +
+              '<span class="preview-action">' + PLANE_SVG + '</span>' +
+            '</div>';
     }
 
     function addPostFiles(fileList) {
@@ -1315,83 +1409,56 @@
         renderPostModal();
     }
 
-    if (postModal) {
-        document.getElementById('openPostModal').addEventListener('click', function () {
-            resetPostModal();
-            postModal.showModal();
-        });
+    function openPostModal() {
+        var m = postModalEl();
+        if (!m) return;
+        resetPostModal();
+        m.showModal();
+        var cap = captionEl();
+        if (cap) cap.focus();
+    }
 
-        document.addEventListener('click', function (e) {
-            var btn = e.target.closest && e.target.closest('.feed-empty-btn');
-            if (!btn) return;
-            resetPostModal();
-            postModal.showModal();
-        });
+    function closePostModal() {
+        var m = postModalEl();
+        if (m && m.open) m.close();
+    }
 
-        postPicker.addEventListener('click', function () { postInput.click(); });
-        if (textOnlyBtn) {
-            textOnlyBtn.addEventListener('click', function () {
-                postStep = 2;
-                renderPostModal();
-                captionArea.focus();
-            });
+    function publishPost() {
+        var cap = captionEl();
+        var text = cap ? (cap.value || '') : '';
+        if (!postFiles.length && !text.trim()) {
+            setPostError('Добавьте текст или выберите фото');
+            return;
         }
-        addMoreBtn.addEventListener('click', function () { postInput.click(); });
-        postInput.addEventListener('change', function () {
-            addPostFiles(postInput.files);
-            postInput.value = '';
-        });
-
-        ['dragover', 'drop'].forEach(function (ev) {
-            postModal.addEventListener(ev, function (e) { e.preventDefault(); });
-        });
-        postPicker.addEventListener('drop', function (e) {
-            if (e.dataTransfer && e.dataTransfer.files) addPostFiles(e.dataTransfer.files);
-        });
-
-        viewMode.querySelectorAll('button').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                postLayout = btn.getAttribute('data-mode');
-                viewMode.querySelectorAll('button').forEach(function (b) {
-                    b.classList.toggle('active', b === btn);
-                });
+        var submit = postSubmitEl();
+        if (submit) submit.disabled = true;
+        var fd = new FormData();
+        fd.append('content', text);
+        fd.append('layout', postLayout);
+        postFiles.forEach(function (f) { fd.append('images', f); });
+        postForm(CFG.urls.feed, fd)
+            .then(function (res) {
+                if (!res.ok) {
+                    setPostError('Не удалось опубликовать');
+                    if (submit) submit.disabled = false;
+                    return;
+                }
+                var html = buildPostCard(res.data);
+                var feedPostsEl = document.getElementById('feedPosts');
+                var feedMainEl = document.querySelector('.feed-main');
+                if (feedPostsEl) feedPostsEl.insertAdjacentHTML('afterbegin', html);
+                else if (feedMainEl) feedMainEl.insertAdjacentHTML('afterbegin', html);
+                closePostModal();
+                toast('Публикация опубликована');
+                resetPostModal();
+                bindAll(document);
+                var empty = document.querySelector('.feed-empty');
+                if (empty) empty.remove();
+            })
+            .catch(function () {
+                setPostError('Ошибка сети');
+                if (submit) submit.disabled = false;
             });
-        });
-
-        postBack.addEventListener('click', function () { postStep = 1; renderPostModal(); });
-
-        postSubmit.addEventListener('click', function () {
-            if (postStep === 1) {
-                if (!postFiles.length) return;
-                postStep = 2;
-                renderPostModal();
-                captionArea.focus();
-                return;
-            }
-            if (!postFiles.length && !(captionArea.value || '').trim()) {
-                setPostError('Добавьте текст или выберите фото');
-                return;
-            }
-            postSubmit.disabled = true;
-            var fd = new FormData();
-            fd.append('content', captionArea.value || '');
-            fd.append('layout', postLayout);
-            postFiles.forEach(function (f) { fd.append('images', f); });
-            postForm(CFG.urls.feed, fd)
-                .then(function (res) {
-                    if (!res.ok) { setPostError('Не удалось опубликовать'); postSubmit.disabled = false; return; }
-                    var html = buildPostCard(res.data);
-                    if (feedPosts) feedPosts.insertAdjacentHTML('afterbegin', html);
-                    else if (feedMain) feedMain.insertAdjacentHTML('afterbegin', html);
-                    postModal.close();
-                    toast('Публикация опубликована');
-                    resetPostModal();
-                    bindAll(document);
-                    var empty = document.querySelector('.feed-empty');
-                    if (empty) empty.remove();
-                })
-                .catch(function () { setPostError('Ошибка сети'); postSubmit.disabled = false; });
-        });
     }
 
     /* ====================== Новая карточка поста ====================== */
@@ -1490,8 +1557,6 @@
     }
 
     /* ====================== Инициализация ====================== */
-    var feedMain = document.querySelector('.feed-main');
-
     function bindAll(root) {
         bindLikes(root);
         bindComments(root);
@@ -1499,26 +1564,119 @@
         bindStoryBubbles(root);
     }
 
-    document.addEventListener('keydown', function (e) {
-        if (lightbox && lightbox.style.display === 'flex') {
-            if (e.key === 'Escape') { closeLightbox(); return; }
-            if (e.key === 'ArrowRight') { lightboxTrack.scrollBy({ left: lightboxTrack.clientWidth, behavior: 'smooth' }); return; }
-            if (e.key === 'ArrowLeft') { lightboxTrack.scrollBy({ left: -lightboxTrack.clientWidth, behavior: 'smooth' }); return; }
-        }
-        if (e.key !== 'Escape') return;
-        if (storyViewer && storyViewer.root.classList.contains('open')) storyViewer.close();
-    });
-
-    bindAll(document);
-    refreshStoriesBar();
-    document.querySelectorAll('.comments-block').forEach(function (b) { b.style.display = 'none'; });
-
-    window.__pageInits = window.__pageInits || [];
-    window.__pageInits.push(function () {
+    /* Перепривязка после SPA-навигации: перечитывает DOM и навешивает слушатели */
+    function bindPage() {
         bindAll(document);
         refreshStoriesBar();
         document.querySelectorAll('.comments-block').forEach(function (b) { b.style.display = 'none'; });
+        initInfiniteScroll();
+    }
+
+    /* Единый делегированный обработчик кликов: выживает при SPA-навигации */
+    document.addEventListener('click', function (e) {
+        var t = e.target;
+        if (!t || !t.closest) return;
+        var el;
+
+        if (t.closest('#openPostModal') || t.closest('.feed-empty-btn')) {
+            openPostModal();
+            return;
+        }
+        if (t.closest('[data-close-post]')) { closePostModal(); return; }
+        if (t.closest('#postPickerArea') || t.closest('#addMoreMediaBtn')) {
+            var pi = postInputEl();
+            if (pi) pi.click();
+            return;
+        }
+        if ((el = t.closest('.preview-remove-btn')) && el.closest('#postPreview')) {
+            var idx = parseInt(el.getAttribute('data-index'), 10);
+            if (!isNaN(idx)) { postFiles.splice(idx, 1); renderPostModal(); }
+            return;
+        }
+        if ((el = t.closest('#postViewMode button'))) {
+            postLayout = el.getAttribute('data-mode');
+            renderPostModal();
+            return;
+        }
+        if (t.closest('#postSubmitBtn')) { publishPost(); return; }
+
+        if (t.closest('#addStoryBtn')) { openStoryModal(); return; }
+        if (t.closest('[data-close-story]')) { closeStoryModal(); return; }
+        if (t.closest('#storyPickerArea')) {
+            var si = storyInputEl();
+            if (si) si.click();
+            return;
+        }
+        if (t.closest('#storySubmitBtn')) { submitStory(); return; }
+
+        if (t.closest('#storyViewerClose')) { storyViewer.close(); return; }
+        if (t.closest('#storyNextZone')) { storyViewer.next(); return; }
+        if (t.closest('#storyPrevZone')) { storyViewer.prev(); return; }
+        if (t.closest('#storyDeleteBtn')) { storyViewer.deleteCurrent(); return; }
+        if (t.closest('#storySoundBtn')) { storyViewer.toggleSound(); return; }
+        if (t.closest('#storyLikeBtn')) { storyViewer.toggleLike(); return; }
+        if (t.closest('#storyStatsBtn')) { storyViewer.openStats(); return; }
+        if (t.closest('#storyStatsClose') || t.id === 'storyStatsModal') {
+            closeStoryStatsModal();
+            return;
+        }
+
+        if (t.closest('#lightboxClose')) { closeLightbox(); return; }
+        if (t.closest('#lightboxPrev')) { lightboxStep(-1); return; }
+        if (t.closest('#lightboxNext')) { lightboxStep(1); return; }
+        if (t.id === 'lightboxOverlay') { closeLightbox(); return; }
+
+        if (t.closest('#confirmCancel')) { closeConfirm(true); return; }
+        if (t.closest('#confirmDelete')) {
+            var act = confirmAction;
+            closeConfirm(false);
+            if (act) act();
+            return;
+        }
+        if (t.id === 'confirmOverlay') { closeConfirm(true); return; }
     });
+
+    document.addEventListener('change', function (e) {
+        var t = e.target;
+        if (!t) return;
+        if (t.id === 'postFileInput') { addPostFiles(t.files); t.value = ''; }
+        if (t.id === 'storyFileInput') { storyFileChange(t); }
+    });
+
+    document.addEventListener('input', function (e) {
+        var t = e.target;
+        if (t && t.id === 'postCaption') {
+            renderPostPreviewCard();
+            syncPostSubmit();
+        }
+    });
+
+    document.addEventListener('drop', function (e) {
+        var t = e.target;
+        if (t && t.closest && t.closest('#postPickerArea') && e.dataTransfer) {
+            e.preventDefault();
+            addPostFiles(e.dataTransfer.files);
+        }
+    });
+    document.addEventListener('dragover', function (e) {
+        var t = e.target;
+        if (t && t.closest && t.closest('#postPickerArea')) e.preventDefault();
+    });
+
+    document.addEventListener('keydown', function (e) {
+        var lb = lightboxEl();
+        if (lb && lb.style.display === 'flex') {
+            if (e.key === 'Escape') { closeLightbox(); return; }
+            if (e.key === 'ArrowRight') { lightboxStep(1); return; }
+            if (e.key === 'ArrowLeft') { lightboxStep(-1); return; }
+        }
+        if (e.key !== 'Escape') return;
+        if (storyViewer && storyViewer.root && storyViewer.root.classList.contains('open')) storyViewer.close();
+    });
+
+    bindPage();
+    window.__pageInits = window.__pageInits || [];
+    window.__pageInits.push(bindPage);
 
     /* Мобильная клавиатура: подскроллить поле комментария в видимую область */
     document.addEventListener('focusin', function (e) {

@@ -4,7 +4,7 @@
 {% block title %}{% trans "Главная" %} — SchoolHub{% endblock %}
 
 {% block extra_head %}
-    <link rel="stylesheet" href="{% static 'css/feed.css' %}">
+    <link rel="stylesheet" href="{% static 'css/feed.css' %}?v=2">
 {% endblock %}
 
 {% block content %}
@@ -132,20 +132,26 @@
     <input type="file" id="storyFileInput" accept="image/*,video/*" hidden>
 </dialog>
 
-<!-- Модалка: создание поста -->
-<dialog class="app-modal" id="postCreateModal">
+<!-- Модалка: создание поста (стиль Instagram/Threads) -->
+<dialog class="app-modal post-composer" id="postCreateModal">
     <div class="modal-head">
-        <button class="modal-head-btn" type="button" id="postModalBack" style="visibility:hidden;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                 stroke-linecap="round" stroke-linejoin="round">
-                <path d="M19 12H5"></path>
-                <path d="M12 19l-7-7 7-7"></path>
-            </svg>
-        </button>
+        <button class="modal-head-btn" type="button" data-close-post>{% trans "Отмена" %}</button>
         <span class="modal-title">{% trans "Новая публикация" %}</span>
-        <button class="modal-head-btn primary" type="button" id="postSubmitBtn" disabled>{% trans "Далее" %}</button>
+        <button class="modal-head-btn primary" type="button" id="postSubmitBtn" disabled>{% trans "Опубликовать" %}</button>
     </div>
     <div class="modal-body">
+        <div class="composer-editor">
+            <span class="composer-avatar">
+                {% if user.profile.avatar %}
+                <img src="{{ user.profile.avatar.url }}" alt="{{ user.username }}" loading="lazy" decoding="async">
+                {% else %}
+                <span class="composer-avatar-ph">{{ user.username|first|upper }}</span>
+                {% endif %}
+            </span>
+            <textarea id="postCaption" rows="2" style="resize:none; font-family:inherit;"
+                      placeholder="{% blocktrans with name=user.username %}Что нового, {{ name }}?{% endblocktrans %}"></textarea>
+        </div>
+
         <label class="picker-area" id="postPickerArea">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
                  stroke-linecap="round" stroke-linejoin="round">
@@ -153,16 +159,9 @@
                 <circle cx="8.5" cy="8.5" r="1.5"></circle>
                 <path d="M21 15l-5-5L5 21"></path>
             </svg>
-            <span class="picker-hint">{% trans "Перетащите фото сюда" %}</span>
-            <span class="picker-sub">{% trans "или нажмите, чтобы выбрать с устройства" %}</span>
+            <span class="picker-hint">{% trans "Добавьте фото или видео" %}</span>
+            <span class="picker-sub">{% trans "Перетащите сюда или нажмите, чтобы выбрать" %}</span>
         </label>
-        <button class="picker-text-btn" type="button" id="textOnlyPostBtn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-                 stroke-linecap="round" stroke-linejoin="round">
-                <path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"></path>
-            </svg>
-            {% trans "Написать текст" %}
-        </button>
         <button class="picker-more-btn" type="button" id="addMoreMediaBtn" style="display:none;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                  stroke-linecap="round" stroke-linejoin="round">
@@ -195,9 +194,11 @@
             </button>
         </div>
 
-        <div class="field-label" id="captionLabel" style="display:none;">{% trans "Подпись" %}</div>
-        <textarea id="postCaption" rows="3" style="display:none; resize:vertical; font-family:inherit;"
-                  placeholder="{% trans 'Напишите подпись…' %}"></textarea>
+        <div class="post-preview-block" id="postPreviewBlock">
+            <div class="post-preview-label">{% trans "Предпросмотр" %}</div>
+            <div class="post-preview" id="postPreviewCard"></div>
+        </div>
+
         <div class="modal-error" id="postError"></div>
     </div>
     <input type="file" id="postFileInput" accept="image/*,video/*" multiple hidden>
@@ -334,5 +335,5 @@ window.FEED_CONFIG = {
     }
 };
 </script>
-<script src="{% static 'js/feed.js' %}"></script>
+<script src="{% static 'js/feed.js' %}?v=2"></script>
 {% endblock %}
