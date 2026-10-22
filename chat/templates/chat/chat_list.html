@@ -34,6 +34,7 @@
     .chat-new-form button:hover { background: var(--accent-hover); }
 
     .dialog {
+        position: relative;
         display: flex;
         align-items: center;
         gap: 12px;
@@ -69,7 +70,7 @@
         text-overflow: ellipsis;
         margin-top: 2px;
     }
-    .dialog-side { text-align: right; flex-shrink: 0; }
+    .dialog-side { text-align: right; flex-shrink: 0; padding-right: 40px; }
     .dialog-time { color: var(--muted); font-size: 12px; }
     .dialog-unread {
         display: inline-flex;
@@ -85,6 +86,24 @@
         font-size: 11px;
         font-weight: 700;
     }
+    .dialog-profile {
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--muted);
+        text-decoration: none;
+        z-index: 2;
+    }
+    .dialog-profile:hover { background: var(--bg); color: var(--text); }
+    .dialog-profile svg { width: 18px; height: 18px; transition: transform 0.3s ease; }
+    .dialog-profile:hover svg { transform: scale(1.15); }
 </style>
 {% endblock %}
 
@@ -135,6 +154,14 @@
                     <div class="dialog-unread">{{ d.unread }}</div>
                 {% endif %}
             </div>
+            <a class="dialog-profile" href="{% url 'profile_user' d.other.username %}"
+               title="{% blocktrans with name=d.other.username %}Профиль {{ name }}{% endblocktrans %}"
+               aria-label="{% blocktrans with name=d.other.username %}Профиль {{ name }}{% endblocktrans %}">
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <circle cx="12" cy="8" r="4"/>
+                    <path d="M4 20c0-4 4-6 8-6s8 2 8 6"/>
+                </svg>
+            </a>
         </a>
         {% endfor %}
     </div>
