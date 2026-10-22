@@ -269,6 +269,18 @@
     </div>
 </dialog>
 
+<!-- Модалка: кто лайкнул пост (для автора) -->
+<dialog class="app-modal" id="postLikesModal">
+    <div class="modal-head">
+        <span class="modal-title">{% trans "Кто лайкнул" %}</span>
+        <button class="modal-head-btn" type="button" id="postLikesClose">{% trans "Закрыть" %}</button>
+    </div>
+    <div class="modal-body">
+        <div class="story-stats-summary" id="postLikesSummary"></div>
+        <div class="story-stats-list" id="postLikesList"></div>
+    </div>
+</dialog>
+
 <!-- Лайтбокс -->
 <div id="lightboxOverlay">
     <button id="lightboxClose" title="{% trans 'Закрыть' %}">
@@ -332,7 +344,8 @@ window.FEED_CONFIG = {
         likeStory: "{% url 'toggle_story_like' 0 %}",
         storyStats: "{% url 'story_stats' 0 %}",
         activeStories: "{% url 'api_active_stories' %}",
-        viewPosts: "{% url 'mark_post_viewed' %}"
+        viewPosts: "{% url 'mark_post_viewed' %}",
+        postLikes: "{% url 'post_likes' 0 %}"
     }
 };
 window.POST_VIEWS_URL = "{% url 'mark_post_viewed' %}";

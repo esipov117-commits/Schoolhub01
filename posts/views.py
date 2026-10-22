@@ -232,6 +232,34 @@ def toggle_like(request, post_id):
 
 
 @login_required
+def post_likes(request, post_id):
+    """Список лайкнувших пост — доступен только автору поста."""
+    post = get_object_or_404(Post, id=post_id)
+    if post.author_id != request.user.id:
+        return JsonResponse({'error': _('Список доступен только автору поста')}, status=403)
+
+    likes = (
+        Like.objects
+        .filter(post=post)
+        .select_related('user__profile')
+        .order_by('-created_at')
+    )
+    likers = []
+    for like in likes:
+        profile = getattr(like.user, 'profile', None)
+        likers.append({
+            'username': like.user.username,
+            'avatar': profile.avatar.url if profile and profile.avatar else None,
+            'liked_at': like.created_at.isoformat(),
+        })
+
+    return JsonResponse({
+        'likes_count': post.likes.count(),
+        'likers': likers,
+    })
+
+
+@login_required
 @require_POST
 def mark_post_viewed(request):
     """Пакетно отмечает посты просмотренными для текущего пользователя.
