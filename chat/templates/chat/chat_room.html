@@ -21,6 +21,16 @@
         padding-bottom: 14px;
         border-bottom: 1px solid var(--border);
     }
+    .chat-head-user {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: inherit;
+        text-decoration: none;
+        min-width: 0;
+        border-radius: 10px;
+    }
+    .chat-head-user:hover .chat-head-name { text-decoration: underline; }
     .chat-back {
         width: 34px;
         height: 34px;
@@ -130,17 +140,19 @@
                 <path d="m15 18-6-6 6-6"/>
             </svg>
         </a>
-        <div class="chat-head-avatar">
-            {% if other_avatar %}
-                <img src="{{ other_avatar }}" alt="{{ other.username }}" loading="lazy" decoding="async">
-            {% else %}
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                    <circle cx="12" cy="8" r="4"/>
-                    <path d="M4 20c0-4 4-6 8-6s8 2 8 6"/>
-                </svg>
-            {% endif %}
-        </div>
-        <div class="chat-head-name">{{ other.username }}</div>
+        <a class="chat-head-user" href="{% url 'profile_user' other.username %}" title="{% blocktrans with name=other.username %}Профиль {{ name }}{% endblocktrans %}">
+            <div class="chat-head-avatar">
+                {% if other_avatar %}
+                    <img src="{{ other_avatar }}" alt="{{ other.username }}" loading="lazy" decoding="async">
+                {% else %}
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <circle cx="12" cy="8" r="4"/>
+                        <path d="M4 20c0-4 4-6 8-6s8 2 8 6"/>
+                    </svg>
+                {% endif %}
+            </div>
+            <div class="chat-head-name">{{ other.username }}</div>
+        </a>
     </div>
 
     <div class="chat-messages" id="chatMessages">
