@@ -115,6 +115,8 @@
         <span class="likes-count">{{ post.likes_count|likes_text }}</span>
         <span class="meta-sep">·</span>
         <span class="comments-count toggle-comments-btn" data-post-id="{{ post.id }}">{{ post.comments_total|comments_text }}</span>
+        <span class="meta-sep">·</span>
+        <span class="views-count">{{ post.views_count|views_text }}</span>
     </div>
 
     <div class="comments-block" id="comments-{{ post.id }}" data-roots-total="{{ post.roots_total }}" style="display:none;">

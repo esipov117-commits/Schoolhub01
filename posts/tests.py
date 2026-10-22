@@ -1,3 +1,4 @@
+import json
 import tempfile
 from io import BytesIO
 
@@ -8,7 +9,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.template.loader import render_to_string
 from django.urls import reverse
 
-from .models import Post, PostImage, Comment
+from .models import Post, PostImage, Comment, PostView
 from .views import _post_queryset
 
 User = get_user_model()
@@ -205,3 +206,54 @@ class CommentReplyTests(TestCase):
         self.assertIn('class="reply-btn"', html)
         self.assertIn('class="comment reply"', html)
         self.assertIn('id="comment-%d"' % root.id, html)
+
+
+class PostViewTests(TestCase):
+    def setUp(self):
+        self.author = User.objects.create_user('author', password='pass12345')
+        self.user = User.objects.create_user('user', password='pass12345')
+        self.other = User.objects.create_user('other', password='pass12345')
+        self.post = Post.objects.create(author=self.author, content='hello')
+        self.client = Client()
+        self.client.force_login(self.user)
+
+    def test_mark_post_viewed_creates_view(self):
+        resp = self.client.post(reverse('mark_post_viewed'), data=json.dumps({'post_ids': [self.post.id]}), content_type='application/json')
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(resp.json()['ok'])
+        self.assertTrue(PostView.objects.filter(post=self.post, user=self.user).exists())
+
+    def test_duplicate_views_not_created(self):
+        for _ in range(2):
+            self.client.post(reverse('mark_post_viewed'), data=json.dumps({'post_ids': [self.post.id]}), content_type='application/json')
+        self.assertEqual(PostView.objects.filter(post=self.post, user=self.user).count(), 1)
+
+    def test_author_own_post_not_counted(self):
+        self.client.force_login(self.author)
+        self.client.post(reverse('mark_post_viewed'), data=json.dumps({'post_ids': [self.post.id]}), content_type='application/json')
+        self.assertFalse(PostView.objects.filter(post=self.post, user=self.author).exists())
+
+    def test_nonexistent_post_ignored(self):
+        resp = self.client.post(reverse('mark_post_viewed'), data=json.dumps({'post_ids': [999999]}), content_type='application/json')
+        self.assertTrue(resp.json()['ok'])
+        self.assertEqual(PostView.objects.count(), 0)
+
+    def test_views_count_annotated(self):
+        Post.objects.create(author=self.author, content='second')
+        PostView.objects.create(post=self.post, user=self.user)
+        PostView.objects.create(post=self.post, user=self.other)
+        post = _post_queryset().get(pk=self.post.pk)
+        self.assertEqual(post.views_count, 2)
+
+    def test_card_renders_views_count(self):
+        PostView.objects.create(post=self.post, user=self.user)
+        post = _post_queryset().get(pk=self.post.pk)
+        html = render_to_string(
+            'posts/_post_card.html',
+            {'post': post, 'user': self.author, 'liked_post_ids': set()},
+        )
+        self.assertIn('1 просмотр', html)
+
+    def test_bad_post_ids_rejected(self):
+        resp = self.client.post(reverse('mark_post_viewed'), data=json.dumps({'post_ids': ['abc']}), content_type='application/json')
+        self.assertEqual(resp.status_code, 400)

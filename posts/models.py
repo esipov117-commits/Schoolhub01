@@ -68,6 +68,26 @@ class Like(models.Model):
         unique_together = ('user', 'post')
 
 
+class PostView(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='post_views')
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='views')
+    viewed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['post', 'user'],
+                name='uniq_post_view_user',
+            ),
+        ]
+        indexes = [
+            models.Index(fields=['post']),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} viewed post {self.post_id}"
+
+
 class Comment(models.Model):
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='comments')
     author = models.ForeignKey(User, on_delete=models.CASCADE)
