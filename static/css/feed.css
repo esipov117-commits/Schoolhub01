@@ -514,6 +514,7 @@
     .post-meta-line .meta-sep { color: var(--muted); font-weight: 400; }
     .post-meta-line .comments-count { cursor: pointer; }
     .post-meta-line .comments-count:hover { text-decoration: underline; }
+    .post-meta-line .views-count { color: var(--muted); font-weight: 400; }
 
     .post-caption {
         font-size: 14px;

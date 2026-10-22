@@ -13,9 +13,11 @@ from django.contrib.auth.models import User
 from django.utils import translation
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
+from django.db.models import Count, IntegerField, OuterRef, Subquery
+from django.db.models.functions import Coalesce
 from .forms import RegisterForm
 from .models import Profile, Follow, downscale_image
-from posts.models import Post, PostImage
+from posts.models import Post, PostImage, PostView
 
 REMEMBERED_USER_COOKIE = 'sh_remembered_user'
 
@@ -159,10 +161,18 @@ def profile(request, username=None):
         target_user = request.user
 
     context = _build_profile_context(request, target_user)
+    views_sq = (
+        PostView.objects.filter(post=OuterRef('pk'))
+        .order_by()
+        .values('post')
+        .annotate(c=Count('pk'))
+        .values('c')
+    )
     posts_qs = (
         Post.objects
         .filter(author=target_user)
         .prefetch_related('images')
+        .annotate(views_count=Coalesce(Subquery(views_sq, output_field=IntegerField()), 0))
         .order_by('-created_at')
     )
     page_obj = Paginator(posts_qs, PROFILE_POSTS_PER_PAGE).get_page(request.GET.get('page'))

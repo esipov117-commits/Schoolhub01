@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% load i18n %}
+{% load i18n post_extras %}
 {% block title %}{% trans "Профиль" %} — SchoolHub{% endblock %}
 {% block grid_columns %}240px 1fr 320px{% endblock %}
 
@@ -203,7 +203,7 @@
     <div class="profile-main-column">
         <h3 class="section-title">{% trans "Посты" %}</h3>
         {% for post in user_posts %}
-            <div class="card post">
+            <div class="card post" data-post-id="{{ post.id }}">
                 {{ post.content|linebreaksbr }}
                 {% if post.images.all %}
                 <div class="wall-post-media">
@@ -216,6 +216,7 @@
                     {% endfor %}
                 </div>
                 {% endif %}
+                <div class="wall-post-meta"><span class="views-count">{{ post.views_count|views_text }}</span></div>
             </div>
         {% empty %}
             <div class="card empty-feed">
@@ -289,6 +290,18 @@ function closeLightbox() {
         overlay.classList.remove("show");
     }
 }
+window.POST_VIEWS_URL = "{% url 'mark_post_viewed' %}";
+(function () {
+    function startObserving() {
+        if (window.observePostViews) {
+            window.observePostViews();
+            if (window.__drainPostViews) window.__drainPostViews();
+        } else {
+            setTimeout(startObserving, 200);
+        }
+    }
+    startObserving();
+})();
 </script>
 <style>
 .profile-page {
@@ -509,6 +522,12 @@ function closeLightbox() {
     border-radius: 10px;
     background: #f0f1f3;
     display: block;
+}
+.wall-post-meta {
+    margin-top: 8px;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--muted);
 }
 .profile-pagination {
     display: flex;

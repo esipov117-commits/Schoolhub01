@@ -331,9 +331,11 @@ window.FEED_CONFIG = {
         viewStory: "{% url 'view_story' 0 %}",
         likeStory: "{% url 'toggle_story_like' 0 %}",
         storyStats: "{% url 'story_stats' 0 %}",
-        activeStories: "{% url 'api_active_stories' %}"
+        activeStories: "{% url 'api_active_stories' %}",
+        viewPosts: "{% url 'mark_post_viewed' %}"
     }
 };
+window.POST_VIEWS_URL = "{% url 'mark_post_viewed' %}";
 </script>
 <script src="{% static 'js/feed.js' %}?v=2"></script>
 {% endblock %}

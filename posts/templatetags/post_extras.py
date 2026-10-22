@@ -43,6 +43,13 @@ def comments_text(value):
 
 
 @register.filter
+def views_text(value):
+    n = int(value)
+    word = _counted(n, _('просмотр'), _('просмотра'), _('просмотров'))
+    return f'{n} {word}'
+
+
+@register.filter
 def fulldate(value):
     if not value:
         return ''

@@ -591,6 +591,8 @@
                 nextPage += 1;
                 noMorePosts = !d.has_next;
                 bindAll(feedPosts);
+                if (window.observePostViews) window.observePostViews(feedPosts);
+                if (window.__drainPostViews) window.__drainPostViews();
             })
             .catch(function () { loadingPosts = false; setFeedLoading(false); });
     }
@@ -1562,6 +1564,8 @@
         bindComments(root);
         bindCarouselDots(root);
         bindStoryBubbles(root);
+        if (window.observePostViews) window.observePostViews(root);
+        if (window.__drainPostViews) window.__drainPostViews();
     }
 
     /* Перепривязка после SPA-навигации: перечитывает DOM и навешивает слушатели */

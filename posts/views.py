@@ -1,3 +1,4 @@
+import json
 import os
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
@@ -9,7 +10,8 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.utils import timezone
 from django.utils.translation import gettext as _
-from .models import Post, PostImage, Like, Comment
+from django.views.decorators.http import require_POST
+from .models import Post, PostImage, Like, Comment, PostView
 from stories.models import Story, StoryView
 from users.models import downscale_image
 
@@ -47,6 +49,13 @@ def _post_queryset():
         .annotate(c=Count('pk'))
         .values('c')
     )
+    views_sq = (
+        PostView.objects.filter(post=OuterRef('pk'))
+        .order_by()
+        .values('post')
+        .annotate(c=Count('pk'))
+        .values('c')
+    )
     return (
         Post.objects
         .select_related('author__profile')
@@ -68,6 +77,7 @@ def _post_queryset():
             likes_count=Coalesce(Subquery(likes_sq, output_field=IntegerField()), 0),
             comments_total=Coalesce(Subquery(comments_sq, output_field=IntegerField()), 0),
             roots_total=Coalesce(Subquery(roots_sq, output_field=IntegerField()), 0),
+            views_count=Coalesce(Subquery(views_sq, output_field=IntegerField()), 0),
         )
         .order_by('-created_at')
     )
@@ -219,6 +229,49 @@ def toggle_like(request, post_id):
         'liked': liked,
         'likes_count': post.likes.count(),
     })
+
+
+@login_required
+@require_POST
+def mark_post_viewed(request):
+    """Пакетно отмечает посты просмотренными для текущего пользователя.
+
+    Один просмотр на пользователя (unique post+user), свои посты не считаем.
+    """
+    try:
+        payload = json.loads(request.body.decode('utf-8') or '{}')
+    except (ValueError, TypeError):
+        payload = {}
+
+    raw_ids = payload.get('post_ids') or request.POST.getlist('post_ids')
+    if not raw_ids:
+        return JsonResponse({'ok': True, 'views_created': 0})
+
+    try:
+        post_ids = {int(pid) for pid in raw_ids}
+    except (TypeError, ValueError):
+        return JsonResponse({'error': _('Некорректный запрос')}, status=400)
+
+    existing = set(
+        PostView.objects
+        .filter(user=request.user, post_id__in=post_ids)
+        .values_list('post_id', flat=True)
+    )
+    to_create = post_ids - existing
+    if not to_create:
+        return JsonResponse({'ok': True, 'views_created': 0})
+
+    eligible = set(
+        Post.objects
+        .filter(pk__in=to_create)
+        .exclude(author=request.user)
+        .values_list('pk', flat=True)
+    )
+    PostView.objects.bulk_create(
+        [PostView(user=request.user, post_id=pid) for pid in eligible],
+        ignore_conflicts=True,
+    )
+    return JsonResponse({'ok': True, 'views_created': len(eligible)})
 
 
 @login_required
