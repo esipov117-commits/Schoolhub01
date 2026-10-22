@@ -1,4 +1,5 @@
 import json
+from urllib.parse import quote, unquote
 
 from django.conf import settings
 from django.core.paginator import Paginator
@@ -23,8 +24,38 @@ PHOTOS_PER_PAGE = 24
 PEOPLE_PER_PAGE = 60
 
 
+HEADERS_SAFE = "~@._-"
+
+
+def _encode_cookie_username(username):
+    """Превращает username в ASCII-safe значение для Cookie.
+
+    Кириллические имена в заголовке Cookie невалидны: gunicorn/nginx
+    отбрасывают такие запросы с 400/502. Внутри храним percent-encoded
+    значение, при чтении декодируем обратно.
+    """
+    try:
+        return quote(username, safe=HEADERS_SAFE)
+    except Exception:
+        return username
+
+
+def _decode_cookie_username(value):
+    try:
+        return unquote(value)
+    except Exception:
+        return ''
+
+
 def _get_remembered_user(request):
-    username = request.COOKIES.get(REMEMBERED_USER_COOKIE, '')
+    raw = request.COOKIES.get(REMEMBERED_USER_COOKIE, '')
+    if not raw:
+        return None
+    # Старая незакодированная кука с невалидными (не-ASCII) значениями
+    # игнорируется — она и так ломает парсинг на nginx/gunicorn.
+    if any(ord(ch) > 127 for ch in raw):
+        return None
+    username = _decode_cookie_username(raw)
     if not username:
         return None
     return User.objects.filter(username=username).first()
@@ -44,7 +75,7 @@ def login_view(request):
             response = redirect('home')
             response.set_cookie(
                 REMEMBERED_USER_COOKIE,
-                form.get_user().username,
+                _encode_cookie_username(form.get_user().username),
                 max_age=365 * 24 * 60 * 60,
                 httponly=True,
                 secure=not settings.DEBUG,
@@ -95,7 +126,7 @@ def register(request):
             response = redirect('home')
             response.set_cookie(
                 REMEMBERED_USER_COOKIE,
-                user.username,
+                _encode_cookie_username(user.username),
                 max_age=365 * 24 * 60 * 60,
                 httponly=True,
                 secure=not settings.DEBUG,
