@@ -6,6 +6,7 @@ urlpatterns = [
     path('feed/view/', views.mark_post_viewed, name='mark_post_viewed'),
     path('community/', views.community, name='community'),
     path('feed/<int:post_id>/like/', views.toggle_like, name='toggle_like'),
+    path('feed/<int:post_id>/likes/', views.post_likes, name='post_likes'),
     path('feed/<int:post_id>/delete/', views.delete_post, name='delete_post'),
     path('feed/<int:post_id>/edit/', views.edit_post, name='edit_post'),
     path('feed/<int:post_id>/comment/', views.add_comment, name='add_comment'),

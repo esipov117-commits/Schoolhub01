@@ -1148,6 +1148,58 @@
         if (m && m.open) m.close();
     }
 
+    function closePostLikesModal() {
+        var m = document.getElementById('postLikesModal');
+        if (m && m.open) m.close();
+    }
+
+    function openPostLikes(postId) {
+        var modal = document.getElementById('postLikesModal');
+        var summary = document.getElementById('postLikesSummary');
+        var list = document.getElementById('postLikesList');
+        if (!modal) return;
+        summary.textContent = 'Загрузка…';
+        list.innerHTML = '';
+        modal.showModal();
+        getJSON(CFG.urls.postLikes.replace('/0/', '/' + postId + '/'))
+            .then(function (d) {
+                if (!d || d.error) {
+                    summary.textContent = (d && d.error) || 'Не удалось загрузить';
+                    return;
+                }
+                summary.textContent = likesText(d.likes_count);
+                list.innerHTML = '';
+                if (!d.likers || !d.likers.length) {
+                    list.innerHTML = '<div class="story-stats-empty">Пока нет отметок «Нравится»</div>';
+                    return;
+                }
+                d.likers.forEach(function (u) {
+                    var row = document.createElement('div');
+                    row.className = 'story-stats-row';
+                    var av = document.createElement('img');
+                    av.className = 'story-stats-avatar';
+                    if (u.avatar) {
+                        av.src = u.avatar;
+                        av.alt = u.username;
+                    } else {
+                        av.className += ' story-stats-avatar-ph';
+                        av.alt = (u.username || '?').charAt(0).toUpperCase();
+                    }
+                    var name = document.createElement('span');
+                    name.className = 'story-stats-name';
+                    name.textContent = u.username;
+                    var time = document.createElement('span');
+                    time.className = 'story-stats-time';
+                    time.textContent = u.liked_at ? new Date(u.liked_at).toLocaleString() : '';
+                    row.appendChild(av);
+                    row.appendChild(name);
+                    row.appendChild(time);
+                    list.appendChild(row);
+                });
+            })
+            .catch(function () { summary.textContent = 'Не удалось загрузить'; });
+    }
+
     function openStoriesFor(authorId, authorName, authorAvatar) {
         getJSON(CFG.urls.activeStories).then(function (d) {
             var groups = (d && d.stories) || [];
@@ -1537,7 +1589,7 @@
             '    <button type="button" class="share-post-btn" data-post-id="' + d.id + '" aria-label="Поделиться">' + PLANE_SVG + '</button>' +
             '  </div>' +
             '  <div class="post-meta-line">' +
-            '    <span class="likes-count">' + likesText(0) + '</span>' +
+            '    <span class="likes-count likes-open" data-post-id="' + d.id + '" role="button" tabindex="0" title="Кто лайкнул">' + likesText(0) + '</span>' +
             '    <span class="meta-sep">·</span>' +
             '    <span class="comments-count toggle-comments-btn" data-post-id="' + d.id + '">' + commentsText(0) + '</span>' +
             '  </div>' +
@@ -1624,6 +1676,14 @@
             closeStoryStatsModal();
             return;
         }
+        if (t.closest('.likes-open')) {
+            openPostLikes(t.closest('.likes-open').getAttribute('data-post-id'));
+            return;
+        }
+        if (t.closest('#postLikesClose') || t.id === 'postLikesModal') {
+            closePostLikesModal();
+            return;
+        }
 
         if (t.closest('#lightboxClose')) { closeLightbox(); return; }
         if (t.closest('#lightboxPrev')) { lightboxStep(-1); return; }
@@ -1668,6 +1728,11 @@
     });
 
     document.addEventListener('keydown', function (e) {
+        if ((e.key === 'Enter' || e.key === ' ') && e.target && e.target.matches && e.target.matches('.likes-open')) {
+            e.preventDefault();
+            openPostLikes(e.target.getAttribute('data-post-id'));
+            return;
+        }
         var lb = lightboxEl();
         if (lb && lb.style.display === 'flex') {
             if (e.key === 'Escape') { closeLightbox(); return; }
@@ -1676,6 +1741,7 @@
         }
         if (e.key !== 'Escape') return;
         if (storyViewer && storyViewer.root && storyViewer.root.classList.contains('open')) storyViewer.close();
+        closePostLikesModal();
     });
 
     bindPage();

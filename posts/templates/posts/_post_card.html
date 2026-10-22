@@ -112,7 +112,12 @@
     </div>
 
     <div class="post-meta-line">
+        {% if post.author == user %}
+        <span class="likes-count likes-open" data-post-id="{{ post.id }}" role="button" tabindex="0"
+              title="{% trans 'Кто лайкнул' %}" aria-label="{% trans 'Кто лайкнул' %}">{{ post.likes_count|likes_text }}</span>
+        {% else %}
         <span class="likes-count">{{ post.likes_count|likes_text }}</span>
+        {% endif %}
         <span class="meta-sep">·</span>
         <span class="comments-count toggle-comments-btn" data-post-id="{{ post.id }}">{{ post.comments_total|comments_text }}</span>
         <span class="meta-sep">·</span>

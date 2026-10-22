@@ -1,5 +1,6 @@
 import json
 import tempfile
+from datetime import timedelta
 from io import BytesIO
 
 from django.conf import settings
@@ -9,7 +10,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.template.loader import render_to_string
 from django.urls import reverse
 
-from .models import Post, PostImage, Comment, PostView
+from .models import Post, PostImage, Comment, PostView, Like
 from .views import _post_queryset
 
 User = get_user_model()
@@ -257,3 +258,54 @@ class PostViewTests(TestCase):
     def test_bad_post_ids_rejected(self):
         resp = self.client.post(reverse('mark_post_viewed'), data=json.dumps({'post_ids': ['abc']}), content_type='application/json')
         self.assertEqual(resp.status_code, 400)
+
+
+class PostLikersTests(TestCase):
+    def setUp(self):
+        self.author = User.objects.create_user('author', password='pass12345')
+        self.user = User.objects.create_user('user', password='pass12345')
+        self.post = Post.objects.create(author=self.author, content='hello')
+        self.client = Client()
+        self.client.force_login(self.author)
+
+    def test_author_sees_likers(self):
+        Like.objects.create(user=self.user, post=self.post)
+        resp = self.client.get(reverse('post_likes', args=[self.post.id]))
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertEqual(data['likes_count'], 1)
+        self.assertEqual(len(data['likers']), 1)
+        self.assertEqual(data['likers'][0]['username'], 'user')
+        self.assertIn('liked_at', data['likers'][0])
+
+    def test_likers_ordered_by_recent(self):
+        older = User.objects.create_user('older', password='pass12345')
+        first = Like.objects.create(user=older, post=self.post)
+        Like.objects.create(user=self.user, post=self.post)
+        first.created_at = self.post.created_at - timedelta(days=1)
+        first.save(update_fields=['created_at'])
+        data = self.client.get(reverse('post_likes', args=[self.post.id])).json()
+        self.assertEqual([l['username'] for l in data['likers']], ['user', 'older'])
+
+    def test_non_author_forbidden(self):
+        self.client.force_login(self.user)
+        resp = self.client.get(reverse('post_likes', args=[self.post.id]))
+        self.assertEqual(resp.status_code, 403)
+
+    def test_no_likers_returns_empty(self):
+        data = self.client.get(reverse('post_likes', args=[self.post.id])).json()
+        self.assertEqual(data['likes_count'], 0)
+        self.assertEqual(data['likers'], [])
+
+    def test_card_likes_open_only_for_author(self):
+        post = _post_queryset().get(pk=self.post.pk)
+        html_author = render_to_string(
+            'posts/_post_card.html',
+            {'post': post, 'user': self.author, 'liked_post_ids': set()},
+        )
+        self.assertIn('likes-open', html_author)
+        html_other = render_to_string(
+            'posts/_post_card.html',
+            {'post': post, 'user': self.user, 'liked_post_ids': set()},
+        )
+        self.assertNotIn('likes-open', html_other)
