@@ -836,6 +836,8 @@
     }
 
     function StoryViewer() {
+        this.groups = [];
+        this.groupIndex = -1;
         this.group = null;
         this.index = 0;
         this.isOwn = false;
@@ -858,13 +860,26 @@
         this.soundBtn = document.getElementById('storySoundBtn');
     };
 
-    StoryViewer.prototype.open = function (group) {
+    StoryViewer.prototype.open = function (groups, startIndex) {
         this.bindEls();
-        this.group = group;
-        this.index = 0;
         if (!this.root) return;
+        this.groups = (groups || []).filter(function (g) {
+            return g && g.items && g.items.length;
+        });
+        if (!this.groups.length) return;
+        var idx = typeof startIndex === 'number' ? startIndex : 0;
+        if (idx < 0 || idx >= this.groups.length) idx = 0;
         this.root.classList.add('open');
         document.body.style.overflow = 'hidden';
+        this.activateGroup(idx, 0);
+    };
+
+    StoryViewer.prototype.activateGroup = function (groupIndex, itemIndex) {
+        var group = this.groups[groupIndex];
+        if (!group || !group.items.length) return this.close();
+        this.groupIndex = groupIndex;
+        this.group = group;
+        this.index = 0;
         this.authorEl.textContent = group.author_name;
         if (group.author_avatar) {
             this.avatarEl.src = group.author_avatar;
@@ -879,8 +894,24 @@
         this.deleteBtn.style.display = canDelete ? 'flex' : 'none';
         this.statsBtn.style.display = isOwn ? 'flex' : 'none';
         this.likeBtn.style.display = isOwn ? 'none' : 'flex';
-        this.renderProgress();
-        this.show(0);
+        this.show(itemIndex || 0);
+    };
+
+    StoryViewer.prototype.nextGroup = function () {
+        if (!this.groups) return this.close();
+        for (var i = this.groupIndex + 1; i < this.groups.length; i++) {
+            if (this.groups[i].items.length) return this.activateGroup(i, 0);
+        }
+        this.close();
+    };
+
+    StoryViewer.prototype.prevGroup = function () {
+        if (!this.groups) return;
+        for (var i = this.groupIndex - 1; i >= 0; i--) {
+            if (this.groups[i].items.length) {
+                return this.activateGroup(i, this.groups[i].items.length - 1);
+            }
+        }
     };
 
     StoryViewer.prototype.deleteCurrent = function () {
@@ -905,7 +936,13 @@
                     if (idx >= 0) self.group.items.splice(idx, 1);
                     toast('История удалена');
                     if (!self.group.items.length) {
-                        self.close();
+                        var gi = self.groups.indexOf(self.group);
+                        if (gi !== -1) self.groups.splice(gi, 1);
+                        if (gi === -1 || gi >= self.groups.length) {
+                            self.close();
+                        } else {
+                            self.activateGroup(gi, 0);
+                        }
                     } else {
                         if (self.index >= self.group.items.length) {
                             self.index = self.group.items.length - 1;
@@ -931,6 +968,8 @@
         this.clearMedia();
         if (this.soundBtn) this.soundBtn.style.display = 'none';
         this.group = null;
+        this.groups = null;
+        this.groupIndex = -1;
     };
 
     StoryViewer.prototype.clearMedia = function () {
@@ -1071,8 +1110,7 @@
 
     StoryViewer.prototype.show = function (i) {
         if (!this.group) return;
-        if (i < 0) return this.prev();
-        if (i >= this.group.items.length) return this.close();
+        if (i < 0 || i >= this.group.items.length) return;
         stopViewerTimer();
         this.index = i;
         var item = this.group.items[i];
@@ -1138,8 +1176,17 @@
         }
     };
 
-    StoryViewer.prototype.next = function () { this.show(this.index + 1); };
-    StoryViewer.prototype.prev = function () { this.show(this.index - 1); };
+    StoryViewer.prototype.next = function () {
+        if (!this.group) return;
+        if (this.index + 1 < this.group.items.length) return this.show(this.index + 1);
+        this.nextGroup();
+    };
+
+    StoryViewer.prototype.prev = function () {
+        if (!this.group) return;
+        if (this.index > 0) return this.show(this.index - 1);
+        this.prevGroup();
+    };
 
     var storyViewer = new StoryViewer();
 
@@ -1203,10 +1250,23 @@
     function openStoriesFor(authorId, authorName, authorAvatar) {
         getJSON(CFG.urls.activeStories).then(function (d) {
             var groups = (d && d.stories) || [];
-            var group = null;
-            groups.forEach(function (g) { if (String(g.author_id) === String(authorId)) group = g; });
-            if (!group || !group.items.length) { toast('Истории недоступны'); return; }
-            storyViewer.open(group);
+            var me = String(CFG.meId);
+            var own = [];
+            var rest = [];
+            groups.forEach(function (g) {
+                if (String(g.author_id) === me) own.push(g);
+                else rest.push(g);
+            });
+            var ordered = own.concat(rest);
+            var start = -1;
+            ordered.forEach(function (g, i) {
+                if (String(g.author_id) === String(authorId)) start = i;
+            });
+            if (start === -1 || !ordered[start].items.length) {
+                toast('Истории недоступны');
+                return;
+            }
+            storyViewer.open(ordered, start);
         }).catch(function () { toast('Не удалось загрузить истории'); });
     }
 
