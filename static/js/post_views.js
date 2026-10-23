@@ -1,43 +1,124 @@
 (function () {
     'use strict';
 
+    var DWELL_MS = 1000;
+    var MAX_BATCH = 50;
+
     var pending = new Set();
+    var marked = new Set();
+    var visible = new Set();
+    var dwellTimers = new WeakMap();
     var flushTimer = null;
     var queuedRoots = [];
 
-    function flush() {
+    function csrfToken() {
+        var match = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/);
+        if (match) return decodeURIComponent(match[1]);
+        var input = document.querySelector('[name=csrfmiddlewaretoken]');
+        return input ? input.value : '';
+    }
+
+    function viewsLabel(n, el) {
+        var one = el.getAttribute('data-view-one') || 'просмотр';
+        var few = el.getAttribute('data-view-few') || 'просмотра';
+        var many = el.getAttribute('data-view-many') || 'просмотров';
+        var word;
+        var n10 = n % 10;
+        var n100 = n % 100;
+        if (n10 === 1 && n100 !== 11) word = one;
+        else if (n10 >= 2 && n10 <= 4 && (n100 < 12 || n100 > 14)) word = few;
+        else word = many;
+        return n + ' ' + word;
+    }
+
+    function updateViewsCount(postId) {
+        var card = document.querySelector('.post-card[data-post-id="' + postId + '"]');
+        if (!card) return;
+        var el = card.querySelector('.views-count');
+        if (!el) return;
+        var current = parseInt(el.getAttribute('data-views-count'), 10);
+        if (isNaN(current)) current = parseInt((el.textContent || '').trim(), 10);
+        if (isNaN(current)) return;
+        var next = current + 1;
+        el.setAttribute('data-views-count', String(next));
+        el.textContent = viewsLabel(next, el);
+    }
+
+    function flush(keepalive) {
+        if (flushTimer) {
+            clearTimeout(flushTimer);
+            flushTimer = null;
+        }
         if (!pending.size) return;
-        var ids = Array.from(pending);
-        pending.clear();
+        var ids = Array.from(pending).slice(0, MAX_BATCH);
+        ids.forEach(function (id) { pending.delete(id); });
         var url = window.POST_VIEWS_URL;
-        if (!url) return;
+        if (!url) {
+            ids.forEach(function (id) { pending.add(id); });
+            return;
+        }
+        var headers = {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        };
+        var token = csrfToken();
+        if (token) headers['X-CSRFToken'] = token;
         try {
             fetch(url, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
+                headers: headers,
                 body: JSON.stringify({ post_ids: ids }),
-                credentials: 'same-origin'
+                credentials: 'same-origin',
+                keepalive: !!keepalive
+            }).then(function (res) {
+                if (!res.ok) return null;
+                return res.json();
+            }).then(function (data) {
+                if (data && data.created_ids) {
+                    data.created_ids.forEach(updateViewsCount);
+                }
             }).catch(function () {});
         } catch (err) { /* ignore */ }
+        if (pending.size) scheduleFlush();
     }
 
     function scheduleFlush() {
         if (flushTimer) clearTimeout(flushTimer);
-        flushTimer = setTimeout(flush, 600);
+        flushTimer = setTimeout(function () { flush(false); }, 600);
+    }
+
+    function stopDwell(el) {
+        var timer = dwellTimers.get(el);
+        if (timer) {
+            clearTimeout(timer);
+            dwellTimers.delete(el);
+        }
+    }
+
+    function startDwell(el) {
+        if (document.visibilityState === 'hidden') return;
+        var id = el.getAttribute('data-post-id');
+        if (!id || marked.has(id) || dwellTimers.has(el)) return;
+        var timer = setTimeout(function () {
+            dwellTimers.delete(el);
+            if (document.visibilityState === 'hidden' || !visible.has(el)) return;
+            marked.add(id);
+            pending.add(id);
+            scheduleFlush();
+        }, DWELL_MS);
+        dwellTimers.set(el, timer);
     }
 
     function onIntersect(entries) {
         entries.forEach(function (en) {
-            if (!en.isIntersecting) return;
             var el = en.target;
-            var id = el.getAttribute('data-post-id');
-            if (!id) return;
-            pending.add(id);
-            scheduleFlush();
-            if (window.__postViewsObserver) window.__postViewsObserver.unobserve(el);
+            if (en.isIntersecting) {
+                visible.add(el);
+                startDwell(el);
+            } else {
+                visible.delete(el);
+                stopDwell(el);
+            }
         });
     }
 
@@ -83,6 +164,23 @@
         var roots = queuedRoots;
         queuedRoots = [];
         roots.forEach(function (r) { observePostViews(r); });
+    }
+
+    document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'hidden') {
+            visible.forEach(stopDwell);
+        } else {
+            visible.forEach(startDwell);
+        }
+    });
+
+    window.addEventListener('pagehide', function () {
+        stopDwellAll();
+        flush(true);
+    });
+
+    function stopDwellAll() {
+        visible.forEach(stopDwell);
     }
 
     window.observePostViews = safeObserve;

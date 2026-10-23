@@ -121,7 +121,9 @@
         <span class="meta-sep">·</span>
         <span class="comments-count toggle-comments-btn" data-post-id="{{ post.id }}">{{ post.comments_total|comments_text }}</span>
         <span class="meta-sep">·</span>
-        <span class="views-count">{{ post.views_count|views_text }}</span>
+        <span class="views-count" data-views-count="{{ post.views_count }}"
+              data-view-one="{% trans 'просмотр' %}" data-view-few="{% trans 'просмотра' %}"
+              data-view-many="{% trans 'просмотров' %}">{{ post.views_count|views_text }}</span>
     </div>
 
     <div class="comments-block" id="comments-{{ post.id }}" data-roots-total="{{ post.roots_total }}" style="display:none;">

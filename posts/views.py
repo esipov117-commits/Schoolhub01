@@ -18,6 +18,7 @@ from users.models import downscale_image
 VIDEO_EXTENSIONS = {'.mp4', '.mov', '.webm', '.avi', '.mkv'}
 POSTS_PER_PAGE = 10
 COMMENTS_PER_BATCH = 2
+POST_VIEWS_MAX_BATCH = 50
 
 
 def _post_queryset():
@@ -273,7 +274,11 @@ def mark_post_viewed(request):
 
     raw_ids = payload.get('post_ids') or request.POST.getlist('post_ids')
     if not raw_ids:
-        return JsonResponse({'ok': True, 'views_created': 0})
+        return JsonResponse({'ok': True, 'views_created': 0, 'created_ids': []})
+    if not isinstance(raw_ids, (list, tuple)):
+        raw_ids = [raw_ids]
+    if len(raw_ids) > POST_VIEWS_MAX_BATCH:
+        return JsonResponse({'error': _('Слишком много постов')}, status=400)
 
     try:
         post_ids = {int(pid) for pid in raw_ids}
@@ -287,7 +292,7 @@ def mark_post_viewed(request):
     )
     to_create = post_ids - existing
     if not to_create:
-        return JsonResponse({'ok': True, 'views_created': 0})
+        return JsonResponse({'ok': True, 'views_created': 0, 'created_ids': []})
 
     eligible = set(
         Post.objects
@@ -299,7 +304,12 @@ def mark_post_viewed(request):
         [PostView(user=request.user, post_id=pid) for pid in eligible],
         ignore_conflicts=True,
     )
-    return JsonResponse({'ok': True, 'views_created': len(eligible)})
+    created_ids = sorted(eligible)
+    return JsonResponse({
+        'ok': True,
+        'views_created': len(created_ids),
+        'created_ids': created_ids,
+    })
 
 
 @login_required
