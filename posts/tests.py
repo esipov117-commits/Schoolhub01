@@ -230,10 +230,27 @@ class PostViewTests(TestCase):
             self.client.post(reverse('mark_post_viewed'), data=json.dumps({'post_ids': [self.post.id]}), content_type='application/json')
         self.assertEqual(PostView.objects.filter(post=self.post, user=self.user).count(), 1)
 
+    def test_response_contains_created_ids(self):
+        resp = self.client.post(reverse('mark_post_viewed'), data=json.dumps({'post_ids': [self.post.id]}), content_type='application/json')
+        self.assertEqual(resp.json()['created_ids'], [self.post.id])
+
+        resp = self.client.post(reverse('mark_post_viewed'), data=json.dumps({'post_ids': [self.post.id]}), content_type='application/json')
+        self.assertEqual(resp.json()['created_ids'], [])
+
     def test_author_own_post_not_counted(self):
         self.client.force_login(self.author)
-        self.client.post(reverse('mark_post_viewed'), data=json.dumps({'post_ids': [self.post.id]}), content_type='application/json')
+        resp = self.client.post(reverse('mark_post_viewed'), data=json.dumps({'post_ids': [self.post.id]}), content_type='application/json')
+        self.assertEqual(resp.json()['created_ids'], [])
         self.assertFalse(PostView.objects.filter(post=self.post, user=self.author).exists())
+
+    def test_batch_limit(self):
+        resp = self.client.post(
+            reverse('mark_post_viewed'),
+            data=json.dumps({'post_ids': list(range(51))}),
+            content_type='application/json',
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(PostView.objects.count(), 0)
 
     def test_nonexistent_post_ignored(self):
         resp = self.client.post(reverse('mark_post_viewed'), data=json.dumps({'post_ids': [999999]}), content_type='application/json')
