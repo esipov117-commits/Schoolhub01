@@ -7,6 +7,7 @@ urlpatterns = [
     path("profile/edit/", views.edit_profile, name="edit_profile"),
     path("profile/", views.profile, name="profile"),
     path("profile/<str:username>/follow/", views.toggle_follow, name="toggle_follow"),
+    path("profile/<str:username>/warn/", views.toggle_warning, name="toggle_warning"),
     path("profile/<str:username>/friends/", views.profile_friends, name="profile_friends"),
     path("profile/<str:username>/photos/", views.profile_photos, name="profile_photos"),
     path("profile/<str:username>/", views.profile, name="profile_user"),

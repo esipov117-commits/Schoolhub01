@@ -111,6 +111,7 @@ class Profile(models.Model):
     is_organizer = models.BooleanField(default=False)
     is_moderator = models.BooleanField(default=False)
     is_donor = models.BooleanField(default=False)
+    has_warning = models.BooleanField(default=False)
 
     dark_mode = models.BooleanField(default=False)
 

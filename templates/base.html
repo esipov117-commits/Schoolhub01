@@ -155,6 +155,7 @@
                         <path d="M8.5 12.5l2.5 2.5 4.5-5" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                     {% endif %}
+                    {% if user.profile.has_warning %}{% include 'partials/warning.html' %}{% endif %}
                 </span>
 
                 <svg
@@ -322,6 +323,7 @@
                     <path d="M8.5 12.5l2.5 2.5 4.5-5" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
                 {% endif %}
+                {% if user.profile.has_warning %}{% include 'partials/warning.html' %}{% endif %}
             </h3>
             </a>
 

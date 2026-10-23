@@ -170,3 +170,62 @@ class RememberedUserCookieTests(TestCase):
         self.assertRedirects(response, reverse('home'))
         value = response.cookies[REMEMBERED_USER_COOKIE].value
         self.assertTrue(all(ord(c) < 128 for c in value))
+
+
+class WarningFlagTests(TestCase):
+    def setUp(self):
+        self.staff = User.objects.create_user('admin', password='pass12345', is_staff=True)
+        Profile.objects.create(user=self.staff)
+        self.moderator = User.objects.create_user('mod', password='pass12345')
+        Profile.objects.create(user=self.moderator, is_moderator=True)
+        self.target = User.objects.create_user('target', password='pass12345')
+        Profile.objects.create(user=self.target)
+        self.plain = User.objects.create_user('plain', password='pass12345')
+        Profile.objects.create(user=self.plain)
+
+    def _flag(self, user):
+        return Profile.objects.get(user=user).has_warning
+
+    def test_moderator_can_give_warning(self):
+        self.client.force_login(self.moderator)
+        resp = self.client.post(reverse('toggle_warning', args=[self.target.username]))
+        self.assertRedirects(resp, reverse('profile_user', args=[self.target.username]))
+        self.assertTrue(self._flag(self.target))
+
+    def test_staff_can_give_warning(self):
+        self.client.force_login(self.staff)
+        resp = self.client.post(reverse('toggle_warning', args=[self.target.username]))
+        self.assertRedirects(resp, reverse('profile_user', args=[self.target.username]))
+        self.assertTrue(self._flag(self.target))
+
+    def test_warning_toggles_off(self):
+        self.client.force_login(self.moderator)
+        self.client.post(reverse('toggle_warning', args=[self.target.username]))
+        self.client.post(reverse('toggle_warning', args=[self.target.username]))
+        self.assertFalse(self._flag(self.target))
+
+    def test_plain_user_cannot_warn(self):
+        self.client.force_login(self.plain)
+        resp = self.client.post(reverse('toggle_warning', args=[self.target.username]))
+        self.assertRedirects(resp, reverse('home'))
+        self.assertFalse(self._flag(self.target))
+
+    def test_cannot_warn_self(self):
+        self.client.force_login(self.moderator)
+        resp = self.client.post(reverse('toggle_warning', args=[self.moderator.username]))
+        self.assertRedirects(resp, reverse('profile_user', args=[self.moderator.username]))
+        self.assertFalse(self._flag(self.moderator))
+
+    def test_warned_profile_shows_icon_and_tooltip(self):
+        self.client.force_login(self.moderator)
+        Profile.objects.filter(user=self.target).update(has_warning=True)
+        resp = self.client.get(reverse('profile_user', args=[self.target.username]))
+        html = resp.content.decode()
+        self.assertIn('warning-icon', html)
+        self.assertIn('сквернословит', html)
+
+    def test_admin_profile_has_warn_button(self):
+        self.client.force_login(self.moderator)
+        resp = self.client.get(reverse('profile_user', args=[self.target.username]))
+        html = resp.content.decode()
+        self.assertIn(reverse('toggle_warning', args=[self.target.username]), html)

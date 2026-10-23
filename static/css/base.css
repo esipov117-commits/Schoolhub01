@@ -621,6 +621,20 @@ img {
     margin-top: 2px;
 }
 
+.warning-badge {
+    display: inline-block;
+    vertical-align: text-bottom;
+    margin-left: 4px;
+    width: 14px;
+    height: 14px;
+    cursor: help;
+}
+.warning-icon {
+    display: block;
+    width: 14px;
+    height: 14px;
+}
+
 .profile-stats {
     display: flex;
     justify-content: space-between;
