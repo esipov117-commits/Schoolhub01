@@ -196,6 +196,12 @@ LOGOUT_REDIRECT_URL = '/accounts/login/'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# Зашифрованные вложения чата лежат вне публичного MEDIA_ROOT. Доступ к ним
+# выдаёт только Django после проверки участия пользователя в чате.
+CHAT_FILE_ROOT = Path(
+    config('CHAT_FILE_ROOT', default=str(BASE_DIR / 'private_media' / 'chat'))
+)
+
 
 # --- Web Push / PWA ---------------------------------------------------------
 # Ключи генерируются командой: python manage.py webpush_vapid

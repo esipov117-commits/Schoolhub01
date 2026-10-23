@@ -1,7 +1,7 @@
 from django.contrib import admin
+from django.http import Http404
 from django.urls import path, include
 from django.conf import settings
-from django.conf.urls.static import static
 from django.views.static import serve
 from users.views import login_view
 
@@ -18,15 +18,20 @@ urlpatterns = [
     path('', include('webpush.urls')),
 ]
 
-# static() отдаёт /media/ только при DEBUG — в продакшене загруженные фото
-# постов и историй иначе отдают 404. Если /media/ уже обслуживает nginx,
-# этот маршрут просто не используется.
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+def serve_public_media(request, path):
+    """Публичное MEDIA, кроме старых вложений чата.
+
+    Новые вложения чата лежат вне MEDIA_ROOT и отдаются только через
+    chat.views.chat_attachment после проверки участия в чате. Этот запрет
+    закрывает старый путь /media/chat_uploads/ на случай прямого запроса
+    к Django мимо nginx.
+    """
+    if path.startswith('chat_uploads/'):
+        raise Http404
+    return serve(request, path, document_root=settings.MEDIA_ROOT)
+
+
 urlpatterns += [
-    path(
-        'media/<path:path>',
-        serve,
-        {'document_root': settings.MEDIA_ROOT},
-        name='serve_media',
-    ),
+    path('media/<path:path>', serve_public_media, name='serve_media'),
 ]

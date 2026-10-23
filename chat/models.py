@@ -67,6 +67,7 @@ class Message(models.Model):
         indexes = [
             models.Index(fields=['chat', '-created_at']),
             GinIndex(fields=['read_by']),
+            GinIndex(fields=['attachments']),
         ]
 
     @classmethod

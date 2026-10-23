@@ -1,20 +1,25 @@
-import json  # НОВОЕ: для парсинга JSON от фронтенда
+import json
 import mimetypes
 import os
+import re
 import uuid
+from pathlib import Path
+from urllib.parse import quote
 
+from cryptography.fernet import InvalidToken
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.core.files.storage import default_storage
 from django.db.models import Count, Q, OuterRef, Subquery
-from django.http import JsonResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 from django.utils.translation import gettext as _
 
 from webpush.push import notify_new_message
 
+from . import crypto
 from .models import Chat, Message
 
 # Сколько последних сообщений подгружаем в комнату. Раньше грузилась вся
@@ -30,7 +35,7 @@ CHAT_REACTION_WINDOW = 50
 # они отдаются с того же домена и могли бы выполнить скрипт в браузере.
 MAX_ATTACHMENT_SIZE = 25 * 1024 * 1024
 MAX_ATTACHMENTS = 10
-CHAT_UPLOAD_DIR = 'chat_uploads'
+CHAT_FILE_ID_RE = re.compile(r'^[a-f0-9]{32}$')
 
 # Набор реакций, как в Telegram: сердечко, огонёк, улыбка, слёзы, глаза,
 # какашка и камень.
@@ -69,15 +74,34 @@ def _get_chat(request, chat_id):
     return get_object_or_404(Chat, pk=chat_id, participants=request.user)
 
 
-def _attachment_prefix(chat_id):
-    return f'{settings.MEDIA_URL.rstrip("/")}/{CHAT_UPLOAD_DIR}/{chat_id}/'
+def _chat_file_path(chat_id, file_id):
+    """Путь к зашифрованному файлу; file_id жёстко проверяется."""
+    if not CHAT_FILE_ID_RE.fullmatch(str(file_id or '')):
+        return None
+    return Path(settings.CHAT_FILE_ROOT) / str(int(chat_id)) / f'{file_id}.enc'
+
+
+def _attachment_url(chat_id, file_id):
+    return reverse('chat_attachment', args=[chat_id, file_id])
+
+
+def _attachment_name(item):
+    return os.path.basename(str(item.get('original_name') or ''))[:180] or 'file'
+
+
+def _attachment_mime(name):
+    """MIME определяется только по белому списку расширений, а не клиентом."""
+    ext = os.path.splitext(name)[1].lower()
+    if ext not in ALLOWED_ATTACHMENT_EXTENSIONS:
+        return None, ext
+    return mimetypes.guess_type(name)[0] or 'application/octet-stream', ext
 
 
 def _clean_attachments(raw, chat_id):
-    """Проверяет вложения из JSON и оставляет только файлы этого чата.
+    """Проверяет вложения из JSON и оставляет только загруженные в этом чате.
 
-    Клиенту нельзя доверять: иначе в сообщение можно вписать произвольный URL
-    или файл из чужого чата.
+    Клиенту нельзя доверять: URL, MIME и имя файла формируются сервером.
+    Файл обязан существовать в приватном хранилище именно этого чата.
     """
     try:
         items = json.loads(raw)
@@ -86,29 +110,29 @@ def _clean_attachments(raw, chat_id):
     if not isinstance(items, list):
         return []
 
-    prefix = _attachment_prefix(chat_id)
     cleaned = []
     for item in items[:MAX_ATTACHMENTS]:
         if not isinstance(item, dict):
             continue
-        url = str(item.get('url') or '')
-        if not url.startswith(prefix) or '..' in url or '\\' in url:
-            continue
-        ext = os.path.splitext(url.split('?', 1)[0])[1].lower()
-        if ext not in ALLOWED_ATTACHMENT_EXTENSIONS:
+        file_id = str(item.get('file_id') or '')
+        path = _chat_file_path(chat_id, file_id)
+        if path is None or not path.is_file():
             continue
 
-        original_name = os.path.basename(str(item.get('original_name') or ''))[:180]
+        original_name = _attachment_name(item)
+        mime_type, ext = _attachment_mime(original_name)
+        if not mime_type:
+            continue
         try:
             size = int(item.get('size') or 0)
         except (TypeError, ValueError):
             size = 0
 
         cleaned.append({
-            'file_id': str(item.get('file_id') or '')[:40],
-            'url': url,
-            'mime_type': mimetypes.guess_type(url)[0] or 'application/octet-stream',
-            'original_name': original_name or 'file',
+            'file_id': file_id,
+            'url': _attachment_url(chat_id, file_id),
+            'mime_type': mime_type,
+            'original_name': original_name,
             'size': max(size, 0),
             'is_image': ext in INLINE_IMAGE_EXTENSIONS,
         })
@@ -311,15 +335,21 @@ def upload_attachment(request, chat_id):
     try:
         for uploaded, original_name, ext in prepared:
             file_id = uuid.uuid4().hex
-            path = default_storage.save(
-                f'{CHAT_UPLOAD_DIR}/{chat.pk}/{file_id}{ext}',
-                uploaded,
-            )
+            path = _chat_file_path(chat.pk, file_id)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            tmp_path = path.with_name(path.name + '.tmp')
+            try:
+                tmp_path.write_bytes(crypto.encrypt_file(uploaded.read()))
+                tmp_path.replace(path)
+            except Exception:
+                tmp_path.unlink(missing_ok=True)
+                raise
             saved_paths.append(path)
+            mime_type, _ = _attachment_mime(original_name)
             result.append({
                 'file_id': file_id,
-                'url': default_storage.url(path),
-                'mime_type': mimetypes.guess_type(original_name)[0] or 'application/octet-stream',
+                'url': _attachment_url(chat.pk, file_id),
+                'mime_type': mime_type or 'application/octet-stream',
                 'original_name': original_name or 'file',
                 'size': uploaded.size,
                 'is_image': ext in INLINE_IMAGE_EXTENSIONS,
@@ -327,12 +357,58 @@ def upload_attachment(request, chat_id):
     except Exception:
         for path in saved_paths:
             try:
-                default_storage.delete(path)
+                path.unlink(missing_ok=True)
             except Exception:
                 pass
         return JsonResponse({'ok': False, 'error': _('Не удалось сохранить файл')}, status=500)
 
     return JsonResponse({'ok': True, 'attachments': result}, status=201)
+
+
+def _find_attachment(chat_id, file_id):
+    """Метаданные вложения из сообщения этого чата."""
+    rows = (
+        Message.objects
+        .filter(chat_id=chat_id, attachments__contains=[{'file_id': file_id}])
+        .values_list('attachments', flat=True)[:20]
+    )
+    for attachments in rows:
+        for item in attachments or []:
+            if isinstance(item, dict) and str(item.get('file_id')) == file_id:
+                return item
+    return None
+
+
+@login_required
+def chat_attachment(request, chat_id, file_id):
+    """Отдаёт расшифрованное вложение только участнику чата."""
+    chat = _get_chat(request, chat_id)
+    path = _chat_file_path(chat.pk, file_id)
+    meta = _find_attachment(chat.pk, file_id)
+    if path is None or meta is None or not path.is_file():
+        raise Http404
+
+    try:
+        data = crypto.decrypt_file(path.read_bytes())
+    except (InvalidToken, ValueError, TypeError):
+        raise Http404
+
+    original_name = _attachment_name(meta)
+    mime_type, ext = _attachment_mime(original_name)
+    if not mime_type:
+        raise Http404
+    is_image = ext in INLINE_IMAGE_EXTENSIONS
+    response = HttpResponse(
+        data,
+        content_type=mime_type if is_image else 'application/octet-stream',
+    )
+    disposition = 'inline' if is_image else 'attachment'
+    response['Content-Disposition'] = (
+        f"{disposition}; filename*=UTF-8''{quote(original_name)}"
+    )
+    response['X-Content-Type-Options'] = 'nosniff'
+    response['Cache-Control'] = 'private, no-store'
+    return response
 
 
 @login_required
