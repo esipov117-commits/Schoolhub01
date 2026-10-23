@@ -12,6 +12,7 @@ from django.urls import reverse
 
 from .models import Post, PostImage, Comment, PostView, Like
 from .views import _post_queryset
+from users.models import Profile
 
 User = get_user_model()
 
@@ -309,3 +310,63 @@ class PostLikersTests(TestCase):
             {'post': post, 'user': self.user, 'liked_post_ids': set()},
         )
         self.assertNotIn('likes-open', html_other)
+
+
+class ModeratorCommentDeleteTests(TestCase):
+    def setUp(self):
+        self.author = User.objects.create_user('author', password='pass12345')
+        self.owner = User.objects.create_user('postowner', password='pass12345')
+        self.moderator = User.objects.create_user('mod', password='pass12345')
+        Profile.objects.create(user=self.moderator, is_moderator=True)
+        self.staff = User.objects.create_user('staff', password='pass12345', is_staff=True)
+        self.stranger = User.objects.create_user('stranger', password='pass12345')
+
+        self.post = Post.objects.create(author=self.owner, content='hello')
+        self.comment = Comment.objects.create(
+            post=self.post, author=self.author, text='нежелательный',
+        )
+        self.client = Client()
+
+    def test_moderator_can_delete_any_comment(self):
+        self.client.force_login(self.moderator)
+        resp = self.client.post(reverse('delete_comment', args=[self.comment.id]))
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(Comment.objects.filter(id=self.comment.id).count(), 0)
+
+    def test_staff_can_delete_any_comment(self):
+        self.client.force_login(self.staff)
+        resp = self.client.post(reverse('delete_comment', args=[self.comment.id]))
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(Comment.objects.filter(id=self.comment.id).count(), 0)
+
+    def test_stranger_cannot_delete(self):
+        self.client.force_login(self.stranger)
+        resp = self.client.post(reverse('delete_comment', args=[self.comment.id]))
+        self.assertEqual(resp.status_code, 403)
+        self.assertEqual(Comment.objects.filter(id=self.comment.id).count(), 1)
+
+    def test_comment_author_can_still_delete(self):
+        self.client.force_login(self.author)
+        resp = self.client.post(reverse('delete_comment', args=[self.comment.id]))
+        self.assertEqual(resp.status_code, 200)
+
+    def test_post_owner_can_still_delete(self):
+        self.client.force_login(self.owner)
+        resp = self.client.post(reverse('delete_comment', args=[self.comment.id]))
+        self.assertEqual(resp.status_code, 200)
+
+    def test_delete_button_visible_to_moderator(self):
+        post = _post_queryset().get(pk=self.post.pk)
+        html = render_to_string(
+            'posts/_post_card.html',
+            {'post': post, 'user': self.moderator, 'liked_post_ids': set()},
+        )
+        self.assertEqual(html.count('delete-comment-btn'), 1)
+
+    def test_delete_button_hidden_from_stranger(self):
+        post = _post_queryset().get(pk=self.post.pk)
+        html = render_to_string(
+            'posts/_post_card.html',
+            {'post': post, 'user': self.stranger, 'liked_post_ids': set()},
+        )
+        self.assertEqual(html.count('delete-comment-btn'), 0)

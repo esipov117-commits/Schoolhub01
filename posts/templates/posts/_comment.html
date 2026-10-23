@@ -40,7 +40,7 @@
                         <span class="comment-time">{{ reply.created_at|timeago }}</span>
                     </div>
                 </div>
-                {% if reply.author == user or post.author == user %}
+                {% if reply.author == user or post.author == user or user.profile.is_moderator or user.is_staff %}
                 <button
                     type="button"
                     class="delete-comment-btn"
@@ -57,7 +57,7 @@
         <div class="comment-replies" id="replies-{{ comment.id }}"></div>
         {% endif %}
     </div>
-    {% if comment.author == user or post.author == user %}
+    {% if comment.author == user or post.author == user or user.profile.is_moderator or user.is_staff %}
     <button
         type="button"
         class="delete-comment-btn"
