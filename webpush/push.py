@@ -17,7 +17,7 @@ from django.utils.translation import gettext as _
 
 logger = logging.getLogger(__name__)
 
-ICON_URL = '/static/icons/icon-192.png'
+ICON_URL = '/static/icons/icon-192.png?v=2'
 
 
 def _vapid_key():
