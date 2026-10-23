@@ -1,6 +1,6 @@
 from django.contrib.auth.models import User
 from django.contrib.postgres.indexes import GinIndex
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 
 from . import crypto
@@ -57,6 +57,10 @@ class Message(models.Model):
     # {"<user_id>": "<шифротекст>"} — отдельная копия текста для каждого участника
     bodies = models.JSONField()
     read_by = models.JSONField(default=list)
+    # [{"file_id", "url", "mime_type", "original_name", "size", "is_image"}]
+    attachments = models.JSONField(default=list, blank=True)
+    # {"<emoji>": ["<user_id>", ...]}
+    reactions = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -66,12 +70,17 @@ class Message(models.Model):
         ]
 
     @classmethod
-    def create_encrypted(cls, chat, sender, text):
+    def create_encrypted(cls, chat, sender, text, attachments_data=None):
         bodies = {
             str(u.pk): crypto.encrypt(UserKey.raw_key_for(u), text)
             for u in chat.participants.all()
         }
-        message = cls.objects.create(chat=chat, sender=sender, bodies=bodies)
+        message = cls.objects.create(
+            chat=chat,
+            sender=sender,
+            bodies=bodies,
+            attachments=attachments_data or [],
+        )
         Chat.objects.filter(pk=chat.pk).update(updated_at=timezone.now())
         return message
 
@@ -89,3 +98,30 @@ class Message(models.Model):
             return
         self.read_by.append(str(user.pk))
         self.save(update_fields=['read_by'])
+
+    def toggle_reaction(self, user, emoji):
+        """Атомарно добавляет/убирает реакцию пользователя и возвращает словарь."""
+        emoji = (emoji or '').strip()[:16]
+        if not emoji:
+            return self.reactions or {}
+
+        uid = str(user.pk)
+        with transaction.atomic():
+            message = type(self).objects.select_for_update().get(pk=self.pk)
+            reactions = dict(message.reactions or {})
+            users = [str(item) for item in reactions.get(emoji, [])]
+            if uid in users:
+                users.remove(uid)
+            else:
+                users.append(uid)
+
+            if users:
+                reactions[emoji] = users
+            else:
+                reactions.pop(emoji, None)
+
+            message.reactions = reactions
+            message.save(update_fields=['reactions'])
+            self.reactions = reactions
+        return reactions
+
