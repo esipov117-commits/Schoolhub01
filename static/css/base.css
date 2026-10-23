@@ -17,6 +17,9 @@
     --accent: #007aff;
     --accent-hover: #0071e3;
     --sidebar-active-bg: rgba(118, 118, 128, 0.12);
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
 }
 
 [data-theme="dark"] {
@@ -76,11 +79,11 @@ img {
 ========================= */
 
 .topbar {
-    height: 64px;
+    height: calc(64px + var(--safe-top));
     background: color-mix(in srgb, var(--panel) 82%, transparent);
     backdrop-filter: blur(24px) saturate(180%);
     -webkit-backdrop-filter: blur(24px) saturate(180%);
-    padding: 0 32px;
+    padding: var(--safe-top) max(32px, var(--safe-right)) 0 max(32px, var(--safe-left));
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -1152,8 +1155,8 @@ button.btn-primary:active {
 @media (max-width: 760px) {
 
     .topbar {
-        height: 58px;
-        padding: 0 14px;
+        height: calc(58px + var(--safe-top));
+        padding: var(--safe-top) max(14px, var(--safe-right)) 0 max(14px, var(--safe-left));
         position: sticky;
         top: 0;
         display: grid;
@@ -1244,7 +1247,7 @@ button.btn-primary:active {
 
     .mobile-search-panel {
         position: fixed;
-        top: 58px;
+        top: calc(58px + var(--safe-top));
         left: 0;
         right: 0;
         padding: 10px 14px;
@@ -1534,7 +1537,8 @@ button.btn-primary:active {
 
 @media (max-width: 420px) {
     .topbar {
-        padding: 0 12px;
+        padding-left: max(12px, var(--safe-left));
+        padding-right: max(12px, var(--safe-right));
     }
 
     .topbar h1 {

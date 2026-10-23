@@ -2,7 +2,7 @@
  * Отдаётся Django-вью с корня сайта (/sw.js), поэтому scope = "/".
  */
 
-const DEFAULT_ICON = '/static/icons/icon-192.png';
+const DEFAULT_ICON = '/static/icons/icon-192.png?v=2';
 
 self.addEventListener('install', () => {
     self.skipWaiting();
