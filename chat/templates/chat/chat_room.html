@@ -13,6 +13,7 @@
         height: calc(100vh - 140px);
         min-height: 420px;
         overflow: hidden;
+        position: relative;
     }
     .chat-head {
         display: flex;
@@ -83,6 +84,7 @@
         background: var(--bg);
         align-self: flex-start;
         word-wrap: break-word;
+        -webkit-touch-callout: none;
     }
     .msg.mine {
         background: var(--accent);
@@ -95,13 +97,125 @@
     .msg-time { font-size: 11px; opacity: .65; margin-top: 3px; text-align: right; }
     .chat-empty { text-align: center; color: var(--muted); font-size: 14px; margin: auto; }
 
-    .chat-form {
+    /* Вложения в сообщении */
+    .msg-attachments {
         display: flex;
-        gap: 10px;
-        padding-top: 14px;
-        border-top: 1px solid var(--border);
+        flex-direction: column;
+        gap: 6px;
     }
-    .chat-form input {
+    .msg-attachments + .msg-text { margin-top: 7px; }
+    .msg-image-link { display: block; line-height: 0; border-radius: 10px; overflow: hidden; }
+    .msg-image {
+        display: block;
+        max-width: 100%;
+        max-height: 320px;
+        border-radius: 10px;
+        object-fit: cover;
+    }
+    .msg-file {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 8px 10px;
+        border-radius: 10px;
+        background: rgba(0, 0, 0, .07);
+        color: inherit;
+        text-decoration: none;
+        min-width: 170px;
+    }
+    .msg.mine .msg-file { background: rgba(255, 255, 255, .18); color: #fff; }
+    .msg-file:hover { background: rgba(0, 0, 0, .12); }
+    .msg.mine .msg-file:hover { background: rgba(255, 255, 255, .26); }
+    .msg-file-icon { width: 34px; height: 34px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+    .msg-file-icon svg { width: 26px; height: 26px; }
+    .msg-file-meta { min-width: 0; display: flex; flex-direction: column; }
+    .msg-file-name {
+        font-size: 13px;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 210px;
+    }
+    .msg-file-size { font-size: 11px; opacity: .65; }
+
+    /* Реакции */
+    .msg-reactions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-top: 5px;
+    }
+    .msg-reaction {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        padding: 1px 7px;
+        border: 1px solid transparent;
+        border-radius: 999px;
+        background: rgba(0, 0, 0, .08);
+        color: inherit;
+        font-family: inherit;
+        font-size: 12.5px;
+        line-height: 1.7;
+        cursor: pointer;
+        transition: background .12s ease, border-color .12s ease, transform .12s ease;
+    }
+    .msg-reaction:hover { transform: translateY(-1px); }
+    .msg.mine .msg-reaction { background: rgba(255, 255, 255, .2); }
+    .msg-reaction.mine {
+        background: rgba(0, 122, 255, .16);
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+    .msg.mine .msg-reaction.mine {
+        background: rgba(255, 255, 255, .3);
+        border-color: rgba(255, 255, 255, .8);
+        color: #fff;
+    }
+
+    .reaction-picker {
+        position: fixed;
+        z-index: 1001;
+        display: none;
+        align-items: center;
+        gap: 2px;
+        padding: 6px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: var(--panel);
+        box-shadow: 0 10px 34px rgba(0, 0, 0, .22);
+    }
+    .reaction-picker.open {
+        display: flex;
+        animation: reactionPickerIn .12s ease-out;
+    }
+    @keyframes reactionPickerIn {
+        from { opacity: 0; transform: translateY(5px) scale(.94); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .reaction-picker button {
+        width: 38px;
+        height: 38px;
+        padding: 0;
+        border: none;
+        border-radius: 50%;
+        background: transparent;
+        font-size: 22px;
+        line-height: 1;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform .12s ease, background .12s ease;
+    }
+    .reaction-picker button:hover { transform: scale(1.22); background: var(--bg); }
+    .reaction-picker button:active { transform: scale(.94); }
+
+    /* Поле ввода */
+    .chat-composer { padding-top: 14px; border-top: 1px solid var(--border); }
+    .chat-form { display: flex; gap: 10px; align-items: center; }
+    .chat-form input[type="text"] {
         flex: 1;
         padding: 12px 15px;
         border: 1px solid var(--border);
@@ -110,8 +224,9 @@
         color: var(--text);
         font-size: 14.5px;
         outline: none;
+        min-width: 0;
     }
-    .chat-form input:focus { border-color: var(--muted); background: var(--panel); }
+    .chat-form input[type="text"]:focus { border-color: var(--muted); background: var(--panel); }
     .chat-form button {
         width: 46px;
         height: 46px;
@@ -127,6 +242,173 @@
     }
     .chat-form button:hover { background: var(--accent-hover); }
     .chat-form button svg { width: 20px; height: 20px; }
+    .chat-form .chat-attach {
+        background: var(--bg);
+        color: var(--muted);
+        border: 1px solid var(--border);
+    }
+    .chat-form .chat-attach:hover { background: var(--panel); color: var(--text); }
+    .chat-form .chat-attach svg { width: 21px; height: 21px; }
+    .chat-form button:disabled { opacity: .5; cursor: default; }
+    .chat-form button:disabled:hover { background: var(--accent); }
+
+    /* Очередь вложений перед отправкой */
+    .chat-pending {
+        display: none;
+        flex-wrap: wrap;
+        gap: 10px 14px;
+        padding-bottom: 12px;
+    }
+    .chat-pending.has-items { display: flex; }
+    .pending-item {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px;
+        max-width: 240px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--bg);
+    }
+    .pending-thumb {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        object-fit: cover;
+        background: var(--panel);
+        flex-shrink: 0;
+    }
+    .pending-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        background: var(--panel);
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    .pending-icon svg { width: 22px; height: 22px; }
+    .pending-meta { min-width: 0; display: flex; flex-direction: column; }
+    .pending-name {
+        font-size: 12.5px;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 150px;
+    }
+    .pending-size { font-size: 11px; color: var(--muted); }
+    .pending-remove {
+        position: absolute;
+        top: -7px;
+        right: -7px;
+        width: 21px;
+        height: 21px;
+        border-radius: 50%;
+        border: none;
+        background: rgba(0, 0, 0, .65);
+        color: #fff;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+    }
+    .pending-remove svg { width: 11px; height: 11px; }
+    .pending-item.uploading { opacity: .7; }
+    .pending-item.error { border-color: #ff3b30; }
+    .pending-item.error .pending-name { color: #ff3b30; }
+    .pending-spinner {
+        width: 15px;
+        height: 15px;
+        border: 2px solid var(--border);
+        border-top-color: var(--accent);
+        border-radius: 50%;
+        animation: chatSpin .8s linear infinite;
+        flex-shrink: 0;
+    }
+    @keyframes chatSpin { to { transform: rotate(360deg); } }
+
+    .chat-error {
+        display: none;
+        padding-top: 8px;
+        color: #ff3b30;
+        font-size: 12.5px;
+    }
+    .chat-error.show { display: block; }
+
+    /* Перетаскивание файлов */
+    .chat-drop {
+        position: absolute;
+        inset: 8px;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        border: 2px dashed var(--accent);
+        border-radius: 16px;
+        background: color-mix(in srgb, var(--panel) 88%, transparent);
+        z-index: 20;
+        pointer-events: none;
+    }
+    .chat-room.drag-over .chat-drop { display: flex; }
+    .chat-drop-box {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 20px;
+        border-radius: 14px;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        color: var(--text);
+        font-size: 14px;
+        font-weight: 600;
+    }
+    .chat-drop-box svg { width: 24px; height: 24px; color: var(--accent); }
+
+    /* Просмотр фото */
+    .chat-lightbox {
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background: rgba(0, 0, 0, .82);
+        cursor: zoom-out;
+    }
+    .chat-lightbox.open { display: flex; }
+    .chat-lightbox img {
+        display: block;
+        max-width: 92vw;
+        max-height: 86vh;
+        border-radius: 12px;
+        object-fit: contain;
+        box-shadow: 0 18px 60px rgba(0, 0, 0, .45);
+        cursor: default;
+    }
+    .chat-lightbox-close {
+        position: absolute;
+        top: max(16px, env(safe-area-inset-top, 0px));
+        right: 16px;
+        width: 42px;
+        height: 42px;
+        padding: 0;
+        border: none;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, .16);
+        color: #fff;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .chat-lightbox-close:hover { background: rgba(255, 255, 255, .28); }
+    .chat-lightbox-close svg { width: 22px; height: 22px; }
+    body.chat-lightbox-open { overflow: hidden; }
 
     /* Мобильный: оставляем место под нижнюю панель разделов (.bottom-nav),
        иначе она перекрывает поле ввода сообщения */
@@ -136,12 +418,20 @@
             height: calc(100dvh - 58px - 16px - 88px - env(safe-area-inset-bottom, 0px));
             min-height: 300px;
         }
+        .msg { max-width: 86%; }
+        .msg-file-name { max-width: 150px; }
+        .reaction-picker { gap: 4px; padding: 8px; }
+        .reaction-picker button { width: 42px; height: 42px; font-size: 24px; }
+    }
+    @media (max-width: 380px) {
+        .reaction-picker { gap: 2px; padding: 6px; }
+        .reaction-picker button { width: 36px; height: 36px; font-size: 20px; }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="card chat-room">
+<div class="card chat-room" id="chatRoom">
     <div class="chat-head">
         <a class="chat-back" href="{% url 'chat' %}" aria-label="{% trans 'Назад' %}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -167,8 +457,39 @@
         {% if messages %}
             {% for item in messages %}
             <div class="msg{% if item.m.sender_id == user.pk %} mine{% endif %}" data-id="{{ item.m.pk }}">
-                <div class="msg-text">{{ item.text }}</div>
+                {% if item.attachments %}
+                <div class="msg-attachments">
+                    {% for att in item.attachments %}
+                        {% if att.is_image %}
+                        <a class="msg-image-link" href="{{ att.url }}">
+                            <img class="msg-image" src="{{ att.url }}" alt="{{ att.original_name }}" loading="lazy" decoding="async">
+                        </a>
+                        {% else %}
+                        <a class="msg-file" href="{{ att.url }}" download="{{ att.original_name }}" target="_blank" rel="noopener noreferrer">
+                            <span class="msg-file-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                    <polyline points="14 2 14 8 20 8"/>
+                                </svg>
+                            </span>
+                            <span class="msg-file-meta">
+                                <span class="msg-file-name">{{ att.original_name }}</span>
+                                <span class="msg-file-size">{{ att.size|filesizeformat }}</span>
+                            </span>
+                        </a>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% if item.text %}<div class="msg-text">{{ item.text }}</div>{% endif %}
                 <div class="msg-time">{{ item.m.created_at|date:"H:i" }}</div>
+                {% if item.reactions_list %}
+                <div class="msg-reactions">
+                    {% for emoji, users in item.reactions_list %}
+                    <button type="button" class="msg-reaction{% if user.pk|stringformat:"s" in users %} mine{% endif %}" data-emoji="{{ emoji }}">{{ emoji }}{% if users|length > 1 %} {{ users|length }}{% endif %}</button>
+                    {% endfor %}
+                </div>
+                {% endif %}
             </div>
             {% endfor %}
         {% else %}
@@ -176,25 +497,118 @@
         {% endif %}
     </div>
 
-    <form class="chat-form" id="chatForm">
-        {% csrf_token %}
-        <input type="text" id="chatInput" placeholder="{% trans 'Сообщение…' %}" autocomplete="off" maxlength="2000">
-        <button type="submit" aria-label="{% trans 'Отправить' %}">
+    <div class="chat-composer">
+        <div class="chat-pending" id="chatPending"></div>
+        <form class="chat-form" id="chatForm">
+            {% csrf_token %}
+            <button type="button" class="chat-attach" id="chatAttachBtn" aria-label="{% trans 'Прикрепить файл' %}" title="{% trans 'Прикрепить файл' %}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.49"/>
+                </svg>
+            </button>
+            <input type="file" id="chatFileInput" multiple hidden>
+            <input type="text" id="chatInput" placeholder="{% trans 'Сообщение…' %}" autocomplete="off" maxlength="2000">
+            <button type="submit" id="chatSendBtn" aria-label="{% trans 'Отправить' %}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m22 2-7 20-4-9-9-4Z"/>
+                    <path d="M22 2 11 13"/>
+                </svg>
+            </button>
+        </form>
+        <div class="chat-error" id="chatError" role="alert"></div>
+    </div>
+
+    <div class="chat-drop" aria-hidden="true">
+        <div class="chat-drop-box">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="m22 2-7 20-4-9-9-4Z"/>
-                <path d="M22 2 11 13"/>
+                <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.49"/>
             </svg>
-        </button>
-    </form>
+            {% trans "Отпустите файлы, чтобы прикрепить" %}
+        </div>
+    </div>
+</div>
+
+<div class="chat-lightbox" id="chatLightbox" role="dialog" aria-modal="true" aria-hidden="true" aria-label="{% trans 'Просмотр фото' %}">
+    <button type="button" class="chat-lightbox-close" id="chatLightboxClose" aria-label="{% trans 'Закрыть' %}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+    </button>
+    <img id="chatLightboxImg" src="" alt="">
 </div>
 
 <script>
 (function () {
+    if (window.__chatTeardown) {
+        try { window.__chatTeardown(); } catch (e) { /* ignore */ }
+    }
+
     const chatId = {{ chat.pk }};
-    let lastId = {{ last_id }};
+    const MAX_FILES = {{ max_attachments|default:10 }};
+    const MAX_SIZE = {{ max_attachment_size|default:26214400 }};
+
+    const roomEl = document.getElementById('chatRoom');
     const messagesEl = document.getElementById('chatMessages');
     const form = document.getElementById('chatForm');
     const input = document.getElementById('chatInput');
+    const fileInput = document.getElementById('chatFileInput');
+    const attachBtn = document.getElementById('chatAttachBtn');
+    const sendBtn = document.getElementById('chatSendBtn');
+    const pendingEl = document.getElementById('chatPending');
+    const errorEl = document.getElementById('chatError');
+    const lightboxEl = document.getElementById('chatLightbox');
+    const lightboxImg = document.getElementById('chatLightboxImg');
+    const lightboxClose = document.getElementById('chatLightboxClose');
+
+    let lastId = {{ last_id }};
+    let pending = [];
+    let uid = 0;
+    let errorTimer = null;
+    let pollTimer = null;
+    let dragDepth = 0;
+
+    const uploadPromises = new Map();
+
+    const T = {
+        tooMany: "{% trans 'Не больше файлов за раз:' %}",
+        tooBig: "{% trans 'Файл слишком большой (макс.' %}",
+        uploadFailed: "{% trans 'Не удалось загрузить файл' %}",
+        waitUpload: "{% trans 'Дождитесь окончания загрузки файлов' %}",
+        remove: "{% trans 'Убрать' %}",
+        sendFailed: "{% trans 'Не удалось отправить сообщение' %}"
+    };
+
+    const MY_ID = '{{ user.pk }}';
+    const REACTIONS = [{% for emoji in reaction_emojis %}"{{ emoji|escapejs }}"{% if not forloop.last %},{% endif %}{% endfor %}];
+    const hoverEnabled = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+    let pickerMessageId = null;
+    let reactionRequests = 0;
+    let hoverTimer = null;
+    let pickerHideTimer = null;
+    let pressTimer = null;
+    let pressStart = null;
+    let suppressClickUntil = 0;
+
+    const pickerEl = document.createElement('div');
+    pickerEl.className = 'reaction-picker';
+    pickerEl.setAttribute('role', 'toolbar');
+    pickerEl.setAttribute('aria-label', "{% trans 'Реакции' %}");
+    REACTIONS.forEach(function (emoji) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = emoji;
+        btn.dataset.emoji = emoji;
+        btn.setAttribute('aria-label', emoji);
+        btn.addEventListener('click', function () {
+            const id = pickerMessageId;
+            hidePicker();
+            if (id) toggleReaction(id, emoji);
+        });
+        pickerEl.appendChild(btn);
+    });
+    document.body.appendChild(pickerEl);
 
     function getCsrf() {
         const cookie = document.cookie.match('(?:^|; )csrftoken=([^;]*)');
@@ -203,11 +617,276 @@
         return field ? field.value : '';
     }
 
+    function formatSize(bytes) {
+        bytes = Number(bytes) || 0;
+        if (bytes < 1024) return bytes + ' Б';
+        const units = ['КБ', 'МБ', 'ГБ'];
+        let value = bytes / 1024;
+        let i = 0;
+        while (value >= 1024 && i < units.length - 1) {
+            value /= 1024;
+            i++;
+        }
+        return (value >= 10 ? Math.round(value) : value.toFixed(1).replace('.0', '')) + ' ' + units[i];
+    }
+
+    function showError(text) {
+        errorEl.textContent = text;
+        errorEl.classList.add('show');
+        clearTimeout(errorTimer);
+        errorTimer = setTimeout(function () {
+            errorEl.classList.remove('show');
+        }, 5000);
+    }
+
     function toBottom() {
         messagesEl.scrollTop = messagesEl.scrollHeight;
     }
 
+    function safeUrl(url) {
+        return typeof url === 'string'
+            && url.charAt(0) === '/'
+            && url.indexOf('//') !== 0
+            && url.indexOf('..') === -1;
+    }
+
+    function openLightbox(link) {
+        const img = link.querySelector('img');
+        if (!img) return;
+        const src = link.getAttribute('href') || img.currentSrc || img.src;
+        if (!safeUrl(src)) return;
+        lightboxImg.src = src;
+        lightboxImg.alt = img.alt || '';
+        lightboxEl.classList.add('open');
+        lightboxEl.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('chat-lightbox-open');
+        lightboxClose.focus();
+    }
+
+    function closeLightbox() {
+        if (!lightboxEl.classList.contains('open')) return;
+        lightboxEl.classList.remove('open');
+        lightboxEl.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('chat-lightbox-open');
+        lightboxImg.removeAttribute('src');
+    }
+
+    function onLightboxKeydown(e) {
+        if (e.key === 'Escape' || e.key === 'Esc') closeLightbox();
+    }
+
+    /* ---------- Реакции ---------- */
+
+    function showPickerFor(msgEl) {
+        if (!msgEl || !pickerEl) return;
+        clearTimeout(hoverTimer);
+        clearTimeout(pickerHideTimer);
+        pickerMessageId = msgEl.dataset.id;
+
+        pickerEl.classList.add('open');
+        pickerEl.style.visibility = 'hidden';
+
+        const rect = msgEl.getBoundingClientRect();
+        const pickerWidth = pickerEl.offsetWidth;
+        const pickerHeight = pickerEl.offsetHeight;
+        const margin = 8;
+
+        let top = rect.top - pickerHeight - margin;
+        if (top < margin) top = rect.bottom + margin;
+        if (top + pickerHeight > window.innerHeight - margin) {
+            top = Math.max(margin, window.innerHeight - pickerHeight - margin);
+        }
+
+        let left = rect.left + rect.width / 2 - pickerWidth / 2;
+        left = Math.max(margin, Math.min(left, window.innerWidth - pickerWidth - margin));
+
+        pickerEl.style.top = top + 'px';
+        pickerEl.style.left = left + 'px';
+        pickerEl.style.visibility = '';
+    }
+
+    function hidePicker() {
+        pickerEl.classList.remove('open');
+        pickerMessageId = null;
+    }
+
+    function clearPress() {
+        if (pressTimer) clearTimeout(pressTimer);
+        pressTimer = null;
+        pressStart = null;
+    }
+
+    function reactionBoxFor(msgEl) {
+        let box = msgEl.querySelector('.msg-reactions');
+        if (!box) {
+            box = document.createElement('div');
+            box.className = 'msg-reactions';
+            msgEl.appendChild(box);
+        }
+        return box;
+    }
+
+    function updateReactions(messageId, reactions) {
+        const msgEl = messagesEl.querySelector('.msg[data-id="' + messageId + '"]');
+        if (!msgEl) return;
+
+        const entries = Object.keys(reactions || {}).filter(function (emoji) {
+            return (reactions[emoji] || []).length > 0;
+        }).sort(function (a, b) {
+            const ia = REACTIONS.indexOf(a);
+            const ib = REACTIONS.indexOf(b);
+            return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+        });
+
+        let box = msgEl.querySelector('.msg-reactions');
+        if (!entries.length) {
+            if (box) box.remove();
+            return;
+        }
+        if (!box) box = reactionBoxFor(msgEl);
+
+        box.innerHTML = '';
+        entries.forEach(function (emoji) {
+            const users = reactions[emoji] || [];
+            const chip = document.createElement('button');
+            chip.type = 'button';
+            chip.className = 'msg-reaction' + (users.indexOf(MY_ID) !== -1 ? ' mine' : '');
+            chip.dataset.emoji = emoji;
+            chip.textContent = emoji + (users.length > 1 ? ' ' + users.length : '');
+            box.appendChild(chip);
+        });
+    }
+
+    async function toggleReaction(messageId, emoji) {
+        reactionRequests++;
+        try {
+            const fd = new FormData();
+            fd.append('emoji', emoji);
+            const r = await fetch('/messages/' + messageId + '/reaction/', {
+                method: 'POST',
+                credentials: 'same-origin',
+                body: fd,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': getCsrf()
+                }
+            });
+            if (!r.ok) return;
+            const data = await r.json();
+            updateReactions(String(messageId), data.reactions || {});
+        } catch (e) { /* нет сети — попробуем в следующий раз */ }
+        finally { reactionRequests--; }
+    }
+
+    function onDocPointerDown(e) {
+        if (!pickerEl.classList.contains('open')) return;
+        if (pickerEl.contains(e.target)) return;
+        if (e.target.closest && e.target.closest('.msg-reaction')) return;
+        hidePicker();
+    }
+
+    function onMessagesMouseOver(e) {
+        if (!hoverEnabled) return;
+        const msgEl = e.target.closest ? e.target.closest('.msg') : null;
+        if (!msgEl) return;
+        if (e.relatedTarget && msgEl.contains(e.relatedTarget)) return;
+        clearTimeout(pickerHideTimer);
+        clearTimeout(hoverTimer);
+        hoverTimer = setTimeout(function () { showPickerFor(msgEl); }, 120);
+    }
+
+    function onMessagesMouseOut(e) {
+        if (!hoverEnabled) return;
+        const msgEl = e.target.closest ? e.target.closest('.msg') : null;
+        if (!msgEl) return;
+        if (e.relatedTarget && msgEl.contains(e.relatedTarget)) return;
+        clearTimeout(hoverTimer);
+        clearTimeout(pickerHideTimer);
+        pickerHideTimer = setTimeout(hidePicker, 180);
+    }
+
+    function onMessagesPointerDown(e) {
+        if (e.pointerType !== 'touch' || e.button !== 0) return;
+        const msgEl = e.target.closest ? e.target.closest('.msg') : null;
+        if (!msgEl) return;
+
+        clearPress();
+        pressStart = { x: e.clientX, y: e.clientY };
+        pressTimer = setTimeout(function () {
+            pressTimer = null;
+            suppressClickUntil = Date.now() + 900;
+            showPickerFor(msgEl);
+            if (navigator.vibrate) {
+                try { navigator.vibrate(10); } catch (err) { /* ignore */ }
+            }
+        }, 450);
+    }
+
+    function onMessagesPointerMove(e) {
+        if (!pressStart) return;
+        if (Math.abs(e.clientX - pressStart.x) > 10 || Math.abs(e.clientY - pressStart.y) > 10) {
+            clearPress();
+        }
+    }
+
+    function fileIcon() {
+        const span = document.createElement('span');
+        span.className = 'msg-file-icon';
+        span.innerHTML =
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" ' +
+            'stroke-linecap="round" stroke-linejoin="round">' +
+            '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>' +
+            '<polyline points="14 2 14 8 20 8"/></svg>';
+        return span;
+    }
+
+    function attachmentNode(att) {
+        if (!att || !safeUrl(att.url)) return null;
+
+        if (att.is_image) {
+            const link = document.createElement('a');
+            link.className = 'msg-image-link';
+            link.href = att.url;
+            const img = document.createElement('img');
+            img.className = 'msg-image';
+            img.src = att.url;
+            img.alt = att.original_name || '';
+            img.loading = 'lazy';
+            img.decoding = 'async';
+            link.appendChild(img);
+            return link;
+        }
+
+        const link = document.createElement('a');
+        link.className = 'msg-file';
+        link.href = att.url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.setAttribute('download', att.original_name || '');
+        link.appendChild(fileIcon());
+
+        const meta = document.createElement('span');
+        meta.className = 'msg-file-meta';
+        const name = document.createElement('span');
+        name.className = 'msg-file-name';
+        name.textContent = att.original_name || 'file';
+        const size = document.createElement('span');
+        size.className = 'msg-file-size';
+        size.textContent = formatSize(att.size);
+        meta.appendChild(name);
+        meta.appendChild(size);
+        link.appendChild(meta);
+        return link;
+    }
+
     function appendMessage(m) {
+        if (!m || m.id == null) return;
+        if (messagesEl.querySelector('.msg[data-id="' + m.id + '"]')) {
+            if (m.id > lastId) lastId = m.id;
+            if (m.reactions) updateReactions(m.id, m.reactions);
+            return;
+        }
+
         const empty = messagesEl.querySelector('.chat-empty');
         if (empty) empty.remove();
 
@@ -215,68 +894,417 @@
         div.className = 'msg' + (m.is_mine ? ' mine' : '');
         div.dataset.id = m.id;
 
-        const text = document.createElement('div');
-        text.className = 'msg-text';
-        text.textContent = m.text;
+        if (m.attachments && m.attachments.length) {
+            const box = document.createElement('div');
+            box.className = 'msg-attachments';
+            m.attachments.forEach(function (att) {
+                const node = attachmentNode(att);
+                if (node) box.appendChild(node);
+            });
+            if (box.childNodes.length) div.appendChild(box);
+        }
+
+        if (m.text) {
+            const text = document.createElement('div');
+            text.className = 'msg-text';
+            text.textContent = m.text;
+            div.appendChild(text);
+        }
 
         const time = document.createElement('div');
         time.className = 'msg-time';
         time.textContent = m.created_at;
-
-        div.appendChild(text);
         div.appendChild(time);
-        messagesEl.appendChild(div);
 
+        messagesEl.appendChild(div);
         if (m.id > lastId) lastId = m.id;
+        if (m.reactions) updateReactions(m.id, m.reactions);
         toBottom();
     }
 
     async function poll() {
         try {
             const r = await fetch('/chat/' + chatId + '/poll/?after=' + lastId, {
+                credentials: 'same-origin',
                 headers: { 'X-Requested-With': 'XMLHttpRequest' }
             });
             if (!r.ok) return;
             const data = await r.json();
             data.messages.forEach(appendMessage);
+            if (!reactionRequests) {
+                (data.reactions || []).forEach(function (item) {
+                    updateReactions(item.id, item.reactions);
+                });
+            }
         } catch (e) { /* нет сети — пропускаем цикл */ }
     }
 
-    form.addEventListener('submit', async function (e) {
-        e.preventDefault();
-        const text = input.value.trim();
-        if (!text) return;
-        input.value = '';
+    /* ---------- Вложения ---------- */
+
+    function updatePendingVisibility() {
+        pendingEl.classList.toggle('has-items', pending.length > 0);
+    }
+
+    function updateSendState() {
+        const uploading = pending.some(function (p) { return p.status === 'uploading'; });
+        sendBtn.disabled = uploading;
+    }
+
+    function removePending(item) {
+        const index = pending.indexOf(item);
+        if (index === -1) return;
+        if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+        pending.splice(index, 1);
+        uploadPromises.delete(item.uid);
+        renderPending();
+    }
+
+    function pendingStatusNode(item) {
+        if (item.status === 'uploading') {
+            const spinner = document.createElement('div');
+            spinner.className = 'pending-spinner';
+            return spinner;
+        }
+        return null;
+    }
+
+    function renderPending() {
+        pendingEl.innerHTML = '';
+        pending.forEach(function (item) {
+            const row = document.createElement('div');
+            row.className = 'pending-item' + (item.status === 'uploading' ? ' uploading' : '')
+                + (item.status === 'error' ? ' error' : '');
+
+            if (item.isImage && item.previewUrl) {
+                const img = document.createElement('img');
+                img.className = 'pending-thumb';
+                img.src = item.previewUrl;
+                img.alt = '';
+                row.appendChild(img);
+            } else {
+                const icon = document.createElement('span');
+                icon.className = 'pending-icon';
+                icon.innerHTML =
+                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" ' +
+                    'stroke-linecap="round" stroke-linejoin="round">' +
+                    '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>' +
+                    '<polyline points="14 2 14 8 20 8"/></svg>';
+                row.appendChild(icon);
+            }
+
+            const meta = document.createElement('span');
+            meta.className = 'pending-meta';
+            const name = document.createElement('span');
+            name.className = 'pending-name';
+            name.textContent = item.file.name;
+            const size = document.createElement('span');
+            size.className = 'pending-size';
+            size.textContent = item.status === 'uploading'
+                ? "{% trans 'Загрузка…' %}"
+                : (item.status === 'error' ? T.uploadFailed : formatSize(item.file.size));
+            meta.appendChild(name);
+            meta.appendChild(size);
+            row.appendChild(meta);
+
+            const status = pendingStatusNode(item);
+            if (status) row.appendChild(status);
+
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.className = 'pending-remove';
+            remove.setAttribute('aria-label', T.remove);
+            remove.innerHTML =
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" ' +
+                'stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/>' +
+                '<line x1="6" y1="6" x2="18" y2="18"/></svg>';
+            remove.addEventListener('click', function () { removePending(item); });
+            row.appendChild(remove);
+
+            pendingEl.appendChild(row);
+        });
+        updatePendingVisibility();
+        updateSendState();
+    }
+
+    async function uploadItem(item) {
+        item.status = 'uploading';
+        renderPending();
+
+        const fd = new FormData();
+        fd.append('files', item.file);
 
         try {
-            const fd = new FormData();
-            fd.append('body', text);
-            const r = await fetch('/chat/' + chatId + '/send/', {
+            const r = await fetch('/chat/' + chatId + '/upload/', {
                 method: 'POST',
+                credentials: 'same-origin',
                 body: fd,
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
                     'X-CSRFToken': getCsrf()
                 }
             });
-            if (r.ok) {
-                const data = await r.json();
-                appendMessage({ id: data.id, is_mine: true, text: data.text, created_at: data.created_at });
+            const data = await r.json().catch(function () { return {}; });
+            if (!r.ok || !data.attachments || !data.attachments.length) {
+                item.status = 'error';
+                showError(data.error || T.uploadFailed);
             } else {
-                input.value = text;
+                item.attachment = data.attachments[0];
+                item.status = 'ready';
             }
         } catch (e) {
+            item.status = 'error';
+            showError(T.uploadFailed);
+        }
+
+        if (pending.indexOf(item) !== -1) renderPending();
+    }
+
+    function handleFiles(fileList) {
+        const files = Array.prototype.slice.call(fileList || []);
+        if (!files.length) return;
+
+        if (pending.length + files.length > MAX_FILES) {
+            showError(T.tooMany + ' ' + MAX_FILES);
+            files.length = Math.max(0, MAX_FILES - pending.length);
+            if (!files.length) return;
+        }
+
+        files.forEach(function (file) {
+            if (file.size > MAX_SIZE) {
+                showError(T.tooBig + ' ' + Math.round(MAX_SIZE / (1024 * 1024)) + ' МБ)');
+                return;
+            }
+            const item = {
+                uid: ++uid,
+                file: file,
+                isImage: /^image\//.test(file.type),
+                status: 'uploading',
+                attachment: null,
+                previewUrl: null
+            };
+            if (item.isImage) {
+                item.previewUrl = URL.createObjectURL(file);
+            }
+            pending.push(item);
+            const promise = uploadItem(item);
+            uploadPromises.set(item.uid, promise);
+        });
+
+        renderPending();
+        fileInput.value = '';
+    }
+
+    attachBtn.addEventListener('click', function () {
+        fileInput.click();
+    });
+
+    fileInput.addEventListener('change', function () {
+        handleFiles(fileInput.files);
+    });
+
+    function hasFiles(event) {
+        const types = event.dataTransfer && event.dataTransfer.types;
+        return !!(types && Array.prototype.indexOf.call(types, 'Files') !== -1);
+    }
+
+    function onDragEnter(e) {
+        if (!hasFiles(e)) return;
+        e.preventDefault();
+        dragDepth++;
+        roomEl.classList.add('drag-over');
+    }
+
+    function onDragOver(e) {
+        if (!hasFiles(e)) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+    }
+
+    function onDragLeave(e) {
+        if (!hasFiles(e)) return;
+        e.preventDefault();
+        dragDepth = Math.max(0, dragDepth - 1);
+        if (dragDepth === 0) roomEl.classList.remove('drag-over');
+    }
+
+    function onDrop(e) {
+        if (!hasFiles(e)) return;
+        e.preventDefault();
+        dragDepth = 0;
+        roomEl.classList.remove('drag-over');
+        handleFiles(e.dataTransfer.files);
+    }
+
+    function onPaste(e) {
+        if (!document.getElementById('chatRoom')) return;
+        const files = e.clipboardData && e.clipboardData.files;
+        if (files && files.length) {
+            e.preventDefault();
+            handleFiles(files);
+        }
+    }
+
+    roomEl.addEventListener('dragenter', onDragEnter);
+    roomEl.addEventListener('dragover', onDragOver);
+    roomEl.addEventListener('dragleave', onDragLeave);
+    roomEl.addEventListener('drop', onDrop);
+    document.addEventListener('paste', onPaste);
+
+    messagesEl.addEventListener('click', function (e) {
+        if (Date.now() < suppressClickUntil) {
+            suppressClickUntil = 0;
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+        }
+
+        const chip = e.target.closest ? e.target.closest('.msg-reaction') : null;
+        if (chip) {
+            e.preventDefault();
+            hidePicker();
+            const msgEl = chip.closest('.msg');
+            if (msgEl) toggleReaction(msgEl.dataset.id, chip.dataset.emoji);
+            return;
+        }
+
+        const link = e.target.closest ? e.target.closest('a.msg-image-link') : null;
+        if (!link) return;
+        e.preventDefault();
+        openLightbox(link);
+    });
+
+    /* Наведение мышью на компьютере и долгое нажатие на мобильном */
+    messagesEl.addEventListener('mouseover', onMessagesMouseOver);
+    messagesEl.addEventListener('mouseout', onMessagesMouseOut);
+    messagesEl.addEventListener('pointerdown', onMessagesPointerDown);
+    messagesEl.addEventListener('pointermove', onMessagesPointerMove);
+    messagesEl.addEventListener('pointerup', clearPress);
+    messagesEl.addEventListener('pointercancel', clearPress);
+    messagesEl.addEventListener('pointerleave', clearPress);
+
+    pickerEl.addEventListener('mouseenter', function () {
+        clearTimeout(pickerHideTimer);
+        clearTimeout(hoverTimer);
+    });
+    pickerEl.addEventListener('mouseleave', function () {
+        pickerHideTimer = setTimeout(hidePicker, 180);
+    });
+    document.addEventListener('pointerdown', onDocPointerDown, true);
+
+    messagesEl.addEventListener('scroll', function () {
+        clearTimeout(hoverTimer);
+        hidePicker();
+    }, { passive: true });
+
+    lightboxEl.addEventListener('click', function (e) {
+        if (e.target === lightboxEl) closeLightbox();
+    });
+    lightboxClose.addEventListener('click', closeLightbox);
+    document.addEventListener('keydown', onLightboxKeydown);
+
+    /* ---------- Отправка ---------- */
+
+    form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        if (pending.some(function (p) { return p.status === 'uploading'; })) {
+            showError(T.waitUpload);
+            return;
+        }
+
+        const text = input.value.trim();
+        const ready = pending.filter(function (p) { return p.status === 'ready' && p.attachment; });
+
+        if (!text && !ready.length) return;
+
+        input.value = '';
+        sendBtn.disabled = true;
+
+        try {
+            const fd = new FormData();
+            fd.append('body', text);
+            fd.append('attachments_json', JSON.stringify(ready.map(function (p) {
+                return p.attachment;
+            })));
+
+            const r = await fetch('/chat/' + chatId + '/send/', {
+                method: 'POST',
+                credentials: 'same-origin',
+                body: fd,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': getCsrf()
+                }
+            });
+
+            if (!r.ok) {
+                input.value = text;
+                showError(T.sendFailed);
+                return;
+            }
+
+            const data = await r.json();
+            appendMessage({
+                id: data.id,
+                is_mine: true,
+                text: data.text,
+                attachments: data.attachments || [],
+                created_at: data.created_at
+            });
+
+            pending.forEach(function (item) {
+                if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+            });
+            pending = [];
+            uploadPromises.clear();
+            renderPending();
+        } catch (err) {
             input.value = text;
+            showError(T.sendFailed);
+        } finally {
+            updateSendState();
         }
     });
 
+    renderPending();
     toBottom();
-    setInterval(function () {
+
+    pollTimer = setInterval(function () {
         if (!document.hidden) poll();
     }, 3000);
-    document.addEventListener('visibilitychange', function () {
+
+    function onVisibility() {
         if (!document.hidden) poll();
-    });
+    }
+    document.addEventListener('visibilitychange', onVisibility);
+
+    window.__chatTeardown = function () {
+        if (pollTimer) clearInterval(pollTimer);
+        pollTimer = null;
+        clearTimeout(errorTimer);
+        clearTimeout(hoverTimer);
+        clearTimeout(pickerHideTimer);
+        clearPress();
+        closeLightbox();
+        hidePicker();
+        if (pickerEl.parentNode) pickerEl.remove();
+        document.removeEventListener('pointerdown', onDocPointerDown, true);
+        document.removeEventListener('visibilitychange', onVisibility);
+        document.removeEventListener('paste', onPaste);
+        document.removeEventListener('keydown', onLightboxKeydown);
+        pending.forEach(function (item) {
+            if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+        });
+        pending = [];
+    };
+
+    if (!window.__chatCleanupRegistered) {
+        window.__chatCleanupRegistered = true;
+        window.__pageCleanups = window.__pageCleanups || [];
+        window.__pageCleanups.push(function () {
+            if (window.__chatTeardown) window.__chatTeardown();
+        });
+    }
 })();
 </script>
 {% endblock %}
