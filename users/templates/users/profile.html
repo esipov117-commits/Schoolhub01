@@ -39,6 +39,42 @@
         <strong>{{ profile_user.date_joined|date:"d.m.Y" }}</strong>
     </div>
 </div>
+{% if not is_own_profile and not profile_user.is_superuser %}
+    {% if request.user.is_staff or request.user.profile.is_moderator %}
+    <div class="profile-side-section">
+        <h4><svg class="i"><use href="#i-chart"></use></svg> {% trans "Модерация" %}</h4>
+        <form
+            method="POST"
+            action="{% url 'toggle_warning' profile_user.username %}"
+            class="inline-form">
+            {% csrf_token %}
+            <button
+                type="submit"
+                class="share-btn{% if profile.has_warning %} danger{% endif %}"
+                style="width:100%; justify-content:center;">
+                <svg
+                    viewBox="0 0 24 24"
+                    width="16"
+                    height="16"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+                {% if profile.has_warning %}
+                    {% trans "Снять предупреждение" %}
+                {% else %}
+                    {% trans "Дать предупреждение" %}
+                {% endif %}
+            </button>
+        </form>
+    </div>
+    {% endif %}
+{% endif %}
 <button
     type="button"
     class="share-btn"
@@ -139,34 +175,6 @@
 
                     {% if not is_own_profile and not profile_user.is_superuser %}
                         {% if request.user.is_staff or request.user.profile.is_moderator %}
-                        <form
-                            method="POST"
-                            action="{% url 'toggle_warning' profile_user.username %}"
-                            class="inline-form">
-                            {% csrf_token %}
-                            <button
-                                type="submit"
-                                class="profile-btn{% if profile.has_warning %} danger{% endif %}">
-                                <svg
-                                    viewBox="0 0 24 24"
-                                    width="16"
-                                    height="16"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round">
-                                    <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                                    <line x1="12" y1="9" x2="12" y2="13"></line>
-                                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                                </svg>
-                                {% if profile.has_warning %}
-                                    {% trans "Снять предупреждение" %}
-                                {% else %}
-                                    {% trans "Дать предупреждение" %}
-                                {% endif %}
-                            </button>
-                        </form>
                         <a
                             class="profile-btn danger"
                             href="{% url 'delete_user' profile_user.id %}">
@@ -622,6 +630,12 @@ window.POST_VIEWS_URL = "{% url 'mark_post_viewed' %}";
     font-weight: 600;
     cursor: pointer;
 }
+.share-btn.danger {
+    background: rgba(224, 36, 94, 0.08);
+    border-color: rgba(224, 36, 94, 0.35);
+    color: #e0245e;
+}
+.share-btn.danger:hover { opacity: .85; }
 .copy-toast {
     min-height: 18px;
     color: var(--muted);
