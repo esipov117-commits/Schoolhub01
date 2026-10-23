@@ -399,3 +399,19 @@ def delete_user(request, user_id):
     return render(request, 'users/confirm_delete_user.html', {
         'target_user': target,
     })
+
+
+@login_required
+@require_POST
+def toggle_warning(request, username):
+    """Поставить/снять предупреждение пользователю (модераторам и админам)."""
+    profile = getattr(request.user, 'profile', None)
+    if not request.user.is_staff and not (profile and profile.is_moderator):
+        return redirect('home')
+    target = get_object_or_404(User, username=username)
+    if target.is_superuser or target == request.user:
+        return redirect('profile_user', username=target.username)
+    target_profile, _ = Profile.objects.get_or_create(user=target)
+    target_profile.has_warning = not target_profile.has_warning
+    target_profile.save(update_fields=['has_warning'])
+    return redirect('profile_user', username=target.username)

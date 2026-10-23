@@ -311,6 +311,24 @@ class PostLikersTests(TestCase):
         )
         self.assertNotIn('likes-open', html_other)
 
+    def test_card_renders_warning_icon_for_warned_author(self):
+        Profile.objects.create(user=self.author, has_warning=True)
+        post = _post_queryset().get(pk=self.post.pk)
+        html = render_to_string(
+            'posts/_post_card.html',
+            {'post': post, 'user': self.user, 'liked_post_ids': set()},
+        )
+        self.assertIn('warning-icon', html)
+        self.assertIn('сквернословит', html)
+
+    def test_card_no_warning_icon_without_warning(self):
+        post = _post_queryset().get(pk=self.post.pk)
+        html = render_to_string(
+            'posts/_post_card.html',
+            {'post': post, 'user': self.user, 'liked_post_ids': set()},
+        )
+        self.assertNotIn('warning-icon', html)
+
 
 class ModeratorCommentDeleteTests(TestCase):
     def setUp(self):

@@ -95,7 +95,7 @@
             <div class="avatar avatar-medium"></div>
             {% endif %}
             <div style="min-width:0;">
-                <div style="font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; align-items:center; gap:4px;">{{ u.profile.display_name|default:u.username }}{% if u.profile.is_verified %}{% include 'partials/verified.html' %}{% endif %}</div>
+                <div style="font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; align-items:center; gap:4px;">{{ u.profile.display_name|default:u.username }}{% if u.profile.is_verified %}{% include 'partials/verified.html' %}{% endif %}{% if u.profile.has_warning %}{% include 'partials/warning.html' %}{% endif %}</div>
                 <div style="color:var(--muted); font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">@{{ u.username }}</div>
             </div>
         </a>

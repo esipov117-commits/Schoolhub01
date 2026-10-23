@@ -1,0 +1,12 @@
+{% load i18n static %}
+<span class="warning-badge" role="img" aria-label="{% trans 'Предупреждение' %}">
+    <img
+        class="warning-icon"
+        src="{% static 'icons/free-icon-font-sad-tear-6275917.png' %}"
+        alt="{% trans 'Предупреждение' %}"
+        width="14"
+        height="14"
+        loading="lazy"
+        decoding="async">
+    <span class="warning-tooltip" role="tooltip">{% trans 'сквернословит' %}</span>
+</span>
