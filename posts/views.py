@@ -399,7 +399,13 @@ def delete_comment(request, comment_id):
     comment = get_object_or_404(Comment, id=comment_id)
     post_id = comment.post_id
 
-    if comment.author != request.user and comment.post.author != request.user:
+    profile = getattr(request.user, 'profile', None)
+    is_moderator = bool(profile and profile.is_moderator) or request.user.is_staff
+    if (
+        comment.author != request.user
+        and comment.post.author != request.user
+        and not is_moderator
+    ):
         return JsonResponse({'deleted': False, 'error': 'Not allowed'}, status=403)
 
     comment.delete()
