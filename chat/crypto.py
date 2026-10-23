@@ -14,6 +14,7 @@ from cryptography.fernet import Fernet
 from django.conf import settings
 
 _master_fernet = None
+_attachment_fernet = None
 
 
 def _master() -> Fernet:
@@ -27,6 +28,28 @@ def _master() -> Fernet:
             key = base64.urlsafe_b64encode(digest)
         _master_fernet = Fernet(key)
     return _master_fernet
+
+
+def _attachments() -> Fernet:
+    """Отдельный ключ для файлов чата, выведенный из мастер-ключа.
+
+    Так ключ сообщений и ключ вложений не совпадают, но оба зависят от
+    CHAT_MASTER_KEY: без него файлы на диске не расшифровать.
+    """
+    global _attachment_fernet
+    if _attachment_fernet is None:
+        raw = settings.CHAT_MASTER_KEY
+        if raw:
+            secret = raw.encode()
+        else:
+            secret = hashlib.sha256(
+                ("schoolhub-chat|" + settings.SECRET_KEY).encode()
+            ).digest()
+        key = base64.urlsafe_b64encode(
+            hashlib.sha256(b"schoolhub-chat-files|" + secret).digest()
+        )
+        _attachment_fernet = Fernet(key)
+    return _attachment_fernet
 
 
 def new_user_key() -> str:
@@ -52,3 +75,13 @@ def encrypt(raw_key: str, plaintext: str) -> str:
 def decrypt(raw_key: str, token: str) -> str:
     """Расшифровывает текст персональным ключом пользователя."""
     return Fernet(raw_key.encode()).decrypt(token.encode()).decode()
+
+
+def encrypt_file(data: bytes) -> bytes:
+    """Шифрует содержимое вложения чата для хранения на диске."""
+    return _attachments().encrypt(data)
+
+
+def decrypt_file(token: bytes) -> bytes:
+    """Расшифровывает содержимое вложения чата."""
+    return _attachments().decrypt(token)
