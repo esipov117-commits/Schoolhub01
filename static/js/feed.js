@@ -109,6 +109,8 @@
     var BUBBLE_SVG = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>';
     var PLANE_SVG = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>';
     var PLANE_SVG_SM = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>';
+    var MORE_SVG = '<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>';
+    var LINK_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.1.1l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"></path><path d="M14 11a5 5 0 0 0-7.1-.1l-2 2A5 5 0 0 0 12 20l1.1-1.1"></path></svg>';
 
     /* ====================== Русские склонения и время ====================== */
     function pluralRu(n, one, few, many) {
@@ -126,6 +128,11 @@
     function commentsText(n) {
         n = n || 0;
         return n + ' ' + pluralRu(n, 'комментарий', 'комментария', 'комментариев');
+    }
+
+    function viewsText(n) {
+        n = n || 0;
+        return n + ' ' + pluralRu(n, 'просмотр', 'просмотра', 'просмотров');
     }
 
     function updateCounts(card, likesN, commentsN) {
@@ -386,11 +393,14 @@
         }
     }
 
+    function postUrl(id) {
+        return location.origin + location.pathname + '#post-' + id;
+    }
+
     document.addEventListener('click', function (e) {
         var btn = e.target.closest && e.target.closest('.share-post-btn');
         if (!btn) return;
-        var id = btn.getAttribute('data-post-id');
-        var url = location.origin + location.pathname + '#post-' + id;
+        var url = postUrl(btn.getAttribute('data-post-id'));
         if (navigator.share) {
             navigator.share({ title: 'SchoolHub', text: 'Публикация в SchoolHub', url: url })
                 .catch(function (err) {
@@ -399,6 +409,54 @@
             return;
         }
         copyShareUrl(url);
+    });
+
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest && e.target.closest('.copy-post-link');
+        if (!btn) return;
+        copyShareUrl(postUrl(btn.getAttribute('data-post-id')));
+    });
+
+    /* Меню «⋯» как в Threads: закрываем при клике вне пункта */
+    function closePostMenus(except) {
+        document.querySelectorAll('.post-more-wrap.open').forEach(function (wrap) {
+            if (wrap === except) return;
+            wrap.classList.remove('open');
+            var card = wrap.closest('.post-card');
+            if (card) card.classList.remove('menu-open');
+            var btn = wrap.querySelector('.post-more-btn');
+            if (btn) btn.setAttribute('aria-expanded', 'false');
+        });
+    }
+
+    document.addEventListener('click', function (e) {
+        var toggle = e.target.closest && e.target.closest('.post-more-btn');
+        if (toggle) {
+            var wrap = toggle.closest('.post-more-wrap');
+            var willOpen = !wrap.classList.contains('open');
+            var card = wrap.closest('.post-card');
+            closePostMenus(wrap);
+            wrap.classList.remove('menu-up');
+            wrap.classList.toggle('open', willOpen);
+            if (card) card.classList.toggle('menu-open', willOpen);
+            toggle.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+            if (willOpen) {
+                var menu = wrap.querySelector('.post-more-menu');
+                if (menu && menu.getBoundingClientRect().bottom > window.innerHeight - 12) {
+                    wrap.classList.add('menu-up');
+                }
+            }
+            return;
+        }
+        if (e.target.closest && e.target.closest('.post-more-menu')) {
+            if (e.target.closest('.post-menu-item')) closePostMenus();
+            return;
+        }
+        closePostMenus();
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closePostMenus();
     });
 
     /* Двойной клик по посту — лайк (как в Threads) */
@@ -1495,21 +1553,23 @@
         }
 
         card.innerHTML =
-            '<div class="post-head-row">' +
-              '<div class="post-head-left">' +
-                '<span class="post-avatar">' + avatarHtml + '</span>' +
-                '<div class="post-author-wrap">' +
+            '<div class="post-avatar-col">' +
+              '<span class="post-avatar-link"><span class="post-avatar">' + avatarHtml + '</span></span>' +
+            '</div>' +
+            '<div class="post-main">' +
+              '<div class="post-head-row">' +
+                '<div class="post-head-left">' +
                   '<span class="post-author">' + esc(name) + '</span>' +
                   '<span class="post-time">сейчас</span>' +
                 '</div>' +
               '</div>' +
-            '</div>' +
-            (text.trim() ? '<div class="post-content">' + esc(text) + '</div>' : '') +
-            (mediaHtml ? '<div class="post-media">' + mediaHtml + '</div>' : '') +
-            '<div class="post-actions">' +
-              '<span class="preview-action">' + LIKE_OUTLINE + '</span>' +
-              '<span class="preview-action">' + BUBBLE_SVG + '</span>' +
-              '<span class="preview-action">' + PLANE_SVG + '</span>' +
+              (text.trim() ? '<div class="post-content">' + esc(text) + '</div>' : '') +
+              (mediaHtml ? '<div class="post-media">' + mediaHtml + '</div>' : '') +
+              '<div class="post-actions">' +
+                '<span class="preview-action">' + LIKE_OUTLINE + '</span>' +
+                '<span class="preview-action">' + BUBBLE_SVG + '</span>' +
+                '<span class="preview-action">' + PLANE_SVG + '</span>' +
+              '</div>' +
             '</div>';
     }
 
@@ -1614,58 +1674,86 @@
         return out;
     }
 
+    function postMenuHtml(id, canEdit, canDelete) {
+        var html = '' +
+            '<div class="post-more-wrap">' +
+            '  <button type="button" class="post-more-btn" aria-label="Ещё" aria-haspopup="menu" aria-expanded="false">' +
+                 MORE_SVG + '</button>' +
+            '  <div class="post-more-menu" role="menu">' +
+            '    <button type="button" class="post-menu-item share-post-btn" data-post-id="' + id + '" role="menuitem">' +
+                   PLANE_SVG + '<span>Поделиться</span></button>' +
+            '    <button type="button" class="post-menu-item copy-post-link" data-post-id="' + id + '" role="menuitem">' +
+                   LINK_SVG + '<span>Скопировать ссылку</span></button>';
+        if (canEdit || canDelete) {
+            html += '<div class="post-menu-sep"></div>';
+        }
+        if (canEdit) {
+            html += '<button type="button" class="post-menu-item edit-post-btn" data-post-id="' + id + '" role="menuitem">' +
+                PENCIL_SVG + '<span>Редактировать</span></button>';
+        }
+        if (canDelete) {
+            html += '<button type="button" class="post-menu-item danger delete-post-btn" data-post-id="' + id + '" role="menuitem">' +
+                '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/></svg>' +
+                '<span>Удалить</span></button>';
+        }
+        html += '  </div></div>';
+        return html;
+    }
+
     function buildPostCard(d) {
         var profileUrl = CFG.profileBase + encodeURIComponent(d.author) + '/';
         var caption = d.content
-            ? '<div class="post-content" style="margin-top:10px;">' + esc(d.content) + '</div>'
+            ? '<div class="post-content">' + esc(d.content) + '</div>'
+            : '';
+        var media = d.media_items && d.media_items.length
+            ? '<div class="post-media">' + mediaHtml(d.media_items, d.layout) + '</div>'
             : '';
         return '' +
             '<div class="card post-card" id="post-' + d.id + '" data-post-id="' + d.id + '">' +
-            '  <div class="post-head-row">' +
-            '    <div class="post-head-left">' +
-            '      <a href="' + profileUrl + '"><span class="post-avatar">' +
-                      avatarHtml(d.author, d.author_avatar) + '</span></a>' +
-            '      <div class="post-author-wrap"><a href="' + profileUrl + '" style="text-decoration:none; color:inherit;">' +
-            '        <span class="post-author">' + esc(d.author) + '</span></a>' +
+            '  <div class="post-avatar-col">' +
+            '    <a class="post-avatar-link" href="' + profileUrl + '" aria-label="' + esc(d.author) + '">' +
+            '      <span class="post-avatar">' + avatarHtml(d.author, d.author_avatar) + '</span>' +
+            '    </a>' +
+            '  </div>' +
+            '  <div class="post-main">' +
+            '    <div class="post-head-row">' +
+            '      <div class="post-head-left">' +
+            '        <a class="post-author-link" href="' + profileUrl + '">' +
+            '          <span class="post-author">' + esc(d.author) + '</span></a>' +
             '        <span class="post-time" title="' + esc(fullDate(d.created_at)) + '">' +
-                      esc(timeAgo(d.created_at)) + '<span class="post-edited" style="display:none;"> · изменено</span></span></div>' +
-            '    </div>' +
-            '    <div class="post-owner-actions">' +
-            '      <button type="button" class="edit-post-btn post-ctrl-btn" data-post-id="' + d.id +
-                  '" title="Редактировать" aria-label="Редактировать">' +
-                      PENCIL_SVG + '</button>' +
-            '      <button type="button" class="delete-post-btn post-ctrl-btn danger" data-post-id="' + d.id +
-                  '" title="Удалить" aria-label="Удалить">' +
-                  '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/></svg>' +
-            '    </button>' +
-            '    </div>' +
-            '  </div>' +
-            caption +
-            '<div class="post-media">' + mediaHtml(d.media_items, d.layout) + '</div>' +
-            '  <div class="post-actions">' +
-            '    <button type="button" class="like-btn" data-post-id="' + d.id + '" data-liked="false" aria-label="Нравится">' +
-            '      <span class="like-icon">' + LIKE_OUTLINE + '</span></button>' +
-            '    <button type="button" class="toggle-comments-btn" data-post-id="' + d.id + '" aria-label="Комментарии">' + BUBBLE_SVG + '</button>' +
-            '    <button type="button" class="share-post-btn" data-post-id="' + d.id + '" aria-label="Поделиться">' + PLANE_SVG + '</button>' +
-            '  </div>' +
-            '  <div class="post-meta-line">' +
-            '    <span class="likes-count likes-open" data-post-id="' + d.id + '" role="button" tabindex="0" title="Кто лайкнул">' + likesText(0) + '</span>' +
-            '    <span class="meta-sep">·</span>' +
-            '    <span class="comments-count toggle-comments-btn" data-post-id="' + d.id + '">' + commentsText(0) + '</span>' +
-            '  </div>' +
-            '  <div class="comments-block" id="comments-' + d.id + '" style="display:none;">' +
-            '    <div class="comments-list"><div class="comments-empty">Пока нет комментариев — напишите первый.</div></div>' +
-            '    <form class="add-comment-form" data-post-id="' + d.id + '">' +
-            '      <span class="comment-me">' +
-                        (CFG.meAvatar
-                            ? '<img src="' + esc(CFG.meAvatar) + '" alt="" loading="lazy" decoding="async">'
-                            : '<span class="comment-avatar-ph">' + esc(((CFG.meName || '?').charAt(0) || '?').toUpperCase()) + '</span>') +
-            '      </span>' +
-            '      <div class="comment-input-wrap">' +
-            '        <input type="text" name="text" placeholder="Добавьте комментарий…" maxlength="500" autocomplete="off">' +
-            '        <button type="submit" class="comment-send-btn" title="Отправить" disabled>' + PLANE_SVG_SM + '</button>' +
+                       esc(timeAgo(d.created_at)) + '<span class="post-edited" style="display:none;"> · изменено</span></span>' +
             '      </div>' +
-            '    </form>' +
+                   postMenuHtml(d.id, true, true) +
+            '    </div>' +
+                   caption +
+                   media +
+            '    <div class="post-actions">' +
+            '      <button type="button" class="like-btn" data-post-id="' + d.id + '" data-liked="false" aria-label="Нравится">' +
+            '        <span class="like-icon">' + LIKE_OUTLINE + '</span></button>' +
+            '      <button type="button" class="toggle-comments-btn" data-post-id="' + d.id + '" aria-label="Комментарии">' + BUBBLE_SVG + '</button>' +
+            '      <button type="button" class="share-post-btn" data-post-id="' + d.id + '" aria-label="Поделиться">' + PLANE_SVG + '</button>' +
+            '    </div>' +
+            '    <div class="post-meta-line">' +
+            '      <span class="likes-count likes-open" data-post-id="' + d.id + '" role="button" tabindex="0" title="Кто лайкнул">' + likesText(0) + '</span>' +
+            '      <span class="meta-sep">·</span>' +
+            '      <span class="comments-count toggle-comments-btn" data-post-id="' + d.id + '">' + commentsText(0) + '</span>' +
+            '      <span class="meta-sep">·</span>' +
+            '      <span class="views-count">' + viewsText(0) + '</span>' +
+            '    </div>' +
+            '    <div class="comments-block" id="comments-' + d.id + '" style="display:none;">' +
+            '      <div class="comments-list"><div class="comments-empty">Пока нет комментариев — напишите первый.</div></div>' +
+            '      <form class="add-comment-form" data-post-id="' + d.id + '">' +
+            '        <span class="comment-me">' +
+                          (CFG.meAvatar
+                              ? '<img src="' + esc(CFG.meAvatar) + '" alt="" loading="lazy" decoding="async">'
+                              : '<span class="comment-avatar-ph">' + esc(((CFG.meName || '?').charAt(0) || '?').toUpperCase()) + '</span>') +
+            '        </span>' +
+            '        <div class="comment-input-wrap">' +
+            '          <input type="text" name="text" placeholder="Добавьте комментарий…" maxlength="500" autocomplete="off">' +
+            '          <button type="submit" class="comment-send-btn" title="Отправить" disabled>' + PLANE_SVG_SM + '</button>' +
+            '        </div>' +
+            '      </form>' +
+            '    </div>' +
             '  </div>' +
             '</div>';
     }

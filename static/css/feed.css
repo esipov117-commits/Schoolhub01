@@ -1550,3 +1550,561 @@
         .feed-main .post-card .post-actions button { width: 44px; height: 44px; }
         .feed-main .post-card .post-actions button svg { width: 23px; height: 23px; }
     }
+
+/* =========================================================
+   POSTS V3 — close Threads-style post layout
+   Avatar rail + content column, compact header, ⋯ menu.
+   ========================================================= */
+
+.feed-main {
+    --post-like: #ff3040;
+}
+
+.feed-main .post-card {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px 0;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--border);
+    border-radius: 0;
+    margin: 0;
+}
+
+.feed-main .post-card.menu-open {
+    z-index: 40;
+    content-visibility: visible;
+    contain: none;
+}
+
+.feed-main #feedPosts > .post-card:last-child {
+    border-bottom: none;
+}
+
+.feed-main .post-card .post-avatar-col {
+    position: relative;
+    flex: 0 0 36px;
+    width: 36px;
+    align-self: stretch;
+}
+
+/* The vertical thread line is the main Threads signature. */
+.feed-main .post-card .post-avatar-col::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 48px;
+    bottom: 0;
+    width: 2px;
+    border-radius: 2px;
+    background: var(--border);
+    transform: translateX(-50%);
+}
+
+.feed-main .post-card .post-avatar-link {
+    position: relative;
+    z-index: 1;
+    display: block;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    color: var(--muted);
+    text-decoration: none;
+}
+
+.feed-main .post-card .post-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: var(--sidebar-active-bg);
+    color: var(--muted);
+}
+
+.feed-main .post-card .post-avatar img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.feed-main .post-card .post-avatar svg {
+    width: 22px;
+    height: 22px;
+}
+
+.feed-main .post-card .post-main {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.feed-main .post-card .post-head-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: 21px;
+}
+
+.feed-main .post-card .post-head-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.feed-main .post-card .post-author-link {
+    color: inherit;
+    text-decoration: none;
+    min-width: 0;
+}
+
+.feed-main .post-card .post-author {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 21px;
+    letter-spacing: -0.01em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: top;
+}
+
+.feed-main .post-card .post-author-link:hover .post-author {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.feed-main .post-card .post-time {
+    display: inline;
+    flex: 0 0 auto;
+    color: var(--muted);
+    font-size: 15px;
+    font-weight: 400;
+    line-height: 21px;
+    white-space: nowrap;
+}
+
+.feed-main .post-card .post-edited {
+    font-size: 14px;
+}
+
+.feed-main .post-card .post-content {
+    margin: 3px 0 0;
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 400;
+    line-height: 21px;
+    letter-spacing: -0.01em;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.feed-main .post-card .post-media {
+    margin: 8px 0 0;
+    border-radius: 12px;
+    overflow: visible;
+}
+
+.feed-main .post-card .carousel-track {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--bg);
+}
+
+.feed-main .post-card .carousel-img,
+.feed-main .post-card video.carousel-img {
+    max-height: 68vh;
+    border-radius: 12px;
+}
+
+.feed-main .post-card .post-grid {
+    gap: 2px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.feed-main .post-card .grid-media {
+    border-radius: 0;
+}
+
+.feed-main .post-card .carousel-dots {
+    gap: 5px;
+    margin-top: 8px;
+}
+
+.feed-main .post-card .carousel-dot {
+    width: 5px;
+    height: 5px;
+    background: color-mix(in srgb, var(--muted) 40%, transparent);
+}
+
+.feed-main .post-card .carousel-dot.active {
+    background: var(--text);
+}
+
+.feed-main .post-card .post-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin: 6px 0 0 -8px;
+    padding: 0;
+}
+
+.feed-main .post-card .post-actions button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: none;
+    color: var(--text);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+.feed-main .post-card .post-actions button:hover {
+    background: var(--sidebar-active-bg);
+}
+
+.feed-main .post-card .post-actions button:active {
+    transform: scale(0.92);
+}
+
+.feed-main .post-card .post-actions button svg {
+    width: 22px;
+    height: 22px;
+}
+
+.feed-main .post-card .post-actions .like-btn.liked {
+    color: var(--post-like);
+}
+
+.feed-main .post-card .post-meta-line {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin: 2px 0 0;
+    color: var(--muted);
+    font-size: 13.5px;
+    font-weight: 400;
+    line-height: 19px;
+}
+
+.feed-main .post-card .post-meta-line .meta-sep {
+    color: var(--muted);
+    font-weight: 400;
+    opacity: 0.7;
+}
+
+.feed-main .post-card .post-meta-line .likes-count,
+.feed-main .post-card .post-meta-line .comments-count,
+.feed-main .post-card .post-meta-line .views-count {
+    color: var(--muted);
+    font-weight: 400;
+}
+
+.feed-main .post-card .post-meta-line .likes-open,
+.feed-main .post-card .post-meta-line .comments-count {
+    cursor: pointer;
+}
+
+.feed-main .post-card .post-meta-line .likes-open:hover,
+.feed-main .post-card .post-meta-line .comments-count:hover {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.feed-main .post-card .comments-block {
+    margin: 12px 0 0;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+
+/* ⋯ menu */
+.post-more-wrap {
+    position: relative;
+    flex: 0 0 auto;
+    margin: -7px -8px 0 0;
+}
+
+.post-more-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: none;
+    color: var(--muted);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.post-more-btn:hover,
+.post-more-wrap.open .post-more-btn {
+    background: var(--sidebar-active-bg);
+    color: var(--text);
+}
+
+.post-more-btn svg {
+    width: 22px;
+    height: 22px;
+}
+
+.post-more-menu {
+    position: absolute;
+    top: 36px;
+    right: 0;
+    z-index: 30;
+    display: none;
+    min-width: 214px;
+    padding: 6px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--panel);
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.16), 0 2px 8px rgba(0, 0, 0, 0.08);
+    transform-origin: top right;
+}
+
+.post-more-wrap.open .post-more-menu {
+    display: block;
+    animation: postMenuIn 0.12s ease-out;
+}
+
+@keyframes postMenuIn {
+    from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.post-more-wrap.menu-up .post-more-menu {
+    top: auto;
+    bottom: 36px;
+    transform-origin: bottom right;
+}
+
+.post-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 9px 11px;
+    border: 0;
+    border-radius: 9px;
+    background: none;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 20px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.post-menu-item:hover {
+    background: var(--sidebar-active-bg);
+}
+
+.post-menu-item svg {
+    flex: 0 0 18px;
+    width: 18px;
+    height: 18px;
+}
+
+.post-menu-item.danger {
+    color: var(--post-like);
+}
+
+.post-menu-sep {
+    height: 1px;
+    margin: 5px 8px;
+    background: var(--border);
+}
+
+/* Composer preview uses the same geometry */
+.post-preview {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.post-preview .post-avatar-col {
+    position: relative;
+    flex: 0 0 34px;
+    width: 34px;
+}
+
+.post-preview .post-avatar-col::after {
+    display: none;
+}
+
+.post-preview .post-avatar-link {
+    display: block;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+}
+
+.post-preview .post-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: var(--sidebar-active-bg);
+    color: var(--muted);
+}
+
+.post-preview .post-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.post-preview .post-avatar svg {
+    width: 21px;
+    height: 21px;
+}
+
+.post-preview .post-main {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.post-preview .post-head-row {
+    align-items: center;
+    gap: 8px;
+}
+
+.post-preview .post-head-left {
+    gap: 7px;
+}
+
+.post-preview .post-author {
+    font-size: 14.5px;
+    line-height: 20px;
+}
+
+.post-preview .post-time {
+    font-size: 14px;
+    line-height: 20px;
+}
+
+.post-preview .post-content {
+    margin: 3px 0 0;
+    font-size: 15px;
+    line-height: 21px;
+}
+
+.post-preview .post-media {
+    margin-top: 8px;
+}
+
+.post-preview .post-actions {
+    margin: 6px 0 0 -9px;
+    gap: 4px;
+}
+
+.post-preview .preview-action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    color: var(--text);
+}
+
+.post-preview .preview-action svg {
+    width: 21px;
+    height: 21px;
+}
+
+@media (max-width: 760px) {
+    .feed-main .post-card {
+        gap: 12px;
+        padding: 14px 0;
+    }
+
+    .feed-main .post-card .post-avatar-col {
+        flex-basis: 36px;
+        width: 36px;
+    }
+
+    .feed-main .post-card .post-avatar-link,
+    .feed-main .post-card .post-avatar {
+        width: 36px;
+        height: 36px;
+    }
+
+    .feed-main .post-card .post-avatar-col::after {
+        top: 48px;
+    }
+
+    .feed-main .post-card .post-content,
+    .feed-main .post-card .post-grid,
+    .feed-main .post-card .post-carousel,
+    .feed-main .post-card .post-actions,
+    .feed-main .post-card .post-meta-line,
+    .feed-main .post-card .comments-block {
+        margin-left: 0;
+    }
+
+    .feed-main .post-card .post-actions {
+        margin-left: -8px;
+    }
+
+    .feed-main .post-card .post-actions button {
+        width: 40px;
+        height: 40px;
+    }
+
+    .feed-main .post-card .post-actions button svg {
+        width: 22px;
+        height: 22px;
+    }
+
+    .feed-main .post-card .post-head-row {
+        gap: 6px;
+    }
+
+    .feed-main .post-card .post-author,
+    .feed-main .post-card .post-time {
+        font-size: 15px;
+    }
+
+    .feed-main .post-card .post-content {
+        font-size: 15px;
+    }
+
+    .post-more-wrap {
+        margin-right: -6px;
+    }
+
+    .post-more-menu {
+        min-width: 205px;
+    }
+}
+
+[data-theme="dark"] .post-more-menu {
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.35);
+}
