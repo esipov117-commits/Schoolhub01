@@ -14,6 +14,9 @@ from pathlib import Path
 from decouple import config
  
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
+# src-layout: импортируемый код (config + приложения, templates/, static/) —
+# в src/, где BASE_DIR = src/. Runtime-данные (media/, staticfiles/,
+# private_media/) живут на корне репо: BASE_DIR.parent.
 BASE_DIR = Path(__file__).resolve().parent.parent
  
  
@@ -188,18 +191,18 @@ LOCALE_PATHS = [BASE_DIR / 'locale']
  
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_ROOT = BASE_DIR.parent / 'staticfiles'
  
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = BASE_DIR.parent / 'media'
 
 # Зашифрованные вложения чата лежат вне публичного MEDIA_ROOT. Доступ к ним
 # выдаёт только Django после проверки участия пользователя в чате.
 CHAT_FILE_ROOT = Path(
-    config('CHAT_FILE_ROOT', default=str(BASE_DIR / 'private_media' / 'chat'))
+    config('CHAT_FILE_ROOT', default=str(BASE_DIR.parent / 'private_media' / 'chat'))
 )
 
 
