@@ -82,19 +82,26 @@ EOF
 
 ## Структура проекта
 
+src-layout: весь импортируемый Python-код живёт в `src/`. Runtime-данные
+(`media/`, `staticfiles/`, `private_media/`) — в корне репо.
+
 ```
-config/     — настройки, корневой urls, wsgi/asgi
-locale/     — переводы интерфейса (gettext .po/.mo, язык en)
-users/      — регистрация/логин, профили, подписки, настройки темы
-posts/      — лента, лайки, комментарии (render + JSON для AJAX)
-chat/       — диалоги, шифрование (crypto.py), опрос новых сообщений
-events/     — школьные события (только для организаторов)
-stories/    — фото/видео на 24 часа (+ команда cleanup_stories)
-tasks/      — личные задачи (живут на главной)
-planner/    — календарь событий (templates/calendar.html в корне)
-templates/  — base.html, welcome.html + папки приложений
-static/js/  — feed.js, main.js (infinite scroll, лайки, сторис, чат)
-webpush/    — PWA-манифест, service worker, Web Push (VAPID) и подписки
+src/config/   — настройки, корневой urls, wsgi/asgi
+src/locale/   — переводы интерфейса (gettext .po/.mo, язык en)
+src/users/    — регистрация/логин, профили, подписки, настройки темы
+src/posts/    — лента, лайки, комментарии (render + JSON для AJAX)
+src/chat/     — диалоги, шифрование (crypto.py), опрос новых сообщений
+src/events/   — школьные события (только для организаторов)
+src/stories/  — фото/видео на 24 часа (+ команда cleanup_stories)
+src/tasks/    — личные задачи (живут на главной)
+src/templates/ — base.html, welcome.html + папки приложений
+src/static/js/ — feed.js, main.js (infinite scroll, лайки, сторис, чат)
+src/webpush/  — PWA-манифест, service worker, Web Push (VAPID) и подписки
+
+manage.py       — запускает всё из корня; положил src/ в sys.path
+media/          — загрузки пользователей (в git не идёт)
+staticfiles/    — collectstatic для продакшена (в git не идёт)
+private_media/  — зашифрованные вложения чата (в git не идёт)
 ```
 
 ## Регистрация и подтверждение почты
@@ -172,3 +179,6 @@ VAPID-ключи в `.env`:
   сейчас заточены под конкретный IP — поменять под свой домен.
 - Статика отдаётся через WhiteNoise (`collectstatic` → `staticfiles/`),
   медиа — из `media/` (каталог в git не коммитится).
+- Приложение запускается через `manage.py` (сам кладёт `src/` в `sys.path`).
+  Если gunicorn/uwsgi стартует напрямую с `config.wsgi` — добавь корень `src/`
+  в `PYTHONPATH` (или флаг `--pythonpath <корень>/src`).
