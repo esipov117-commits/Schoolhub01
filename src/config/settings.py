@@ -112,6 +112,10 @@ MIDDLEWARE = [
 ]
  
 ROOT_URLCONF = 'config.urls'
+
+# src-layout: unittest не видит тесты под non-пакетом src/, поэтому
+# дискавери при «manage.py test» без меток стартует из BASE_DIR (= src/).
+TEST_RUNNER = 'config.test_runner.SrcLayoutDiscoverRunner'
  
 TEMPLATES = [
     {
