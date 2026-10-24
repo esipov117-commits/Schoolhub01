@@ -77,7 +77,7 @@ def upload_story(request):
 @login_required
 def api_active_stories(request):
     """JSON-список активных историй для JS-просмотрщика."""
-    cutoff = timezone.now() - timezone.timedelta(hours=24)
+    now = timezone.now()
     liked_sq = (
         StoryLike.objects.filter(story=OuterRef('pk'))
         .order_by()
@@ -86,7 +86,7 @@ def api_active_stories(request):
         .values('c')
     )
     stories = list(
-        Story.objects.filter(created_at__gte=cutoff)
+        Story.objects.filter(expires_at__gt=now)
         .select_related('author', 'author__profile')
         .annotate(likes_count=Coalesce(Subquery(liked_sq, output_field=IntegerField()), 0))
         .order_by('author', 'created_at')

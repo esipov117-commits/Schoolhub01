@@ -1,7 +1,9 @@
 from django.contrib.auth import get_user_model
+from django.core.management import call_command
 from django.db import IntegrityError
 from django.test import TestCase, Client
 from django.urls import reverse
+from django.utils import timezone
 
 from .models import Story, StoryLike, StoryView
 
@@ -54,6 +56,38 @@ class StoryLikeTests(TestCase):
         item = resp.json()['stories'][0]['items'][0]
         self.assertTrue(item['liked_by_me'])
         self.assertEqual(item['likes_count'], 1)
+
+    def test_api_active_stories_hides_expired(self):
+        expired = Story.objects.create(
+            author=self.author,
+            expires_at=timezone.now() - timezone.timedelta(minutes=1),
+        )
+        resp = self.client.get(reverse('api_active_stories'))
+        self.assertEqual(resp.status_code, 200)
+        ids = {
+            item['id']
+            for group in resp.json()['stories']
+            for item in group['items']
+        }
+        self.assertNotIn(expired.id, ids)
+        self.assertIn(self.story.id, ids)
+
+
+class StoryCleanupTests(TestCase):
+    def setUp(self):
+        self.author = User.objects.create_user('author', password='pass12345')
+
+    def test_cleanup_deletes_only_expired_stories(self):
+        expired = Story.objects.create(
+            author=self.author,
+            expires_at=timezone.now() - timezone.timedelta(minutes=1),
+        )
+        active = Story.objects.create(author=self.author)
+
+        call_command('cleanup_stories')
+
+        self.assertFalse(Story.objects.filter(pk=expired.pk).exists())
+        self.assertTrue(Story.objects.filter(pk=active.pk).exists())
 
 
 class StoryStatsTests(TestCase):
