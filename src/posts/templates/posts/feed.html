@@ -4,7 +4,7 @@
 {% block title %}{% trans "Главная" %} — SchoolHub{% endblock %}
 
 {% block extra_head %}
-    <link rel="stylesheet" href="{% static 'css/feed.css' %}?v=3">
+    <link rel="stylesheet" href="{% static 'css/feed.css' %}?v=4">
 {% endblock %}
 
 {% block content %}
@@ -135,11 +135,14 @@
 <!-- Модалка: создание поста (стиль Instagram/Threads) -->
 <dialog class="app-modal post-composer" id="postCreateModal">
     <div class="modal-head">
-        <button class="modal-head-btn" type="button" data-close-post>{% trans "Отмена" %}</button>
-        <span class="modal-title">{% trans "Новая публикация" %}</span>
-        <button class="modal-head-btn primary" type="button" id="postSubmitBtn" disabled>{% trans "Опубликовать" %}</button>
+        <button class="modal-head-btn" type="button" id="postCancelBtn" data-close-post>{% trans "Отмена" %}</button>
+        <button class="modal-head-btn" type="button" id="postBackBtn" style="display:none;">{% trans "Назад" %}</button>
+        <span class="modal-title" id="postModalTitle">{% trans "Новая публикация" %}</span>
+        <button class="modal-head-btn primary" type="button" id="postPreviewBtn" disabled>{% trans "Предпросмотр" %}</button>
+        <button class="modal-head-btn primary" type="button" id="postSubmitBtn" style="display:none;" disabled>{% trans "Опубликовать" %}</button>
     </div>
     <div class="modal-body">
+        <div class="composer-step" id="postEditStep">
         <div class="composer-editor">
             <span class="composer-avatar">
                 {% if user.profile.avatar %}
@@ -148,7 +151,7 @@
                 <span class="composer-avatar-ph">{{ user.username|first|upper }}</span>
                 {% endif %}
             </span>
-            <textarea id="postCaption" rows="2" style="resize:none; font-family:inherit;"
+            <textarea id="postCaption" rows="2" style="resize:none; font-family:inherit; padding-left: 16px;padding-right: 6px;"
                       placeholder="{% blocktrans with name=user.username %}Что нового, {{ name }}?{% endblocktrans %}"></textarea>
         </div>
 
@@ -194,7 +197,9 @@
             </button>
         </div>
 
-        <div class="post-preview-block" id="postPreviewBlock">
+        </div>
+
+        <div class="composer-step" id="postPreviewStep" style="display:none;">
             <div class="post-preview-label">{% trans "Предпросмотр" %}</div>
             <div class="post-preview" id="postPreviewCard"></div>
         </div>

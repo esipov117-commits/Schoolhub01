@@ -1426,6 +1426,7 @@
     /* ====================== Создание поста (стиль Threads) ====================== */
     var postFiles = [];
     var postLayout = 'carousel';
+    var postStep = 'edit';
 
     function postModalEl() { return document.getElementById('postCreateModal'); }
     function postInputEl() { return document.getElementById('postFileInput'); }
@@ -1436,6 +1437,12 @@
     function viewModeEl() { return document.getElementById('postViewMode'); }
     function captionEl() { return document.getElementById('postCaption'); }
     function postSubmitEl() { return document.getElementById('postSubmitBtn'); }
+    function postPreviewBtnEl() { return document.getElementById('postPreviewBtn'); }
+    function postEditStepEl() { return document.getElementById('postEditStep'); }
+    function postPreviewStepEl() { return document.getElementById('postPreviewStep'); }
+    function postBackBtnEl() { return document.getElementById('postBackBtn'); }
+    function postCancelBtnEl() { return document.getElementById('postCancelBtn'); }
+    function postTitleEl() { return document.getElementById('postModalTitle'); }
     function postErrorEl() { return document.getElementById('postError'); }
 
     function setPostError(msg) {
@@ -1453,15 +1460,40 @@
         var cap = captionEl();
         if (cap) cap.value = '';
         setPostError('');
+        showPostStep('edit');
         renderPostModal();
     }
 
-    function syncPostSubmit() {
+    function showPostStep(step) {
+        postStep = step === 'preview' ? 'preview' : 'edit';
+        var isPreview = postStep === 'preview';
+        var editStep = postEditStepEl();
+        var previewStep = postPreviewStepEl();
+        var previewBtn = postPreviewBtnEl();
         var submit = postSubmitEl();
-        if (!submit) return;
+        var backBtn = postBackBtnEl();
+        var cancelBtn = postCancelBtnEl();
+        var title = postTitleEl();
+
+        if (editStep) editStep.style.display = isPreview ? 'none' : 'flex';
+        if (previewStep) previewStep.style.display = isPreview ? 'flex' : 'none';
+        if (previewBtn) previewBtn.style.display = isPreview ? 'none' : '';
+        if (submit) submit.style.display = isPreview ? '' : 'none';
+        if (backBtn) backBtn.style.display = isPreview ? '' : 'none';
+        if (cancelBtn) cancelBtn.style.display = isPreview ? 'none' : '';
+        if (title) title.textContent = isPreview ? 'Предпросмотр' : 'Новая публикация';
+        if (isPreview) renderPostPreviewCard();
+        syncPostSubmit();
+    }
+
+    function syncPostSubmit() {
         var cap = captionEl();
         var hasText = cap ? (cap.value || '').trim() : false;
-        submit.disabled = !postFiles.length && !hasText;
+        var hasContent = !!postFiles.length || !!hasText;
+        var previewBtn = postPreviewBtnEl();
+        if (previewBtn) previewBtn.disabled = !hasContent;
+        var submit = postSubmitEl();
+        if (submit) submit.disabled = !hasContent;
     }
 
     function renderPostModal() {
@@ -1507,11 +1539,10 @@
             });
         }
 
-        renderPostPreviewCard();
         syncPostSubmit();
     }
 
-    /* Живой предпросмотр: как пост будет выглядеть в ленте */
+    /* Предпросмотр: как пост будет выглядеть в ленте */
     function renderPostPreviewCard() {
         var card = postPreviewCardEl();
         if (!card) return;
@@ -1787,6 +1818,7 @@
             return;
         }
         if (t.closest('[data-close-post]')) { closePostModal(); return; }
+        if (t.closest('#postBackBtn')) { showPostStep('edit'); return; }
         if (t.closest('#postPickerArea') || t.closest('#addMoreMediaBtn')) {
             var pi = postInputEl();
             if (pi) pi.click();
@@ -1802,6 +1834,7 @@
             renderPostModal();
             return;
         }
+        if (t.closest('#postPreviewBtn')) { showPostStep('preview'); return; }
         if (t.closest('#postSubmitBtn')) { publishPost(); return; }
 
         if (t.closest('#addStoryBtn')) { openStoryModal(); return; }
@@ -1858,7 +1891,6 @@
     document.addEventListener('input', function (e) {
         var t = e.target;
         if (t && t.id === 'postCaption') {
-            renderPostPreviewCard();
             syncPostSubmit();
         }
     });
