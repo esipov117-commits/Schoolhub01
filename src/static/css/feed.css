@@ -246,9 +246,44 @@
         position: absolute;
         top: 60px; bottom: 0;
         z-index: 10;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        appearance: none;
+        -webkit-appearance: none;
+        cursor: pointer;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+    }
+    .story-tap-left:focus-visible,
+    .story-tap-right:focus-visible {
+        outline: 2px solid rgba(255, 255, 255, 0.6);
+        outline-offset: -2px;
     }
     .story-tap-left { left: 0; width: 30%; }
     .story-tap-right { right: 0; width: 70%; }
+
+    @keyframes story-slide-next {
+        from { opacity: 0.35; transform: translateX(42px) scale(1.02); }
+        to { opacity: 1; transform: none; }
+    }
+    @keyframes story-slide-prev {
+        from { opacity: 0.35; transform: translateX(-42px) scale(1.02); }
+        to { opacity: 1; transform: none; }
+    }
+    .viewer-actual-media.story-slide-next {
+        animation: story-slide-next 180ms ease-out;
+    }
+    .viewer-actual-media.story-slide-prev {
+        animation: story-slide-prev 180ms ease-out;
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .viewer-actual-media.story-slide-next,
+        .viewer-actual-media.story-slide-prev {
+            animation: none;
+        }
+    }
 
     .story-close {
         position: absolute;

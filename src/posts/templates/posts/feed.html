@@ -4,7 +4,7 @@
 {% block title %}{% trans "Главная" %} — SchoolHub{% endblock %}
 
 {% block extra_head %}
-    <link rel="stylesheet" href="{% static 'css/feed.css' %}?v=4">
+    <link rel="stylesheet" href="{% static 'css/feed.css' %}?v=5">
 {% endblock %}
 
 {% block content %}
@@ -219,8 +219,10 @@
                 <span id="viewer-author"></span>
             </div>
         </div>
-        <div class="story-tap-left" id="storyPrevZone"></div>
-        <div class="story-tap-right" id="storyNextZone"></div>
+        <button class="story-tap-left" id="storyPrevZone" type="button"
+                aria-label="{% trans 'Предыдущая история' %}"></button>
+        <button class="story-tap-right" id="storyNextZone" type="button"
+                aria-label="{% trans 'Следующая история' %}"></button>
         <div class="viewer-caption-text" id="viewer-caption" style="display:none;"></div>
         <button class="viewer-icon-btn" id="storySoundBtn" type="button" title="{% trans 'Выключить звук' %}"
                 style="display:none;">
@@ -355,5 +357,5 @@ window.FEED_CONFIG = {
 };
 window.POST_VIEWS_URL = "{% url 'mark_post_viewed' %}";
 </script>
-<script src="{% static 'js/feed.js' %}?v=4"></script>
+<script src="{% static 'js/feed.js' %}?v=5"></script>
 {% endblock %}
