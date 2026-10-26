@@ -1982,8 +1982,7 @@
 }
 
 .feed-main .post-card .post-media {
-    margin: 8px 0 0 -48px;
-    width: calc(100% + 48px);
+    margin: 8px 0 0;
     border-radius: 12px;
     overflow: visible;
 }
