@@ -757,3 +757,47 @@ msgstr "New message"
 #: webpush/views.py:29 webpush/views.py:57
 msgid "Некорректный JSON"
 msgstr "Invalid JSON"
+
+#: posts/templates/posts/feed.html
+msgid "Перетащите медиа, чтобы выбрать кадр"
+msgstr "Drag the media to choose the frame"
+
+#: posts/templates/posts/feed.html
+msgid "Как вписать медиа"
+msgstr "How to fit the media"
+
+#: posts/templates/posts/feed.html
+msgid "Вся картинка"
+msgstr "Show the whole image"
+
+#: posts/templates/posts/feed.html
+msgid "Заполнить экран"
+msgstr "Fill the screen"
+
+#: posts/templates/posts/feed.html
+msgid "Фон по краям"
+msgstr "Background around the edges"
+
+#: posts/templates/posts/feed.html
+msgid "Размытое медиа"
+msgstr "Blurred media"
+
+#: posts/templates/posts/feed.html
+msgid "Чёрный фон"
+msgstr "Black background"
+
+#: posts/templates/posts/feed.html
+msgid "Масштаб"
+msgstr "Zoom"
+
+#: posts/templates/posts/feed.html
+msgid "Добавьте подпись к истории"
+msgstr "Add a caption to your story"
+
+#: posts/templates/posts/feed.html
+msgid "Убрать"
+msgstr "Remove"
+
+#: posts/templates/posts/feed.html
+msgid "Сбросить кадр"
+msgstr "Reset frame"

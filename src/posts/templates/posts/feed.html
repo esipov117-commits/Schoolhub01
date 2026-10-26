@@ -4,7 +4,7 @@
 {% block title %}{% trans "Главная" %} — SchoolHub{% endblock %}
 
 {% block extra_head %}
-    <link rel="stylesheet" href="{% static 'css/feed.css' %}?v=5">
+    <link rel="stylesheet" href="{% static 'css/feed.css' %}?v=6">
 {% endblock %}
 
 {% block content %}
@@ -122,7 +122,93 @@
             <span class="picker-hint">{% trans "Выберите фото или видео" %}</span>
             <span class="picker-sub">{% trans "История исчезнет через 24 часа" %}</span>
         </label>
-        <div class="preview-grid" id="storyPreview" style="display:none;"></div>
+        <div class="story-composer-preview" id="storyPreview" style="display:none;">
+            <div class="story-frame" id="storyPreviewFrame">
+                <div class="story-frame-bg" id="storyPreviewBg"></div>
+                <div class="story-frame-media" id="storyPreviewMedia"></div>
+                <div class="story-frame-head">
+                    <span class="story-frame-avatar">
+                        {% if user.profile.avatar %}
+                        <img src="{{ user.profile.avatar.url }}" alt="{{ user.username }}">
+                        {% else %}
+                        <span>{{ user.username|first|upper }}</span>
+                        {% endif %}
+                    </span>
+                    <span class="story-frame-name">{{ user.username }}</span>
+                </div>
+                <div class="story-frame-caption" id="storyPreviewCaption"></div>
+                <span class="story-frame-hint" id="storyPreviewHint">
+                    {% trans "Перетащите медиа, чтобы выбрать кадр" %}
+                </span>
+                <button class="story-frame-remove" id="storyPreviewRemove" type="button" title="{% trans 'Убрать' %}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+                         stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="story-control">
+                <span class="field-label">{% trans "Как вписать медиа" %}</span>
+                <div class="segmented" id="storyFitModes">
+                    <button type="button" class="active" data-fit="contain">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                             stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="4" y="4" width="16" height="16" rx="2"></rect>
+                            <path d="M8 12h8"></path>
+                            <path d="M12 8v8"></path>
+                        </svg>
+                        {% trans "Вся картинка" %}
+                    </button>
+                    <button type="button" data-fit="cover">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                             stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                            <path d="M3 9h18"></path>
+                            <path d="M9 3v18"></path>
+                        </svg>
+                        {% trans "Заполнить экран" %}
+                    </button>
+                </div>
+            </div>
+
+            <div class="story-control" id="storyBackgroundControls">
+                <span class="field-label">{% trans "Фон по краям" %}</span>
+                <div class="segmented" id="storyBackgroundModes">
+                    <button type="button" class="active" data-background="blur">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                             stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="8"></circle>
+                            <path d="M8 12a4 4 0 0 1 8 0"></path>
+                        </svg>
+                        {% trans "Размытое медиа" %}
+                    </button>
+                    <button type="button" data-background="black">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                             stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                            <path d="M3 3l18 18"></path>
+                        </svg>
+                        {% trans "Чёрный фон" %}
+                    </button>
+                </div>
+            </div>
+
+            <div class="story-control">
+                <div class="story-control-head">
+                    <label class="field-label" for="storyZoomRange">{% trans "Масштаб" %}</label>
+                    <button class="story-reset-btn" id="storyResetFrame" type="button">{% trans "Сбросить кадр" %}</button>
+                </div>
+                <input class="story-zoom-range" id="storyZoomRange" type="range" min="100" max="250" step="5" value="100">
+            </div>
+
+            <label class="story-caption-field">
+                <span class="field-label">{% trans "Подпись" %}</span>
+                <textarea id="storyCaption" rows="2" maxlength="200"
+                          placeholder="{% trans 'Добавьте подпись к истории' %}"></textarea>
+            </label>
+        </div>
         <div class="modal-error" id="storyError"></div>
     </div>
     <div class="modal-foot">
@@ -357,5 +443,5 @@ window.FEED_CONFIG = {
 };
 window.POST_VIEWS_URL = "{% url 'mark_post_viewed' %}";
 </script>
-<script src="{% static 'js/feed.js' %}?v=5"></script>
+<script src="{% static 'js/feed.js' %}?v=6"></script>
 {% endblock %}
