@@ -32,7 +32,13 @@ staticfiles/
 
 # OS
 .DS_Store
-Thumbs.dbdb.sqlite3
-.env
-.env
-.env
+Thumbs.db
+
+# Tools
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local AI rules (not shared in git)
+AGENTS.md

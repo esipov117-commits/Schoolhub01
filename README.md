@@ -131,6 +131,23 @@ private_media/  — зашифрованные вложения чата (в git
 .venv/bin/python manage.py compilemessages    # скомпилировать .po → .mo
 ```
 
+## Линтеры и стиль
+
+Проверки запускаются через `make`; dev-зависимости ставятся отдельно:
+
+```bash
+make install-dev   # ruff + pre-commit
+make lint          # ruff check .
+make check         # manage.py check
+make test          # manage.py test
+make ci            # lint + check + test
+```
+
+Форматирование — `make format` (Ruff), проверка без изменений —
+`make format-check`, pre-commit по всем файлам — `make precommit`.
+Правила для AI-агентов и локальной разработки лежат в `AGENTS.md`
+(файл не коммитится).
+
 ## Язык интерфейса
 
 Язык хранится в `Profile.language` (`ru` по умолчанию, `en`), применяется
