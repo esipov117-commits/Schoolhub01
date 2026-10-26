@@ -2028,8 +2028,7 @@
 .feed-main .post-card .post-actions {
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
-    row-gap: 6px;
+    flex-wrap: nowrap;
     column-gap: 16px;
     margin: 6px 0 0 -8px;
     padding: 0;
@@ -2038,7 +2037,14 @@
 .feed-main .post-card .post-action {
     display: inline-flex;
     align-items: center;
+    flex-wrap: nowrap;
+    flex: 0 0 auto;
     gap: 2px;
+    white-space: nowrap;
+}
+
+.feed-main .post-card .post-action > * {
+    flex: 0 0 auto;
 }
 
 .feed-main .post-card .post-action .likes-count,
