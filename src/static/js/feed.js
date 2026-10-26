@@ -901,6 +901,7 @@
         this.isOwn = false;
         this.muted = false;
         this._customMedia = null;
+        this._ignoreTap = false;
         this.bindEls();
     }
 
@@ -916,6 +917,40 @@
         this.statsBtn = document.getElementById('storyStatsBtn');
         this.likeBtn = document.getElementById('storyLikeBtn');
         this.soundBtn = document.getElementById('storySoundBtn');
+        this.bindGestures();
+    };
+
+    /* Свайпы влево/вправо по области просмотра */
+    StoryViewer.prototype.bindGestures = function () {
+        var self = this;
+        if (!this.root || this.root._storyGesturesBound) return;
+        this.root._storyGesturesBound = true;
+        var startX = 0;
+        var startY = 0;
+        var tracking = false;
+
+        this.root.addEventListener('touchstart', function (e) {
+            if (e.touches.length !== 1) return;
+            var target = e.target;
+            if (target && target.closest && target.closest('.story-close, .viewer-icon-btn')) return;
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+            tracking = true;
+        }, { passive: true });
+
+        this.root.addEventListener('touchend', function (e) {
+            if (!tracking) return;
+            tracking = false;
+            var touch = e.changedTouches && e.changedTouches[0];
+            if (!touch) return;
+            var dx = touch.clientX - startX;
+            var dy = touch.clientY - startY;
+            if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
+            self._ignoreTap = true;
+            setTimeout(function () { self._ignoreTap = false; }, 350);
+            if (dx < 0) self.next();
+            else self.prev();
+        }, { passive: true });
     };
 
     StoryViewer.prototype.open = function (groups, startIndex) {
@@ -932,7 +967,7 @@
         this.activateGroup(idx, 0);
     };
 
-    StoryViewer.prototype.activateGroup = function (groupIndex, itemIndex) {
+    StoryViewer.prototype.activateGroup = function (groupIndex, itemIndex, direction) {
         var group = this.groups[groupIndex];
         if (!group || !group.items.length) return this.close();
         this.groupIndex = groupIndex;
@@ -952,22 +987,28 @@
         this.deleteBtn.style.display = canDelete ? 'flex' : 'none';
         this.statsBtn.style.display = isOwn ? 'flex' : 'none';
         this.likeBtn.style.display = isOwn ? 'none' : 'flex';
-        this.show(itemIndex || 0);
+        this.show(itemIndex || 0, direction || 0);
     };
 
-    StoryViewer.prototype.nextGroup = function () {
+    StoryViewer.prototype.nextGroup = function (direction) {
         if (!this.groups) return this.close();
         for (var i = this.groupIndex + 1; i < this.groups.length; i++) {
-            if (this.groups[i].items.length) return this.activateGroup(i, 0);
+            if (this.groups[i].items.length) {
+                return this.activateGroup(i, 0, direction == null ? 1 : direction);
+            }
         }
         this.close();
     };
 
-    StoryViewer.prototype.prevGroup = function () {
+    StoryViewer.prototype.prevGroup = function (direction) {
         if (!this.groups) return;
         for (var i = this.groupIndex - 1; i >= 0; i--) {
             if (this.groups[i].items.length) {
-                return this.activateGroup(i, this.groups[i].items.length - 1);
+                return this.activateGroup(
+                    i,
+                    this.groups[i].items.length - 1,
+                    direction == null ? -1 : direction
+                );
             }
         }
     };
@@ -1166,7 +1207,7 @@
             });
     };
 
-    StoryViewer.prototype.show = function (i) {
+    StoryViewer.prototype.show = function (i, direction) {
         if (!this.group) return;
         if (i < 0 || i >= this.group.items.length) return;
         stopViewerTimer();
@@ -1207,6 +1248,8 @@
             el.alt = '';
         }
         el.className = 'viewer-actual-media';
+        if (direction > 0) el.classList.add('story-slide-next');
+        else if (direction < 0) el.classList.add('story-slide-prev');
         el.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000;';
         this.mediaBox.appendChild(el);
         this._customMedia = el;
@@ -1236,14 +1279,14 @@
 
     StoryViewer.prototype.next = function () {
         if (!this.group) return;
-        if (this.index + 1 < this.group.items.length) return this.show(this.index + 1);
-        this.nextGroup();
+        if (this.index + 1 < this.group.items.length) return this.show(this.index + 1, 1);
+        this.nextGroup(1);
     };
 
     StoryViewer.prototype.prev = function () {
         if (!this.group) return;
-        if (this.index > 0) return this.show(this.index - 1);
-        this.prevGroup();
+        if (this.index > 0) return this.show(this.index - 1, -1);
+        this.prevGroup(-1);
     };
 
     var storyViewer = new StoryViewer();
@@ -1847,8 +1890,16 @@
         if (t.closest('#storySubmitBtn')) { submitStory(); return; }
 
         if (t.closest('#storyViewerClose')) { storyViewer.close(); return; }
-        if (t.closest('#storyNextZone')) { storyViewer.next(); return; }
-        if (t.closest('#storyPrevZone')) { storyViewer.prev(); return; }
+        if (t.closest('#storyNextZone')) {
+            if (storyViewer._ignoreTap) { storyViewer._ignoreTap = false; return; }
+            storyViewer.next();
+            return;
+        }
+        if (t.closest('#storyPrevZone')) {
+            if (storyViewer._ignoreTap) { storyViewer._ignoreTap = false; return; }
+            storyViewer.prev();
+            return;
+        }
         if (t.closest('#storyDeleteBtn')) { storyViewer.deleteCurrent(); return; }
         if (t.closest('#storySoundBtn')) { storyViewer.toggleSound(); return; }
         if (t.closest('#storyLikeBtn')) { storyViewer.toggleLike(); return; }
@@ -1918,6 +1969,10 @@
             if (e.key === 'Escape') { closeLightbox(); return; }
             if (e.key === 'ArrowRight') { lightboxStep(1); return; }
             if (e.key === 'ArrowLeft') { lightboxStep(-1); return; }
+        }
+        if (storyViewer && storyViewer.root && storyViewer.root.classList.contains('open')) {
+            if (e.key === 'ArrowRight') { e.preventDefault(); storyViewer.next(); return; }
+            if (e.key === 'ArrowLeft') { e.preventDefault(); storyViewer.prev(); return; }
         }
         if (e.key !== 'Escape') return;
         if (storyViewer && storyViewer.root && storyViewer.root.classList.contains('open')) storyViewer.close();
