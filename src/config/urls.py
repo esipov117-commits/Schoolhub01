@@ -1,8 +1,9 @@
+from django.conf import settings
 from django.contrib import admin
 from django.http import Http404
-from django.urls import path, include
-from django.conf import settings
+from django.urls import include, path
 from django.views.static import serve
+
 from users.views import login_view
 
 urlpatterns = [
@@ -13,7 +14,7 @@ urlpatterns = [
     path('', include('posts.urls')),
     path('', include('events.urls')),
     path('', include('chat.urls')),
-    path("tasks/", include("tasks.urls")),
+    path('tasks/', include('tasks.urls')),
     path('stories/', include('stories.urls')),
     path('', include('webpush.urls')),
 ]

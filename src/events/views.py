@@ -1,7 +1,7 @@
-from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import User
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+
 from .models import Event
 
 
@@ -25,12 +25,7 @@ def create_event(request):
 
         if title and date:
             Event.objects.create(
-                title=title,
-                description=description,
-                date=date,
-                location=location,
-                image=image,
-                created_by=request.user
+                title=title, description=description, date=date, location=location, image=image, created_by=request.user
             )
             return redirect('events_list')
 

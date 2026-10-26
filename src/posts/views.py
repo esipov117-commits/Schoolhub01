@@ -1,19 +1,22 @@
 import json
 import os
+
+from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db.models import Count, IntegerField, OuterRef, Prefetch, Subquery
 from django.db.models.functions import Coalesce
-from django.template.loader import render_to_string
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
-from .models import Post, PostImage, Like, Comment, PostView
+
 from stories.models import Story, StoryView
 from users.models import downscale_image
+
+from .models import Comment, Like, Post, PostImage, PostView
 
 VIDEO_EXTENSIONS = {'.mp4', '.mov', '.webm', '.avi', '.mkv'}
 POSTS_PER_PAGE = 10
@@ -29,19 +32,9 @@ def _post_queryset():
     с активностью запрос начинал «подвисать». Считаем счётчики отдельными
     подзапросами: одна строка на пост, без размножения JOIN'ов.
     """
-    likes_sq = (
-        Like.objects.filter(post=OuterRef('pk'))
-        .order_by()
-        .values('post')
-        .annotate(c=Count('pk'))
-        .values('c')
-    )
+    likes_sq = Like.objects.filter(post=OuterRef('pk')).order_by().values('post').annotate(c=Count('pk')).values('c')
     comments_sq = (
-        Comment.objects.filter(post=OuterRef('pk'))
-        .order_by()
-        .values('post')
-        .annotate(c=Count('pk'))
-        .values('c')
+        Comment.objects.filter(post=OuterRef('pk')).order_by().values('post').annotate(c=Count('pk')).values('c')
     )
     roots_sq = (
         Comment.objects.filter(post=OuterRef('pk'), parent__isnull=True)
@@ -51,22 +44,16 @@ def _post_queryset():
         .values('c')
     )
     views_sq = (
-        PostView.objects.filter(post=OuterRef('pk'))
-        .order_by()
-        .values('post')
-        .annotate(c=Count('pk'))
-        .values('c')
+        PostView.objects.filter(post=OuterRef('pk')).order_by().values('post').annotate(c=Count('pk')).values('c')
     )
     return (
-        Post.objects
-        .select_related('author__profile')
+        Post.objects.select_related('author__profile')
         .prefetch_related(
             'images',
             Prefetch(
                 'comments',
                 queryset=(
-                    Comment.objects
-                    .filter(parent__isnull=True)
+                    Comment.objects.filter(parent__isnull=True)
                     .select_related('author__profile')
                     .prefetch_related('replies__author__profile')
                     .order_by('created_at')
@@ -114,21 +101,21 @@ def feed(request):
                 return redirect('feed')
 
             if is_ajax:
-                media_items = [
-                    {'url': pi.url, 'type': pi.media_type}
-                    for pi in post.images.all()
-                ]
+                media_items = [{'url': pi.url, 'type': pi.media_type} for pi in post.images.all()]
                 author_profile = getattr(post.author, 'profile', None)
-                return JsonResponse({
-                    'id': post.id,
-                    'author': post.author.username,
-                    'author_avatar': author_profile.avatar.url
-                    if author_profile and author_profile.avatar else None,
-                    'content': post.content,
-                    'media_items': media_items,
-                    'layout': post.layout,
-                    'created_at': post.created_at.isoformat(),
-                })
+                return JsonResponse(
+                    {
+                        'id': post.id,
+                        'author': post.author.username,
+                        'author_avatar': author_profile.avatar.url
+                        if author_profile and author_profile.avatar
+                        else None,
+                        'content': post.content,
+                        'media_items': media_items,
+                        'layout': post.layout,
+                        'created_at': post.created_at.isoformat(),
+                    }
+                )
         elif is_ajax:
             return JsonResponse({'error': _('Добавьте текст или выберите фото')}, status=400)
         return redirect('feed')
@@ -140,17 +127,21 @@ def feed(request):
         page_number = request.GET.get('page')
         paginator = Paginator(posts_qs, POSTS_PER_PAGE)
         page_obj = paginator.get_page(page_number)
- 
+
         html_list = [
-            render_to_string('posts/_post_card.html', {
-                'post': p,
-                'liked_post_ids': liked_post_ids,
-                'user': request.user,
-            }, request=request)
+            render_to_string(
+                'posts/_post_card.html',
+                {
+                    'post': p,
+                    'liked_post_ids': liked_post_ids,
+                    'user': request.user,
+                },
+                request=request,
+            )
             for p in page_obj
         ]
         return JsonResponse({'html': html_list, 'has_next': page_obj.has_next()})
- 
+
     # Обычный первый рендер страницы
     paginator = Paginator(posts_qs, POSTS_PER_PAGE)
     page_obj = paginator.get_page(1)
@@ -159,18 +150,13 @@ def feed(request):
     cutoff = timezone.now() - timezone.timedelta(hours=24)
     grouped = {}
     for story in (
-        Story.objects
-        .filter(created_at__gte=cutoff)
-        .select_related('author__profile')
-        .order_by('author', '-created_at')
+        Story.objects.filter(created_at__gte=cutoff).select_related('author__profile').order_by('author', '-created_at')
     ):
         grouped.setdefault(story.author, []).append(story)
     grouped.pop(request.user, None)
 
     viewed_story_ids = set(
-        StoryView.objects
-        .filter(user=request.user, story__created_at__gte=cutoff)
-        .values_list('story_id', flat=True)
+        StoryView.objects.filter(user=request.user, story__created_at__gte=cutoff).values_list('story_id', flat=True)
     )
     other_stories = [
         (author, author_stories, all(s.id in viewed_story_ids for s in author_stories))
@@ -182,38 +168,40 @@ def feed(request):
         'friends_count': 0,
         'groups_count': 0,
     }
-    return render(request, 'posts/feed.html', {
-        'posts': page_obj.object_list,
-        'liked_post_ids': liked_post_ids,
-        'stats': stats,
-        'has_next': page_obj.has_next(),
-        'other_stories': other_stories,
-    })
- 
+    return render(
+        request,
+        'posts/feed.html',
+        {
+            'posts': page_obj.object_list,
+            'liked_post_ids': liked_post_ids,
+            'stats': stats,
+            'has_next': page_obj.has_next(),
+            'other_stories': other_stories,
+        },
+    )
+
 
 @login_required
 def community(request):
     from django.contrib.auth.models import User
+
     from users.models import Follow
-    users = (
-        User.objects
-        .select_related('profile')
-        .order_by('username')
-    )
-    following_ids = set(
-        Follow.objects.filter(follower=request.user).values_list('following_id', flat=True)
-    )
-    is_friend = set()  # simplified: treat following each other as friends? or just not used; keep simple
+
+    users = User.objects.select_related('profile').order_by('username')
+    following_ids = set(Follow.objects.filter(follower=request.user).values_list('following_id', flat=True))
     # detect mutual follows
-    friend_ids = set()
     my_following = set(Follow.objects.filter(follower=request.user).values_list('following_id', flat=True))
     followers_me = set(Follow.objects.filter(following=request.user).values_list('follower_id', flat=True))
     friend_ids = my_following & followers_me
-    return render(request, 'posts/community.html', {
-        'users': users,
-        'following_ids': following_ids,
-        'friend_ids': friend_ids,
-    })
+    return render(
+        request,
+        'posts/community.html',
+        {
+            'users': users,
+            'following_ids': following_ids,
+            'friend_ids': friend_ids,
+        },
+    )
 
 
 @login_required
@@ -226,10 +214,12 @@ def toggle_like(request, post_id):
     else:
         liked = True
 
-    return JsonResponse({
-        'liked': liked,
-        'likes_count': post.likes.count(),
-    })
+    return JsonResponse(
+        {
+            'liked': liked,
+            'likes_count': post.likes.count(),
+        }
+    )
 
 
 @login_required
@@ -239,25 +229,24 @@ def post_likes(request, post_id):
     if post.author_id != request.user.id:
         return JsonResponse({'error': _('Список доступен только автору поста')}, status=403)
 
-    likes = (
-        Like.objects
-        .filter(post=post)
-        .select_related('user__profile')
-        .order_by('-created_at')
-    )
+    likes = Like.objects.filter(post=post).select_related('user__profile').order_by('-created_at')
     likers = []
     for like in likes:
         profile = getattr(like.user, 'profile', None)
-        likers.append({
-            'username': like.user.username,
-            'avatar': profile.avatar.url if profile and profile.avatar else None,
-            'liked_at': like.created_at.isoformat(),
-        })
+        likers.append(
+            {
+                'username': like.user.username,
+                'avatar': profile.avatar.url if profile and profile.avatar else None,
+                'liked_at': like.created_at.isoformat(),
+            }
+        )
 
-    return JsonResponse({
-        'likes_count': post.likes.count(),
-        'likers': likers,
-    })
+    return JsonResponse(
+        {
+            'likes_count': post.likes.count(),
+            'likers': likers,
+        }
+    )
 
 
 @login_required
@@ -285,31 +274,24 @@ def mark_post_viewed(request):
     except (TypeError, ValueError):
         return JsonResponse({'error': _('Некорректный запрос')}, status=400)
 
-    existing = set(
-        PostView.objects
-        .filter(user=request.user, post_id__in=post_ids)
-        .values_list('post_id', flat=True)
-    )
+    existing = set(PostView.objects.filter(user=request.user, post_id__in=post_ids).values_list('post_id', flat=True))
     to_create = post_ids - existing
     if not to_create:
         return JsonResponse({'ok': True, 'views_created': 0, 'created_ids': []})
 
-    eligible = set(
-        Post.objects
-        .filter(pk__in=to_create)
-        .exclude(author=request.user)
-        .values_list('pk', flat=True)
-    )
+    eligible = set(Post.objects.filter(pk__in=to_create).exclude(author=request.user).values_list('pk', flat=True))
     PostView.objects.bulk_create(
         [PostView(user=request.user, post_id=pid) for pid in eligible],
         ignore_conflicts=True,
     )
     created_ids = sorted(eligible)
-    return JsonResponse({
-        'ok': True,
-        'views_created': len(created_ids),
-        'created_ids': created_ids,
-    })
+    return JsonResponse(
+        {
+            'ok': True,
+            'views_created': len(created_ids),
+            'created_ids': created_ids,
+        }
+    )
 
 
 @login_required
@@ -361,15 +343,17 @@ def add_comment(request, post_id):
     comment = Comment.objects.create(post=post, author=request.user, text=text, parent=parent)
 
     author_profile = getattr(comment.author, 'profile', None)
-    return JsonResponse({
-        'id': comment.id,
-        'author': comment.author.username,
-        'author_avatar': author_profile.avatar.url if author_profile and author_profile.avatar else None,
-        'text': comment.text,
-        'parent_id': comment.parent_id,
-        'parent_author': comment.parent.author.username if comment.parent_id else None,
-        'comments_count': post.comments.count(),
-    })
+    return JsonResponse(
+        {
+            'id': comment.id,
+            'author': comment.author.username,
+            'author_avatar': author_profile.avatar.url if author_profile and author_profile.avatar else None,
+            'text': comment.text,
+            'parent_id': comment.parent_id,
+            'parent_author': comment.parent.author.username if comment.parent_id else None,
+            'comments_count': post.comments.count(),
+        }
+    )
 
 
 @login_required
@@ -383,13 +367,12 @@ def load_comments(request, post_id):
         offset = 0
 
     roots = (
-        Comment.objects
-        .filter(post=post, parent__isnull=True)
+        Comment.objects.filter(post=post, parent__isnull=True)
         .select_related('author__profile')
         .prefetch_related('replies__author__profile')
         .order_by('created_at')
     )
-    batch = list(roots[offset:offset + COMMENTS_PER_BATCH])
+    batch = list(roots[offset : offset + COMMENTS_PER_BATCH])
     html_list = [
         render_to_string(
             'posts/_comment.html',
@@ -398,10 +381,12 @@ def load_comments(request, post_id):
         )
         for c in batch
     ]
-    return JsonResponse({
-        'html': html_list,
-        'has_more': offset + len(batch) < roots.count(),
-    })
+    return JsonResponse(
+        {
+            'html': html_list,
+            'has_more': offset + len(batch) < roots.count(),
+        }
+    )
 
 
 @login_required
@@ -411,11 +396,7 @@ def delete_comment(request, comment_id):
 
     profile = getattr(request.user, 'profile', None)
     is_moderator = bool(profile and profile.is_moderator) or request.user.is_staff
-    if (
-        comment.author != request.user
-        and comment.post.author != request.user
-        and not is_moderator
-    ):
+    if comment.author != request.user and comment.post.author != request.user and not is_moderator:
         return JsonResponse({'deleted': False, 'error': 'Not allowed'}, status=403)
 
     comment.delete()

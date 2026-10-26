@@ -1,22 +1,25 @@
+from typing import ClassVar
+
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.utils.translation import gettext_lazy as _
+
 from .models import Profile
 
 
 class UserSettingsForm(forms.ModelForm):
     class Meta:
         model = Profile
-        fields = ["language", "dark_mode"]
+        fields = ('language', 'dark_mode')
 
-        widgets = {
-            "language": forms.Select(),
-            "dark_mode": forms.CheckboxInput(),
+        widgets: ClassVar[dict] = {
+            'language': forms.Select(),
+            'dark_mode': forms.CheckboxInput(),
         }
 
-        labels = {
-            "language": _("Язык"),
-            "dark_mode": _("Тёмная тема"),
+        labels: ClassVar[dict] = {
+            'language': _('Язык'),
+            'dark_mode': _('Тёмная тема'),
         }
 
 
@@ -24,4 +27,4 @@ class RegisterForm(UserCreationForm):
     """Регистрация по username + password. Аккаунт сразу активен."""
 
     class Meta(UserCreationForm.Meta):
-        fields = ["username", "password1", "password2"]
+        fields = ('username', 'password1', 'password2')

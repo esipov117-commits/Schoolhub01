@@ -1,5 +1,8 @@
-from django.db import models
+from typing import ClassVar
+
 from django.contrib.auth.models import User
+from django.db import models
+
 from users.models import validate_image_size
 
 
@@ -13,10 +16,8 @@ class Event(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ['date']
-        indexes = [
-            models.Index(fields=['date']),
-        ]
+        ordering: ClassVar[list[str]] = ['date']
+        indexes: ClassVar[list] = [models.Index(fields=['date'])]
 
     def __str__(self):
         return self.title

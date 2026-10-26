@@ -14,24 +14,21 @@ from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 
-STEP_PATTERN = re.compile(r"^(\d+)(s|m|h|d)$")
+STEP_PATTERN = re.compile(r'^(\d+)(s|m|h|d)$')
 
 
 def parse_delta(value, name):
     """Разбирает строку вида '30d', '12h', '45m', '90s' в timedelta."""
     match = STEP_PATTERN.match(str(value).strip().lower())
     if not match:
-        raise CommandError(
-            f"Некорректное значение {name!r}: {value!r}. "
-            "Ожидается формат вида 30d, 12h, 45m или 90s."
-        )
+        raise CommandError(f'Некорректное значение {name!r}: {value!r}. Ожидается формат вида 30d, 12h, 45m или 90s.')
     amount = int(match.group(1))
     unit = match.group(2)
-    if unit == "s":
+    if unit == 's':
         return timedelta(seconds=amount)
-    if unit == "m":
+    if unit == 'm':
         return timedelta(minutes=amount)
-    if unit == "h":
+    if unit == 'h':
         return timedelta(hours=amount)
     return timedelta(days=amount)
 
@@ -41,42 +38,40 @@ def fmt_dt(value, step):
     local = timezone.localtime(value)
     step_seconds = step.total_seconds()
     if step_seconds >= 86400:
-        return local.strftime("%Y-%m-%d")
+        return local.strftime('%Y-%m-%d')
     if step_seconds >= 3600:
-        return local.strftime("%Y-%m-%d %H:00")
-    return local.strftime("%Y-%m-%d %H:%M")
+        return local.strftime('%Y-%m-%d %H:00')
+    return local.strftime('%Y-%m-%d %H:%M')
 
 
 class Command(BaseCommand):
-    help = "Показывает прирост пользователей по дням/часам с выбираемым шагом."
+    help = 'Показывает прирост пользователей по дням/часам с выбираемым шагом.'
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--step",
-            default="1d",
-            help="Шаг агрегации: 30d, 12h, 45m, 90s (по умолчанию 1d).",
+            '--step',
+            default='1d',
+            help='Шаг агрегации: 30d, 12h, 45m, 90s (по умолчанию 1d).',
         )
         parser.add_argument(
-            "--range",
-            default="30d",
-            help="Период от текущего момента в прошлое: 30d, 48h, 12h (по умолчанию 30d).",
+            '--range',
+            default='30d',
+            help='Период от текущего момента в прошлое: 30d, 48h, 12h (по умолчанию 30d).',
         )
 
     def handle(self, *args, **options):
-        step = parse_delta(options["step"], "--step")
-        span = parse_delta(options["range"], "--range")
+        step = parse_delta(options['step'], '--step')
+        span = parse_delta(options['range'], '--range')
 
         if step.total_seconds() <= 0 or span.total_seconds() <= 0:
-            raise CommandError("Шаг и период должны быть положительными.")
+            raise CommandError('Шаг и период должны быть положительными.')
 
         User = get_user_model()
         now = timezone.now()
         start = now - span
 
         users = (
-            User.objects.filter(date_joined__gte=start)
-            .order_by("date_joined")
-            .values_list("date_joined", flat=True)
+            User.objects.filter(date_joined__gte=start).order_by('date_joined').values_list('date_joined', flat=True)
         )
 
         # Разбивка на «корзины» по шагу.
@@ -99,15 +94,13 @@ class Command(BaseCommand):
 
         def bar(count):
             if max_count == 0:
-                return ""
+                return ''
             filled = round(count / max_count * bar_width)
-            return "#" * filled
+            return '#' * filled
 
-        self.stdout.write(
-            f"Прирост пользователей за последние {options['range']}, шаг {options['step']}"
-        )
-        self.stdout.write("-" * 60)
+        self.stdout.write(f'Прирост пользователей за последние {options["range"]}, шаг {options["step"]}')
+        self.stdout.write('-' * 60)
         for label, count in rows:
-            self.stdout.write(f"{label}  ->  {count:<5} {bar(count)}")
-        self.stdout.write("-" * 60)
-        self.stdout.write(self.style.SUCCESS(f"Итого новых: {total}"))
+            self.stdout.write(f'{label}  ->  {count:<5} {bar(count)}')
+        self.stdout.write('-' * 60)
+        self.stdout.write(self.style.SUCCESS(f'Итого новых: {total}'))

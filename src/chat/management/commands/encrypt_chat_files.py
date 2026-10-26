@@ -32,7 +32,7 @@ class Command(BaseCommand):
         media_url = settings.MEDIA_URL.rstrip('/') + '/'
         if not raw.startswith(media_url):
             return None
-        relative = raw[len(media_url):]
+        relative = raw[len(media_url) :]
         if not relative.startswith('chat_uploads/'):
             return None
         root = (Path(settings.MEDIA_ROOT) / 'chat_uploads').resolve()
@@ -65,9 +65,7 @@ class Command(BaseCommand):
                 mime_type, ext = _attachment_mime(original_name)
                 if not mime_type:
                     self.stderr.write(
-                        self.style.WARNING(
-                            f'Сообщение {message.pk}: неизвестный тип файла {original_name!r}, пропуск'
-                        )
+                        self.style.WARNING(f'Сообщение {message.pk}: неизвестный тип файла {original_name!r}, пропуск')
                     )
                     skipped += 1
                     continue
@@ -102,11 +100,7 @@ class Command(BaseCommand):
                     migrated += 1
                 else:
                     missing += 1
-                    self.stderr.write(
-                        self.style.WARNING(
-                            f'Сообщение {message.pk}: файл {original_name!r} не найден'
-                        )
-                    )
+                    self.stderr.write(self.style.WARNING(f'Сообщение {message.pk}: файл {original_name!r} не найден'))
 
                 item['file_id'] = file_id
                 item['url'] = reverse('chat_attachment', args=[message.chat_id, file_id])
@@ -126,13 +120,9 @@ class Command(BaseCommand):
                     try:
                         legacy.unlink(missing_ok=True)
                     except OSError as exc:
-                        self.stderr.write(
-                            self.style.WARNING(f'Не удалось удалить {legacy}: {exc}')
-                        )
+                        self.stderr.write(self.style.WARNING(f'Не удалось удалить {legacy}: {exc}'))
 
         suffix = ' (dry-run)' if dry_run else ''
         self.stdout.write(
-            self.style.SUCCESS(
-                f'Зашифровано файлов: {migrated}; пропущено: {skipped}; не найдено: {missing}{suffix}'
-            )
+            self.style.SUCCESS(f'Зашифровано файлов: {migrated}; пропущено: {skipped}; не найдено: {missing}{suffix}')
         )

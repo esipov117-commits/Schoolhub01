@@ -1,7 +1,7 @@
 import base64
 
-from django.core.management.base import BaseCommand
 from cryptography.hazmat.primitives import serialization
+from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):

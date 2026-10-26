@@ -1,4 +1,5 @@
 import hashlib
+from typing import ClassVar
 
 from django.contrib.auth.models import User
 from django.db import models
@@ -26,21 +27,19 @@ class PushSubscription(models.Model):
     class Meta:
         verbose_name = 'Push-подписка'
         verbose_name_plural = 'Push-подписки'
-        indexes = [
-            models.Index(fields=['user']),
-        ]
+        indexes: ClassVar[list] = [models.Index(fields=['user'])]
 
     def __str__(self):
         return f'{self.user} · {self.endpoint[:40]}…'
-
-    @staticmethod
-    def hash_endpoint(endpoint):
-        return hashlib.sha256(endpoint.encode('utf-8')).hexdigest()
 
     def save(self, *args, **kwargs):
         if not self.endpoint_hash:
             self.endpoint_hash = self.hash_endpoint(self.endpoint)
         super().save(*args, **kwargs)
+
+    @staticmethod
+    def hash_endpoint(endpoint):
+        return hashlib.sha256(endpoint.encode('utf-8')).hexdigest()
 
     @classmethod
     def upsert(cls, user, endpoint, p256dh, auth, user_agent=''):
