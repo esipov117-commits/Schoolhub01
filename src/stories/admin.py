@@ -5,8 +5,18 @@ from .models import Story, StoryLike, StoryView
 
 @admin.register(Story)
 class StoryAdmin(admin.ModelAdmin):
-    list_display = ('id', 'author', 'media_type', 'caption', 'created_at', 'expires_at', 'is_expired')
-    list_filter = ('media_type', 'created_at', 'expires_at')
+    list_display = (
+        'id',
+        'author',
+        'media_type',
+        'fit_mode',
+        'background_mode',
+        'caption',
+        'created_at',
+        'expires_at',
+        'is_expired',
+    )
+    list_filter = ('media_type', 'fit_mode', 'background_mode', 'created_at', 'expires_at')
     search_fields = ('author__username', 'caption')
     actions = ('delete_selected',)
 

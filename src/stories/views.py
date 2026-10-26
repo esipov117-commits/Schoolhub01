@@ -15,6 +15,39 @@ from users.models import downscale_image
 from .models import Story, StoryLike, StoryView
 
 
+def _choice(value, allowed, default):
+    """Возвращает значение из белого списка или безопасный дефолт."""
+    return value if value in allowed else default
+
+
+def _bounded_int(value, default, minimum, maximum):
+    """Парсит целое из POST и ограничивает его допустимым диапазоном."""
+    try:
+        number = int(value)
+    except (TypeError, ValueError):
+        return default
+    return max(minimum, min(maximum, number))
+
+
+def _story_layout_from_post(request):
+    """Собирает настройки кадрирования истории из POST-запроса."""
+    return {
+        'fit_mode': _choice(
+            request.POST.get('fit_mode'),
+            {Story.FIT_CONTAIN, Story.FIT_COVER},
+            Story.FIT_CONTAIN,
+        ),
+        'background_mode': _choice(
+            request.POST.get('background_mode'),
+            {Story.BACKGROUND_BLUR, Story.BACKGROUND_BLACK},
+            Story.BACKGROUND_BLUR,
+        ),
+        'focus_x': _bounded_int(request.POST.get('focus_x'), 50, 0, 100),
+        'focus_y': _bounded_int(request.POST.get('focus_y'), 50, 0, 100),
+        'zoom': _bounded_int(request.POST.get('zoom'), 100, 100, 250),
+    }
+
+
 @login_required
 def stories_bar(request):
     """
@@ -29,7 +62,8 @@ def upload_story(request):
     """Загрузка новой истории (Универсальная AJAX + HTML)."""
     if request.method == 'POST':
         file = request.FILES.get('media')
-        caption = request.POST.get('caption', '')
+        caption = request.POST.get('caption', '')[:200]
+        layout = _story_layout_from_post(request)
         is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
 
         if not file:
@@ -50,6 +84,7 @@ def upload_story(request):
                 media_type=media_type,
                 image=downscale_image(file, 1600) or file,
                 caption=caption,
+                **layout,
             )
         else:
             story = Story.objects.create(
@@ -57,6 +92,7 @@ def upload_story(request):
                 media_type=media_type,
                 video=file,
                 caption=caption,
+                **layout,
             )
 
         # Если запрос пришел через JavaScript (Fetch) — отдаем чистый JSON
@@ -65,6 +101,11 @@ def upload_story(request):
                 {
                     'id': story.id,
                     'media_url': story.image.url if story.image else story.video.url,
+                    'fit_mode': story.fit_mode,
+                    'background_mode': story.background_mode,
+                    'focus_x': story.focus_x,
+                    'focus_y': story.focus_y,
+                    'zoom': story.zoom,
                 }
             )
 
@@ -121,6 +162,11 @@ def api_active_stories(request):
                 'type': s.media_type,
                 'url': s.image.url if s.image else (s.video.url if s.video else ''),
                 'caption': s.caption,
+                'fit_mode': s.fit_mode,
+                'background_mode': s.background_mode,
+                'focus_x': s.focus_x,
+                'focus_y': s.focus_y,
+                'zoom': s.zoom,
                 'viewed': is_viewed,
                 'liked_by_me': s.id in liked_ids,
                 'likes_count': s.likes_count,
