@@ -801,3 +801,19 @@ msgstr "Remove"
 #: posts/templates/posts/feed.html
 msgid "Сбросить кадр"
 msgstr "Reset frame"
+
+#: posts/templates/posts/_post_card.html
+msgid "Просмотры"
+msgstr "Views"
+
+#: posts/templatetags/post_extras.py
+msgid "поделился"
+msgstr "shared"
+
+#: posts/templatetags/post_extras.py
+msgid "поделились"
+msgstr "shared"
+
+#: posts/templatetags/post_extras.py
+msgid "Кто лайкнул"
+msgstr "Who liked it"

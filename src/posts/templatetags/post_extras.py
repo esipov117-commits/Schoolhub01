@@ -30,23 +30,17 @@ def plural_ru(value, forms):
 
 @register.filter
 def likes_text(value):
-    n = int(value)
-    word = _counted(n, _('отметка'), _('отметки'), _('отметок'))
-    return f'{n} {word} «{_("Нравится")}»'
+    return str(int(value))
 
 
 @register.filter
 def comments_text(value):
-    n = int(value)
-    word = _counted(n, _('комментарий'), _('комментария'), _('комментариев'))
-    return f'{n} {word}'
+    return str(int(value))
 
 
 @register.filter
 def views_text(value):
-    n = int(value)
-    word = _counted(n, _('просмотр'), _('просмотра'), _('просмотров'))
-    return f'{n} {word}'
+    return str(int(value))
 
 
 @register.filter
