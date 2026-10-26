@@ -470,6 +470,7 @@
 
     .post-carousel { position: relative; }
     .carousel-track {
+        
         display: flex;
         overflow-x: auto;
         scroll-snap-type: x mandatory;
@@ -490,6 +491,7 @@
         border-radius: 14px;
         display: block;
         cursor: pointer;
+        padding-left: 0;
     }
 
     .carousel-dots {
@@ -555,7 +557,7 @@
     .post-actions button:hover { background: var(--sidebar-active-bg); }
     .post-actions button svg { width: 22px; height: 22px; }
     .post-actions .like-btn.liked { color: #e0245e; }
-    .like-btn .like-icon { display: flex; align-items: center; justify-content: center; }
+    .like-btn .like-icon { display: flex; align-items: center; justify-content: center; padding-left: 0;}
     .like-btn.liked .like-icon { animation: likePop 0.35s ease; }
     @keyframes likePop {
         0% { transform: scale(1); }
@@ -1980,7 +1982,8 @@
 }
 
 .feed-main .post-card .post-media {
-    margin: 8px 0 0;
+    margin: 8px 0 0 -48px;
+    width: calc(100% + 48px);
     border-radius: 12px;
     overflow: visible;
 }
@@ -2026,9 +2029,52 @@
 .feed-main .post-card .post-actions {
     display: flex;
     align-items: center;
-    gap: 4px;
+    flex-wrap: wrap;
+    row-gap: 6px;
+    column-gap: 16px;
     margin: 6px 0 0 -8px;
     padding: 0;
+}
+
+.feed-main .post-card .post-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.feed-main .post-card .post-action .likes-count,
+.feed-main .post-card .post-action .comments-count,
+.feed-main .post-card .post-action .views-count {
+    color: var(--muted);
+    font-size: 13.5px;
+    font-weight: 400;
+    white-space: nowrap;
+}
+
+.feed-main .post-card .post-action:last-child {
+    margin-left: auto;
+}
+
+.feed-main .post-card .post-action .views-icon {
+    display: flex;
+    align-items: center;
+    color: var(--muted);
+}
+
+.feed-main .post-card .post-action .views-icon svg {
+    width: 22px;
+    height: 22px;
+}
+
+.feed-main .post-card .post-action .likes-open,
+.feed-main .post-card .post-action .comments-count {
+    cursor: pointer;
+}
+
+.feed-main .post-card .post-action .likes-open:hover,
+.feed-main .post-card .post-action .comments-count:hover {
+    text-decoration: underline;
+    text-underline-offset: 2px;
 }
 
 .feed-main .post-card .post-actions button {

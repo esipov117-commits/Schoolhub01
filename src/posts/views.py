@@ -16,7 +16,7 @@ from django.views.decorators.http import require_POST
 from stories.models import Story, StoryView
 from users.models import downscale_image
 
-from .models import Comment, Like, Post, PostImage, PostView
+from .models import Comment, Like, Post, PostImage, PostShare, PostView
 
 VIDEO_EXTENSIONS = {'.mp4', '.mov', '.webm', '.avi', '.mkv'}
 POSTS_PER_PAGE = 10
@@ -46,6 +46,9 @@ def _post_queryset():
     views_sq = (
         PostView.objects.filter(post=OuterRef('pk')).order_by().values('post').annotate(c=Count('pk')).values('c')
     )
+    shares_sq = (
+        PostShare.objects.filter(post=OuterRef('pk')).order_by().values('post').annotate(c=Count('pk')).values('c')
+    )
     return (
         Post.objects.select_related('author__profile')
         .prefetch_related(
@@ -66,6 +69,7 @@ def _post_queryset():
             comments_total=Coalesce(Subquery(comments_sq, output_field=IntegerField()), 0),
             roots_total=Coalesce(Subquery(roots_sq, output_field=IntegerField()), 0),
             views_count=Coalesce(Subquery(views_sq, output_field=IntegerField()), 0),
+            shares_count=Coalesce(Subquery(shares_sq, output_field=IntegerField()), 0),
         )
         .order_by('-created_at')
     )
@@ -220,6 +224,18 @@ def toggle_like(request, post_id):
             'likes_count': post.likes.count(),
         }
     )
+
+
+@login_required
+@require_POST
+def share_post(request, post_id):
+    """Фиксирует факт «поделился» постом (один на пользователя).
+
+    Поделиться своей историей тоже можно — это считается как обычный шаринг.
+    """
+    post = get_object_or_404(Post, id=post_id)
+    PostShare.objects.get_or_create(user=request.user, post=post)
+    return JsonResponse({'shares_count': post.shares.count()})
 
 
 @login_required

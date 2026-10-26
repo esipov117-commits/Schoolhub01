@@ -19,16 +19,7 @@
     }
 
     function viewsLabel(n, el) {
-        var one = el.getAttribute('data-view-one') || 'просмотр';
-        var few = el.getAttribute('data-view-few') || 'просмотра';
-        var many = el.getAttribute('data-view-many') || 'просмотров';
-        var word;
-        var n10 = n % 10;
-        var n100 = n % 100;
-        if (n10 === 1 && n100 !== 11) word = one;
-        else if (n10 >= 2 && n10 <= 4 && (n100 < 12 || n100 > 14)) word = few;
-        else word = many;
-        return n + ' ' + word;
+        return String(n);
     }
 
     function updateViewsCount(postId) {

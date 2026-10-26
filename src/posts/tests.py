@@ -12,7 +12,7 @@ from django.urls import reverse
 
 from users.models import Profile
 
-from .models import Comment, Like, Post, PostImage, PostView
+from .models import Comment, Like, Post, PostImage, PostShare, PostView
 from .views import _post_queryset
 
 User = get_user_model()
@@ -309,7 +309,8 @@ class PostViewTests(TestCase):
             'posts/_post_card.html',
             {'post': post, 'user': self.author, 'liked_post_ids': set()},
         )
-        self.assertIn('1 просмотр', html)
+        self.assertIn('data-views-count="1"', html)
+        self.assertNotIn('1 просмотр', html)
 
     def test_bad_post_ids_rejected(self):
         resp = self.client.post(
@@ -447,3 +448,43 @@ class ModeratorCommentDeleteTests(TestCase):
             {'post': post, 'user': self.stranger, 'liked_post_ids': set()},
         )
         self.assertEqual(html.count('delete-comment-btn'), 0)
+
+
+class PostShareTests(TestCase):
+    def setUp(self):
+        self.author = User.objects.create_user('author', password='pass12345')
+        self.user = User.objects.create_user('user', password='pass12345')
+        self.post = Post.objects.create(author=self.author, content='hello')
+        self.client = Client()
+        self.client.force_login(self.user)
+
+    def test_share_post_counts_once_per_user(self):
+        url = reverse('share_post', args=[self.post.id])
+        resp = self.client.post(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()['shares_count'], 1)
+        self.assertEqual(PostShare.objects.filter(post=self.post).count(), 1)
+
+        resp = self.client.post(url)
+        self.assertEqual(resp.json()['shares_count'], 1)
+        self.assertEqual(PostShare.objects.filter(post=self.post).count(), 1)
+
+    def test_share_requires_login(self):
+        resp = Client().post(reverse('share_post', args=[self.post.id]))
+        self.assertEqual(resp.status_code, 302)
+
+    def test_queryset_annotates_shares_count(self):
+        PostShare.objects.create(user=self.user, post=self.post)
+        post = _post_queryset().get(pk=self.post.pk)
+        self.assertEqual(post.shares_count, 1)
+
+    def test_card_renders_counts_and_eye_icon(self):
+        post = _post_queryset().get(pk=self.post.pk)
+        html = render_to_string(
+            'posts/_post_card.html',
+            {'post': post, 'user': self.author, 'liked_post_ids': set()},
+        )
+        for cls in ('post-action', 'likes-count', 'comments-count', 'views-count', 'views-icon'):
+            self.assertIn(cls, html)
+        self.assertNotIn('post-meta-line', html)
+        self.assertNotIn('shares-count', html)

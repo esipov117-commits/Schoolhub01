@@ -122,17 +122,17 @@
 
     function likesText(n) {
         n = n || 0;
-        return n + ' ' + pluralRu(n, 'отметка', 'отметки', 'отметок') + ' «Нравится»';
+        return n ;
     }
 
     function commentsText(n) {
         n = n || 0;
-        return n + ' ' + pluralRu(n, 'комментарий', 'комментария', 'комментариев');
+        return n ;
     }
 
     function viewsText(n) {
         n = n || 0;
-        return n + ' ' + pluralRu(n, 'просмотр', 'просмотра', 'просмотров');
+        return n ;
     }
 
     function updateCounts(card, likesN, commentsN) {
@@ -397,24 +397,34 @@
         return location.origin + location.pathname + '#post-' + id;
     }
 
+    function recordShare(id) {
+        var url = CFG.urls.sharePost;
+        if (!url) return;
+        postForm(url.replace('/0/', '/' + id + '/'), new FormData()).catch(function () {});
+    }
+
     document.addEventListener('click', function (e) {
         var btn = e.target.closest && e.target.closest('.share-post-btn');
         if (!btn) return;
-        var url = postUrl(btn.getAttribute('data-post-id'));
+        var id = btn.getAttribute('data-post-id');
+        var url = postUrl(id);
         if (navigator.share) {
             navigator.share({ title: 'SchoolHub', text: 'Публикация в SchoolHub', url: url })
+                .then(function () { recordShare(id); })
                 .catch(function (err) {
-                    if (!err || err.name !== 'AbortError') copyShareUrl(url);
+                    if (!err || err.name !== 'AbortError') { copyShareUrl(url); recordShare(id); }
                 });
             return;
         }
         copyShareUrl(url);
+        recordShare(id);
     });
 
     document.addEventListener('click', function (e) {
         var btn = e.target.closest && e.target.closest('.copy-post-link');
         if (!btn) return;
         copyShareUrl(postUrl(btn.getAttribute('data-post-id')));
+        recordShare(btn.getAttribute('data-post-id'));
     });
 
     /* Меню «⋯» как в Threads: закрываем при клике вне пункта */
@@ -1530,7 +1540,7 @@
                     summary.textContent = (d && d.error) || 'Не удалось загрузить';
                     return;
                 }
-                summary.textContent = likesText(d.likes_count);
+                summary.textContent = 'Лайков: ' + d.likes_count;
                 list.innerHTML = '';
                 if (!d.likers || !d.likers.length) {
                     list.innerHTML = '<div class="story-stats-empty">Пока нет отметок «Нравится»</div>';
@@ -2016,20 +2026,26 @@
             '    </div>' +
                    caption +
                    media +
-            '    <div class="post-actions">' +
-            '      <button type="button" class="like-btn" data-post-id="' + d.id + '" data-liked="false" aria-label="Нравится">' +
-            '        <span class="like-icon">' + LIKE_OUTLINE + '</span></button>' +
-            '      <button type="button" class="toggle-comments-btn" data-post-id="' + d.id + '" aria-label="Комментарии">' + BUBBLE_SVG + '</button>' +
-            '      <button type="button" class="share-post-btn" data-post-id="' + d.id + '" aria-label="Поделиться">' + PLANE_SVG + '</button>' +
-            '    </div>' +
-            '    <div class="post-meta-line">' +
-            '      <span class="likes-count likes-open" data-post-id="' + d.id + '" role="button" tabindex="0" title="Кто лайкнул">' + likesText(0) + '</span>' +
-            '      <span class="meta-sep">·</span>' +
-            '      <span class="comments-count toggle-comments-btn" data-post-id="' + d.id + '">' + commentsText(0) + '</span>' +
-            '      <span class="meta-sep">·</span>' +
-            '      <span class="views-count">' + viewsText(0) + '</span>' +
-            '    </div>' +
-            '    <div class="comments-block" id="comments-' + d.id + '" style="display:none;">' +
+             '    <div class="post-actions">' +
+             '      <div class="post-action">' +
+             '        <button type="button" class="like-btn" data-post-id="' + d.id + '" data-liked="false" aria-label="Нравится">' +
+             '          <span class="like-icon">' + LIKE_OUTLINE + '</span></button>' +
+             '        <span class="likes-count likes-open" data-post-id="' + d.id + '" role="button" tabindex="0" title="Кто лайкнул">' + likesText(d.likes_count || 0) + '</span>' +
+             '      </div>' +
+             '      <div class="post-action">' +
+             '        <button type="button" class="toggle-comments-btn" data-post-id="' + d.id + '" aria-label="Комментарии">' + BUBBLE_SVG + '</button>' +
+             '        <span class="comments-count toggle-comments-btn" data-post-id="' + d.id + '">' + commentsText(d.comments_total || 0) + '</span>' +
+             '      </div>' +
+             '      <div class="post-action">' +
+             '        <button type="button" class="share-post-btn" data-post-id="' + d.id + '" aria-label="Поделиться">' + PLANE_SVG + '</button>' +
+             '      </div>' +
+             '      <div class="post-action">' +
+             '        <span class="views-icon" aria-label="Просмотры"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></span>' +
+             '        <span class="views-count" data-views-count="' + (d.views_count || 0) + '"' +
+             '              data-view-one="просмотр" data-view-few="просмотра" data-view-many="просмотров">' + viewsText(d.views_count || 0) + '</span>' +
+             '      </div>' +
+             '    </div>' +
+             '    <div class="comments-block" id="comments-' + d.id + '" style="display:none;">' +
             '      <div class="comments-list"><div class="comments-empty">Пока нет комментариев — напишите первый.</div></div>' +
             '      <form class="add-comment-form" data-post-id="' + d.id + '">' +
             '        <span class="comment-me">' +
