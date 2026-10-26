@@ -2,22 +2,23 @@ import json
 from urllib.parse import quote, unquote
 
 from django.conf import settings
-from django.core.paginator import Paginator
-from django.http import JsonResponse
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib import messages
-from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login as auth_login
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.models import User
+from django.core.paginator import Paginator
+from django.db.models import Count, IntegerField, OuterRef, Subquery
+from django.db.models.functions import Coalesce
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import translation
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
-from django.db.models import Count, IntegerField, OuterRef, Subquery
-from django.db.models.functions import Coalesce
-from .forms import RegisterForm
-from .models import Profile, Follow, downscale_image
+
 from posts.models import Post, PostImage, PostView
+
+from .forms import RegisterForm
+from .models import Follow, Profile, downscale_image
 
 REMEMBERED_USER_COOKIE = 'sh_remembered_user'
 
@@ -26,7 +27,7 @@ PHOTOS_PER_PAGE = 24
 PEOPLE_PER_PAGE = 60
 
 
-HEADERS_SAFE = "~@._-"
+HEADERS_SAFE = '~@._-'
 
 
 def _encode_cookie_username(username):
@@ -100,7 +101,7 @@ def login_view(request):
 
 def _build_profile_context(request, target_user):
     profile_obj, _ = Profile.objects.get_or_create(user=target_user)
-    is_own_profile = (target_user == request.user)
+    is_own_profile = target_user == request.user
     return {
         'profile': profile_obj,
         'profile_user': target_user,
@@ -109,8 +110,7 @@ def _build_profile_context(request, target_user):
         'followers_count': target_user.followers.count(),
         'following_count': target_user.following.count(),
         'is_following': (
-            not is_own_profile
-            and Follow.objects.filter(follower=request.user, following=target_user).exists()
+            not is_own_profile and Follow.objects.filter(follower=request.user, following=target_user).exists()
         ),
     }
 
@@ -150,27 +150,20 @@ def home(request):
     Profile.objects.get_or_create(user=request.user)
 
     from posts.views import feed
+
     return feed(request)
 
 
 @login_required
 def profile(request, username=None):
-    if username:
-        target_user = get_object_or_404(User, username=username)
-    else:
-        target_user = request.user
+    target_user = get_object_or_404(User, username=username) if username else request.user
 
     context = _build_profile_context(request, target_user)
     views_sq = (
-        PostView.objects.filter(post=OuterRef('pk'))
-        .order_by()
-        .values('post')
-        .annotate(c=Count('pk'))
-        .values('c')
+        PostView.objects.filter(post=OuterRef('pk')).order_by().values('post').annotate(c=Count('pk')).values('c')
     )
     posts_qs = (
-        Post.objects
-        .filter(author=target_user)
+        Post.objects.filter(author=target_user)
         .prefetch_related('images')
         .annotate(views_count=Coalesce(Subquery(views_sq, output_field=IntegerField()), 0))
         .order_by('-created_at')
@@ -203,8 +196,7 @@ def profile_photos(request, username):
     context = _build_profile_context(request, target_user)
 
     photos_qs = (
-        PostImage.objects
-        .filter(post__author=target_user)
+        PostImage.objects.filter(post__author=target_user)
         .select_related('post')
         .order_by('-post__created_at', 'order', 'id')
     )
@@ -219,7 +211,7 @@ def profile_photos(request, username):
 
 @login_required
 def edit_profile(request):
-    profile_obj, created = Profile.objects.get_or_create(user=request.user)
+    profile_obj, _created = Profile.objects.get_or_create(user=request.user)
 
     if request.method == 'POST':
         profile_obj.display_name = request.POST.get('display_name') or profile_obj.display_name
@@ -250,30 +242,34 @@ def edit_profile(request):
 def settings_page(request):
     profile_obj, _ = Profile.objects.get_or_create(user=request.user)
 
-    if request.method == "POST":
+    if request.method == 'POST':
         changed = []
 
-        dark_mode = request.POST.get("dark_mode") == "on"
+        dark_mode = request.POST.get('dark_mode') == 'on'
         if dark_mode != profile_obj.dark_mode:
             profile_obj.dark_mode = dark_mode
-            changed.append("dark_mode")
+            changed.append('dark_mode')
 
-        language = request.POST.get("language")
+        language = request.POST.get('language')
         if language and language != profile_obj.language and language in dict(settings.LANGUAGES):
             profile_obj.language = language
-            changed.append("language")
+            changed.append('language')
 
         if changed:
             profile_obj.save(update_fields=changed)
-        if "language" in changed:
+        if 'language' in changed:
             translation.activate(profile_obj.language)
 
-        return redirect("settings")
+        return redirect('settings')
 
-    return render(request, "users/settings.html", {
-        "profile": profile_obj,
-        "languages": settings.LANGUAGES,
-    })
+    return render(
+        request,
+        'users/settings.html',
+        {
+            'profile': profile_obj,
+            'languages': settings.LANGUAGES,
+        },
+    )
 
 
 @login_required
@@ -285,20 +281,20 @@ def set_language(request):
     """
     profile_obj, _ = Profile.objects.get_or_create(user=request.user)
     try:
-        payload = json.loads(request.body.decode("utf-8") or "{}")
+        payload = json.loads(request.body.decode('utf-8') or '{}')
     except (ValueError, UnicodeDecodeError):
         payload = {}
 
-    language = payload.get("language")
+    language = payload.get('language')
     if language not in dict(settings.LANGUAGES):
-        return JsonResponse({"ok": False, "error": "unsupported"}, status=400)
+        return JsonResponse({'ok': False, 'error': 'unsupported'}, status=400)
 
     if language != profile_obj.language:
         profile_obj.language = language
-        profile_obj.save(update_fields=["language"])
+        profile_obj.save(update_fields=['language'])
 
     translation.activate(language)
-    return JsonResponse({"ok": True, "language": language})
+    return JsonResponse({'ok': True, 'language': language})
 
 
 @login_required
@@ -324,8 +320,7 @@ def search_users(request):
     query = request.GET.get('q', '').strip()
     if query:
         results = (
-            User.objects
-            .filter(username__icontains=query)
+            User.objects.filter(username__icontains=query)
             .exclude(id=request.user.id)
             .select_related('profile')
             .order_by('username')[:PEOPLE_PER_PAGE]
@@ -333,57 +328,61 @@ def search_users(request):
     else:
         results = User.objects.none()
 
-    following_ids = set(
-        Follow.objects.filter(follower=request.user).values_list('following_id', flat=True)
-    )
+    following_ids = set(Follow.objects.filter(follower=request.user).values_list('following_id', flat=True))
 
-    return render(request, 'users/search.html', {
-        'query': query,
-        'results': results,
-        'following_ids': following_ids,
-    })
+    return render(
+        request,
+        'users/search.html',
+        {
+            'query': query,
+            'results': results,
+            'following_ids': following_ids,
+        },
+    )
 
 
 @login_required
 def followers_list(request, username):
     target_user = get_object_or_404(User, username=username)
     followers = (
-        User.objects
-        .filter(following__following=target_user)
+        User.objects.filter(following__following=target_user)
         .select_related('profile')
         .order_by('username')[:PEOPLE_PER_PAGE]
     )
-    following_ids = set(
-        Follow.objects.filter(follower=request.user).values_list('following_id', flat=True)
-    )
+    following_ids = set(Follow.objects.filter(follower=request.user).values_list('following_id', flat=True))
 
-    return render(request, 'users/follow_list.html', {
-        'target_user': target_user,
-        'people': followers,
-        'following_ids': following_ids,
-        'list_title': _('Подписчики'),
-    })
+    return render(
+        request,
+        'users/follow_list.html',
+        {
+            'target_user': target_user,
+            'people': followers,
+            'following_ids': following_ids,
+            'list_title': _('Подписчики'),
+        },
+    )
 
 
 @login_required
 def following_list(request, username):
     target_user = get_object_or_404(User, username=username)
     following = (
-        User.objects
-        .filter(followers__follower=target_user)
+        User.objects.filter(followers__follower=target_user)
         .select_related('profile')
         .order_by('username')[:PEOPLE_PER_PAGE]
     )
-    following_ids = set(
-        Follow.objects.filter(follower=request.user).values_list('following_id', flat=True)
-    )
+    following_ids = set(Follow.objects.filter(follower=request.user).values_list('following_id', flat=True))
 
-    return render(request, 'users/follow_list.html', {
-        'target_user': target_user,
-        'people': following,
-        'following_ids': following_ids,
-        'list_title': _('Подписки'),
-    })
+    return render(
+        request,
+        'users/follow_list.html',
+        {
+            'target_user': target_user,
+            'people': following,
+            'following_ids': following_ids,
+            'list_title': _('Подписки'),
+        },
+    )
 
 
 @login_required
@@ -396,9 +395,13 @@ def delete_user(request, user_id):
     if request.method == 'POST':
         target.delete()
         return redirect('home')
-    return render(request, 'users/confirm_delete_user.html', {
-        'target_user': target,
-    })
+    return render(
+        request,
+        'users/confirm_delete_user.html',
+        {
+            'target_user': target,
+        },
+    )
 
 
 @login_required

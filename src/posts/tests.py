@@ -4,15 +4,16 @@ from datetime import timedelta
 from io import BytesIO
 
 from django.conf import settings
-from django.test import TestCase, Client, override_settings
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.template.loader import render_to_string
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
-from .models import Post, PostImage, Comment, PostView, Like
-from .views import _post_queryset
 from users.models import Profile
+
+from .models import Comment, Like, Post, PostImage, PostView
+from .views import _post_queryset
 
 User = get_user_model()
 
@@ -38,7 +39,9 @@ class CommentReplyTests(TestCase):
 
     def test_reply_to_root(self):
         root = Comment.objects.create(
-            post=self.post, author=self.author, text='root',
+            post=self.post,
+            author=self.author,
+            text='root',
         )
         resp = self.client.post(
             reverse('add_comment', args=[self.post.id]),
@@ -54,10 +57,15 @@ class CommentReplyTests(TestCase):
 
     def test_reply_to_reply_flattens_to_root(self):
         root = Comment.objects.create(
-            post=self.post, author=self.author, text='root',
+            post=self.post,
+            author=self.author,
+            text='root',
         )
         reply = Comment.objects.create(
-            post=self.post, author=self.user, text='reply', parent=root,
+            post=self.post,
+            author=self.user,
+            text='reply',
+            parent=root,
         )
         resp = self.client.post(
             reverse('add_comment', args=[self.post.id]),
@@ -70,16 +78,16 @@ class CommentReplyTests(TestCase):
     def test_parent_from_other_post_rejected(self):
         other = Post.objects.create(author=self.author, content='other')
         other_comment = Comment.objects.create(
-            post=other, author=self.author, text='other',
+            post=other,
+            author=self.author,
+            text='other',
         )
         resp = self.client.post(
             reverse('add_comment', args=[self.post.id]),
             {'text': 'bad', 'parent_id': other_comment.id},
         )
         self.assertEqual(resp.status_code, 400)
-        self.assertFalse(
-            Comment.objects.filter(post=self.post, text='bad').exists()
-        )
+        self.assertFalse(Comment.objects.filter(post=self.post, text='bad').exists())
 
     def test_carousel_media_not_huge_vertically(self):
         css = (settings.BASE_DIR / 'static' / 'css' / 'feed.css').read_text(encoding='utf-8')
@@ -89,20 +97,30 @@ class CommentReplyTests(TestCase):
 
     def test_comments_total_includes_replies(self):
         root = Comment.objects.create(
-            post=self.post, author=self.author, text='root',
+            post=self.post,
+            author=self.author,
+            text='root',
         )
         Comment.objects.create(
-            post=self.post, author=self.user, text='reply', parent=root,
+            post=self.post,
+            author=self.user,
+            text='reply',
+            parent=root,
         )
         post = _post_queryset().get(pk=self.post.pk)
         self.assertEqual(post.comments_total, 2)
 
     def test_deleting_root_cascades_replies(self):
         root = Comment.objects.create(
-            post=self.post, author=self.author, text='root',
+            post=self.post,
+            author=self.author,
+            text='root',
         )
         Comment.objects.create(
-            post=self.post, author=self.user, text='reply', parent=root,
+            post=self.post,
+            author=self.user,
+            text='reply',
+            parent=root,
         )
         self.client.force_login(self.author)
         resp = self.client.post(reverse('delete_comment', args=[root.id]))
@@ -111,40 +129,41 @@ class CommentReplyTests(TestCase):
 
     def _make_image_file(self, name='test.png', size=(120, 80)):
         from PIL import Image
+
         buf = BytesIO()
         Image.new('RGB', size, 'red').save(buf, 'PNG')
         buf.seek(0)
         return SimpleUploadedFile(name, buf.read(), content_type='image/png')
 
     def test_postimage_dimensions_populated(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            with override_settings(MEDIA_ROOT=tmp):
-                pi = PostImage.objects.create(
-                    post=self.post, image=self._make_image_file(), media_type='image',
-                )
-                pi.refresh_from_db()
-                self.assertEqual(pi.width, 120)
-                self.assertEqual(pi.height, 80)
+        with tempfile.TemporaryDirectory() as tmp, override_settings(MEDIA_ROOT=tmp):
+            pi = PostImage.objects.create(
+                post=self.post,
+                image=self._make_image_file(),
+                media_type='image',
+            )
+            pi.refresh_from_db()
+            self.assertEqual(pi.width, 120)
+            self.assertEqual(pi.height, 80)
 
     def test_card_grid_media_square(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            with override_settings(MEDIA_ROOT=tmp):
-                Post.objects.filter(pk=self.post.pk).update(layout='grid')
-                for i in range(2):
-                    PostImage.objects.create(
-                        post=self.post,
-                        image=self._make_image_file('g%d.png' % i),
-                        media_type='image',
-                        order=i,
-                    )
-                post = _post_queryset().get(pk=self.post.pk)
-                html = render_to_string(
-                    'posts/_post_card.html',
-                    {'post': post, 'user': self.author, 'liked_post_ids': set()},
+        with tempfile.TemporaryDirectory() as tmp, override_settings(MEDIA_ROOT=tmp):
+            Post.objects.filter(pk=self.post.pk).update(layout='grid')
+            for i in range(2):
+                PostImage.objects.create(
+                    post=self.post,
+                    image=self._make_image_file(f'g{i}.png'),
+                    media_type='image',
+                    order=i,
                 )
-                self.assertIn('grid-media', html)
-                self.assertNotIn('width="120"', html)
-                self.assertNotIn('height="80"', html)
+            post = _post_queryset().get(pk=self.post.pk)
+            html = render_to_string(
+                'posts/_post_card.html',
+                {'post': post, 'user': self.author, 'liked_post_ids': set()},
+            )
+            self.assertIn('grid-media', html)
+            self.assertNotIn('width="120"', html)
+            self.assertNotIn('height="80"', html)
 
     def test_card_renders_only_first_two_roots(self):
         for i in range(5):
@@ -194,20 +213,25 @@ class CommentReplyTests(TestCase):
 
     def test_card_template_renders_nested_replies(self):
         root = Comment.objects.create(
-            post=self.post, author=self.author, text='root',
+            post=self.post,
+            author=self.author,
+            text='root',
         )
         Comment.objects.create(
-            post=self.post, author=self.user, text='reply', parent=root,
+            post=self.post,
+            author=self.user,
+            text='reply',
+            parent=root,
         )
         post = _post_queryset().get(pk=self.post.pk)
         html = render_to_string(
             'posts/_post_card.html',
             {'post': post, 'user': self.author, 'liked_post_ids': set()},
         )
-        self.assertIn('id="replies-%d"' % root.id, html)
+        self.assertIn(f'id="replies-{root.id}"', html)
         self.assertIn('class="reply-btn"', html)
         self.assertIn('class="comment reply"', html)
-        self.assertIn('id="comment-%d"' % root.id, html)
+        self.assertIn(f'id="comment-{root.id}"', html)
 
 
 class PostViewTests(TestCase):
@@ -220,26 +244,38 @@ class PostViewTests(TestCase):
         self.client.force_login(self.user)
 
     def test_mark_post_viewed_creates_view(self):
-        resp = self.client.post(reverse('mark_post_viewed'), data=json.dumps({'post_ids': [self.post.id]}), content_type='application/json')
+        resp = self.client.post(
+            reverse('mark_post_viewed'), data=json.dumps({'post_ids': [self.post.id]}), content_type='application/json'
+        )
         self.assertEqual(resp.status_code, 200)
         self.assertTrue(resp.json()['ok'])
         self.assertTrue(PostView.objects.filter(post=self.post, user=self.user).exists())
 
     def test_duplicate_views_not_created(self):
         for _ in range(2):
-            self.client.post(reverse('mark_post_viewed'), data=json.dumps({'post_ids': [self.post.id]}), content_type='application/json')
+            self.client.post(
+                reverse('mark_post_viewed'),
+                data=json.dumps({'post_ids': [self.post.id]}),
+                content_type='application/json',
+            )
         self.assertEqual(PostView.objects.filter(post=self.post, user=self.user).count(), 1)
 
     def test_response_contains_created_ids(self):
-        resp = self.client.post(reverse('mark_post_viewed'), data=json.dumps({'post_ids': [self.post.id]}), content_type='application/json')
+        resp = self.client.post(
+            reverse('mark_post_viewed'), data=json.dumps({'post_ids': [self.post.id]}), content_type='application/json'
+        )
         self.assertEqual(resp.json()['created_ids'], [self.post.id])
 
-        resp = self.client.post(reverse('mark_post_viewed'), data=json.dumps({'post_ids': [self.post.id]}), content_type='application/json')
+        resp = self.client.post(
+            reverse('mark_post_viewed'), data=json.dumps({'post_ids': [self.post.id]}), content_type='application/json'
+        )
         self.assertEqual(resp.json()['created_ids'], [])
 
     def test_author_own_post_not_counted(self):
         self.client.force_login(self.author)
-        resp = self.client.post(reverse('mark_post_viewed'), data=json.dumps({'post_ids': [self.post.id]}), content_type='application/json')
+        resp = self.client.post(
+            reverse('mark_post_viewed'), data=json.dumps({'post_ids': [self.post.id]}), content_type='application/json'
+        )
         self.assertEqual(resp.json()['created_ids'], [])
         self.assertFalse(PostView.objects.filter(post=self.post, user=self.author).exists())
 
@@ -253,7 +289,9 @@ class PostViewTests(TestCase):
         self.assertEqual(PostView.objects.count(), 0)
 
     def test_nonexistent_post_ignored(self):
-        resp = self.client.post(reverse('mark_post_viewed'), data=json.dumps({'post_ids': [999999]}), content_type='application/json')
+        resp = self.client.post(
+            reverse('mark_post_viewed'), data=json.dumps({'post_ids': [999999]}), content_type='application/json'
+        )
         self.assertTrue(resp.json()['ok'])
         self.assertEqual(PostView.objects.count(), 0)
 
@@ -274,7 +312,9 @@ class PostViewTests(TestCase):
         self.assertIn('1 просмотр', html)
 
     def test_bad_post_ids_rejected(self):
-        resp = self.client.post(reverse('mark_post_viewed'), data=json.dumps({'post_ids': ['abc']}), content_type='application/json')
+        resp = self.client.post(
+            reverse('mark_post_viewed'), data=json.dumps({'post_ids': ['abc']}), content_type='application/json'
+        )
         self.assertEqual(resp.status_code, 400)
 
 
@@ -303,7 +343,7 @@ class PostLikersTests(TestCase):
         first.created_at = self.post.created_at - timedelta(days=1)
         first.save(update_fields=['created_at'])
         data = self.client.get(reverse('post_likes', args=[self.post.id])).json()
-        self.assertEqual([l['username'] for l in data['likers']], ['user', 'older'])
+        self.assertEqual([liker['username'] for liker in data['likers']], ['user', 'older'])
 
     def test_non_author_forbidden(self):
         self.client.force_login(self.user)
@@ -358,7 +398,9 @@ class ModeratorCommentDeleteTests(TestCase):
 
         self.post = Post.objects.create(author=self.owner, content='hello')
         self.comment = Comment.objects.create(
-            post=self.post, author=self.author, text='нежелательный',
+            post=self.post,
+            author=self.author,
+            text='нежелательный',
         )
         self.client = Client()
 

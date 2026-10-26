@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
 from django.db import IntegrityError
-from django.test import TestCase, Client
+from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
 
@@ -64,11 +64,7 @@ class StoryLikeTests(TestCase):
         )
         resp = self.client.get(reverse('api_active_stories'))
         self.assertEqual(resp.status_code, 200)
-        ids = {
-            item['id']
-            for group in resp.json()['stories']
-            for item in group['items']
-        }
+        ids = {item['id'] for group in resp.json()['stories'] for item in group['items']}
         self.assertNotIn(expired.id, ids)
         self.assertIn(self.story.id, ids)
 

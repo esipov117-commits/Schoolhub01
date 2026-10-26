@@ -1,3 +1,6 @@
+import contextlib
+from typing import ClassVar
+
 from django.contrib.auth.models import User
 from django.contrib.postgres.indexes import GinIndex
 from django.db import models, transaction
@@ -12,6 +15,9 @@ class UserKey(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='chat_key')
     key_encrypted = models.CharField(max_length=255)
 
+    def __str__(self):
+        return f'Ключ чата пользователя {self.user}'
+
     @classmethod
     def raw_key_for(cls, user):
         # Кэшируем расшифрованный ключ на объекте пользователя в рамках запроса,
@@ -25,10 +31,8 @@ class UserKey(models.Model):
             defaults={'key_encrypted': crypto.wrap_key(crypto.new_user_key())},
         )
         key = crypto.unwrap_key(obj.key_encrypted)
-        try:
+        with contextlib.suppress(AttributeError):
             user._chat_raw_key = key
-        except AttributeError:
-            pass
         return key
 
 
@@ -38,17 +42,16 @@ class Chat(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        indexes = [
-            models.Index(fields=['-updated_at']),
-        ]
+        indexes: ClassVar[list] = [models.Index(fields=['-updated_at'])]
+
+    def __str__(self):
+        return f'Чат {self.pk}'
 
     def interlocutor(self, user):
         return self.participants.exclude(pk=user.pk).first()
 
     def unread_count_for(self, user):
-        return self.messages.exclude(sender=user).exclude(
-            read_by__contains=[str(user.pk)]
-        ).count()
+        return self.messages.exclude(sender=user).exclude(read_by__contains=[str(user.pk)]).count()
 
 
 class Message(models.Model):
@@ -64,18 +67,18 @@ class Message(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        indexes = [
+        indexes: ClassVar[list] = [
             models.Index(fields=['chat', '-created_at']),
             GinIndex(fields=['read_by']),
             GinIndex(fields=['attachments']),
         ]
 
+    def __str__(self):
+        return f'Сообщение {self.pk} от {self.sender}'
+
     @classmethod
     def create_encrypted(cls, chat, sender, text, attachments_data=None):
-        bodies = {
-            str(u.pk): crypto.encrypt(UserKey.raw_key_for(u), text)
-            for u in chat.participants.all()
-        }
+        bodies = {str(u.pk): crypto.encrypt(UserKey.raw_key_for(u), text) for u in chat.participants.all()}
         message = cls.objects.create(
             chat=chat,
             sender=sender,
@@ -125,4 +128,3 @@ class Message(models.Model):
             message.save(update_fields=['reactions'])
             self.reactions = reactions
         return reactions
-

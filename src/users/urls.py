@@ -1,21 +1,22 @@
 from django.urls import path
+
 from . import views
 
 urlpatterns = [
-    path("", views.home, name="home"),
-    path("register/", views.register, name="register"),
-    path("profile/edit/", views.edit_profile, name="edit_profile"),
-    path("profile/", views.profile, name="profile"),
-    path("profile/<str:username>/follow/", views.toggle_follow, name="toggle_follow"),
-    path("profile/<str:username>/warn/", views.toggle_warning, name="toggle_warning"),
-    path("profile/<str:username>/friends/", views.profile_friends, name="profile_friends"),
-    path("profile/<str:username>/photos/", views.profile_photos, name="profile_photos"),
-    path("profile/<str:username>/", views.profile, name="profile_user"),
-    path("toggle-theme/", views.toggle_theme, name="toggle_theme"),
-    path("set-language/", views.set_language, name="set_language"),
-    path("settings/", views.settings_page, name="settings"),
-    path("search/", views.search_users, name="search_users"),
-    path("profile/<str:username>/followers/", views.followers_list, name="followers_list"),
-    path("profile/<str:username>/following/", views.following_list, name="following_list"),
-    path("manage/delete-user/<int:user_id>/", views.delete_user, name="delete_user"),
+    path('', views.home, name='home'),
+    path('register/', views.register, name='register'),
+    path('profile/edit/', views.edit_profile, name='edit_profile'),
+    path('profile/', views.profile, name='profile'),
+    path('profile/<str:username>/follow/', views.toggle_follow, name='toggle_follow'),
+    path('profile/<str:username>/warn/', views.toggle_warning, name='toggle_warning'),
+    path('profile/<str:username>/friends/', views.profile_friends, name='profile_friends'),
+    path('profile/<str:username>/photos/', views.profile_photos, name='profile_photos'),
+    path('profile/<str:username>/', views.profile, name='profile_user'),
+    path('toggle-theme/', views.toggle_theme, name='toggle_theme'),
+    path('set-language/', views.set_language, name='set_language'),
+    path('settings/', views.settings_page, name='settings'),
+    path('search/', views.search_users, name='search_users'),
+    path('profile/<str:username>/followers/', views.followers_list, name='followers_list'),
+    path('profile/<str:username>/following/', views.following_list, name='following_list'),
+    path('manage/delete-user/<int:user_id>/', views.delete_user, name='delete_user'),
 ]

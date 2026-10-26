@@ -1,13 +1,16 @@
-from django.db import models
+from typing import ClassVar
+
 from django.conf import settings
+from django.db import models
 from django.utils import timezone
+
 from users.models import validate_image_size, validate_video_size
 
 
 class Story(models.Model):
     MEDIA_PHOTO = 'photo'
     MEDIA_VIDEO = 'video'
-    MEDIA_TYPES = [
+    MEDIA_TYPES: ClassVar[list[tuple[str, str]]] = [
         (MEDIA_PHOTO, 'Фото'),
         (MEDIA_VIDEO, 'Видео'),
     ]
@@ -25,11 +28,14 @@ class Story(models.Model):
     expires_at = models.DateTimeField()
 
     class Meta:
-        ordering = ['-created_at']
-        indexes = [
+        ordering: ClassVar[list[str]] = ['-created_at']
+        indexes: ClassVar[list] = [
             models.Index(fields=['-created_at']),
             models.Index(fields=['expires_at']),
         ]
+
+    def __str__(self):
+        return f'История {self.pk} от {self.author}'
 
     def save(self, *args, **kwargs):
         if not self.expires_at:
@@ -57,6 +63,9 @@ class StoryLike(models.Model):
     class Meta:
         unique_together = ('user', 'story')
 
+    def __str__(self):
+        return f'{self.user} лайкнул историю {self.story_id}'
+
 
 class StoryView(models.Model):
     story = models.ForeignKey(
@@ -72,12 +81,13 @@ class StoryView(models.Model):
     viewed_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        constraints = [
+        constraints: ClassVar[list] = [
             models.UniqueConstraint(
                 fields=['story', 'user'],
                 name='uniq_story_view_user',
             ),
         ]
-        indexes = [
-            models.Index(fields=['user', 'story']),
-        ]
+        indexes: ClassVar[list] = [models.Index(fields=['user', 'story'])]
+
+    def __str__(self):
+        return f'{self.user} просмотрел историю {self.story_id}'

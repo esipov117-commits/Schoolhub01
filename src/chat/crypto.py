@@ -24,7 +24,7 @@ def _master() -> Fernet:
         if raw:
             key = raw.encode()
         else:
-            digest = hashlib.sha256(("schoolhub-chat|" + settings.SECRET_KEY).encode()).digest()
+            digest = hashlib.sha256(('schoolhub-chat|' + settings.SECRET_KEY).encode()).digest()
             key = base64.urlsafe_b64encode(digest)
         _master_fernet = Fernet(key)
     return _master_fernet
@@ -39,15 +39,8 @@ def _attachments() -> Fernet:
     global _attachment_fernet
     if _attachment_fernet is None:
         raw = settings.CHAT_MASTER_KEY
-        if raw:
-            secret = raw.encode()
-        else:
-            secret = hashlib.sha256(
-                ("schoolhub-chat|" + settings.SECRET_KEY).encode()
-            ).digest()
-        key = base64.urlsafe_b64encode(
-            hashlib.sha256(b"schoolhub-chat-files|" + secret).digest()
-        )
+        secret = raw.encode() if raw else hashlib.sha256(('schoolhub-chat|' + settings.SECRET_KEY).encode()).digest()
+        key = base64.urlsafe_b64encode(hashlib.sha256(b'schoolhub-chat-files|' + secret).digest())
         _attachment_fernet = Fernet(key)
     return _attachment_fernet
 

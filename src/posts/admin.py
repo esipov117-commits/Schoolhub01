@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import Post, PostImage, Like, Comment
+
+from .models import Comment, Like, Post, PostImage
 
 
 class PostImageInline(admin.TabularInline):
@@ -12,8 +13,8 @@ class PostAdmin(admin.ModelAdmin):
     list_display = ('id', 'author', 'content', 'created_at', 'edited_at')
     list_filter = ('created_at', 'layout')
     search_fields = ('author__username', 'content')
-    inlines = [PostImageInline]
-    actions = ['delete_selected']
+    inlines = (PostImageInline,)
+    actions = ('delete_selected',)
 
 
 @admin.register(Comment)

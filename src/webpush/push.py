@@ -71,8 +71,7 @@ def _send_sync(subscriptions, payload, urgency='normal'):
         close_old_connections()
 
 
-def send_to_user(user, title, body, url='/', tag=None, icon=ICON_URL,
-                 urgency='normal'):
+def send_to_user(user, title, body, url='/', tag=None, icon=ICON_URL, urgency='normal'):
     """Отправляет push на все устройства пользователя (не блокирует запрос)."""
     if not getattr(settings, 'WEBPUSH_ENABLED', False):
         return 0

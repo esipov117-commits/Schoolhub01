@@ -1,5 +1,5 @@
 from django.contrib.auth import get_user_model
-from django.test import TestCase, Client
+from django.test import Client, TestCase
 from django.urls import reverse
 
 from .models import Chat, Message
@@ -34,12 +34,14 @@ class ChatProfileLinkTests(TestCase):
         resp = self.client.get(reverse('chat_room', args=[self.chat.pk]))
         html = resp.content.decode()
         # В шапке не должно быть <a> внутри <a>.
-        head = html[html.index('<div class="chat-head"'):html.index('<div class="chat-messages"')]
+        head = html[html.index('<div class="chat-head"') : html.index('<div class="chat-messages"')]
         self.assertEqual(head.count('<a '), 2)  # кнопка назад + ссылка на профиль
+
 
 class ChatAttachmentSecurityTests(TestCase):
     def setUp(self):
         import tempfile
+
         from django.test import override_settings
 
         self.media_tmp = tempfile.TemporaryDirectory()
@@ -90,9 +92,7 @@ class ChatAttachmentSecurityTests(TestCase):
 
         secret = b'secret-image-bytes-for-encryption-test'
         attachment = self.upload(content=secret)
-        encrypted_path = (
-            Path(self.private_tmp.name) / str(self.chat.pk) / (attachment['file_id'] + '.enc')
-        )
+        encrypted_path = Path(self.private_tmp.name) / str(self.chat.pk) / (attachment['file_id'] + '.enc')
         self.assertTrue(encrypted_path.is_file())
         self.assertNotIn(secret, encrypted_path.read_bytes())
         self.assertEqual(
@@ -134,9 +134,7 @@ class ChatAttachmentSecurityTests(TestCase):
 
     def test_file_id_cannot_be_reused_in_another_chat(self):
         attachment = self.upload()
-        response = self.client.get(
-            reverse('chat_attachment', args=[self.other_chat.pk, attachment['file_id']])
-        )
+        response = self.client.get(reverse('chat_attachment', args=[self.other_chat.pk, attachment['file_id']]))
         self.assertEqual(response.status_code, 404)
 
     def test_legacy_chat_media_path_is_blocked(self):
@@ -174,6 +172,7 @@ class ChatAttachmentSecurityTests(TestCase):
 class ChatFileMigrationTests(TestCase):
     def setUp(self):
         import tempfile
+
         from django.test import override_settings
 
         self.media_tmp = tempfile.TemporaryDirectory()
@@ -195,6 +194,7 @@ class ChatFileMigrationTests(TestCase):
     def test_command_encrypts_legacy_file_and_updates_message(self):
         import json
         from pathlib import Path
+
         from django.core.management import call_command
 
         file_id = 'a' * 32
@@ -205,14 +205,16 @@ class ChatFileMigrationTests(TestCase):
             chat=self.chat,
             sender=self.user,
             bodies={},
-            attachments=[{
-                'file_id': file_id,
-                'url': f'/media/chat_uploads/{self.chat.pk}/{file_id}.png',
-                'mime_type': 'image/png',
-                'original_name': 'old.png',
-                'size': 13,
-                'is_image': True,
-            }],
+            attachments=[
+                {
+                    'file_id': file_id,
+                    'url': f'/media/chat_uploads/{self.chat.pk}/{file_id}.png',
+                    'mime_type': 'image/png',
+                    'original_name': 'old.png',
+                    'size': 13,
+                    'is_image': True,
+                }
+            ],
         )
 
         call_command('encrypt_chat_files', verbosity=0)

@@ -1,10 +1,13 @@
-from django.db import models
+from typing import ClassVar
+
 from django.contrib.auth.models import User
+from django.db import models
+
 from users.models import validate_image_size, validate_video_size
 
 
 class Post(models.Model):
-    LAYOUT_CHOICES = [
+    LAYOUT_CHOICES: ClassVar[list[tuple[str, str]]] = [
         ('carousel', 'Carousel'),
         ('grid', 'Grid'),
     ]
@@ -16,17 +19,15 @@ class Post(models.Model):
     edited_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        ordering = ['-created_at']
-        indexes = [
-            models.Index(fields=['-created_at']),
-        ]
+        ordering: ClassVar[list[str]] = ['-created_at']
+        indexes: ClassVar[list] = [models.Index(fields=['-created_at'])]
 
     def __str__(self):
-        return f"{self.author.username}: {self.content[:50]}..."
+        return f'{self.author.username}: {self.content[:50]}...'
 
 
 class PostImage(models.Model):
-    MEDIA_TYPE_CHOICES = [
+    MEDIA_TYPE_CHOICES: ClassVar[list[tuple[str, str]]] = [
         ('image', 'Image'),
         ('video', 'Video'),
     ]
@@ -47,10 +48,10 @@ class PostImage(models.Model):
     height = models.PositiveIntegerField(null=True, blank=True)
 
     class Meta:
-        ordering = ['order', 'id']
+        ordering: ClassVar[list[str]] = ['order', 'id']
 
     def __str__(self):
-        return f"{self.media_type} for post {self.post_id}"
+        return f'{self.media_type} for post {self.post_id}'
 
     @property
     def url(self):
@@ -67,6 +68,9 @@ class Like(models.Model):
     class Meta:
         unique_together = ('user', 'post')
 
+    def __str__(self):
+        return f'{self.user} лайкнул пост {self.post_id}'
+
 
 class PostView(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='post_views')
@@ -74,18 +78,16 @@ class PostView(models.Model):
     viewed_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        constraints = [
+        constraints: ClassVar[list] = [
             models.UniqueConstraint(
                 fields=['post', 'user'],
                 name='uniq_post_view_user',
             ),
         ]
-        indexes = [
-            models.Index(fields=['post']),
-        ]
+        indexes: ClassVar[list] = [models.Index(fields=['post'])]
 
     def __str__(self):
-        return f"{self.user.username} viewed post {self.post_id}"
+        return f'{self.user.username} viewed post {self.post_id}'
 
 
 class Comment(models.Model):
@@ -102,11 +104,14 @@ class Comment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ['created_at']
-        indexes = [
+        ordering: ClassVar[list[str]] = ['created_at']
+        indexes: ClassVar[list] = [
             models.Index(fields=['post', 'created_at']),
             models.Index(fields=['post', 'parent', 'created_at']),
         ]
+
+    def __str__(self):
+        return f'{self.author.username} on post {self.post_id}: {self.text[:30]}'
 
     @property
     def is_reply(self):
@@ -115,6 +120,3 @@ class Comment(models.Model):
     @property
     def root(self):
         return self.parent if self.parent_id else self
-
-    def __str__(self):
-        return f"{self.author.username} on post {self.post_id}: {self.text[:30]}"

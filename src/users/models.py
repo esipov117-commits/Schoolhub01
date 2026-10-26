@@ -1,10 +1,11 @@
+import contextlib
 import os
 from io import BytesIO
 
-from django.db import models
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
+from django.db import models
 from django.utils.translation import gettext_lazy as _
 from PIL import Image, ImageOps
 
@@ -16,10 +17,8 @@ def downscale_image(field_file, max_dim, quality=82):
         return None
 
     def reset():
-        try:
+        with contextlib.suppress(Exception):
             field_file.seek(0)
-        except Exception:
-            pass
 
     name = getattr(field_file, 'name', '') or ''
     ext = os.path.splitext(name)[1].lower()
@@ -70,17 +69,13 @@ def downscale_image(field_file, max_dim, quality=82):
 def validate_image_size(image):
     max_size_mb = 5
     if image.size > max_size_mb * 1024 * 1024:
-        raise ValidationError(
-            _("Размер файла не должен превышать %(n)sMB") % {"n": max_size_mb}
-        )
+        raise ValidationError(_('Размер файла не должен превышать %(n)sMB') % {'n': max_size_mb})
 
 
 def validate_video_size(video):
     max_size_mb = 3000
     if video.size > max_size_mb * 1024 * 1024:
-        raise ValidationError(
-            _("Размер видео не должен превышать %(n)s MB") % {"n": max_size_mb}
-        )
+        raise ValidationError(_('Размер видео не должен превышать %(n)s MB') % {'n': max_size_mb})
 
 
 class Profile(models.Model):
@@ -92,14 +87,14 @@ class Profile(models.Model):
     bio = models.TextField(max_length=500, blank=True)
 
     avatar = models.ImageField(
-        upload_to="avatars/",
+        upload_to='avatars/',
         blank=True,
         null=True,
         validators=[validate_image_size],
     )
 
     banner = models.ImageField(
-        upload_to="banners/",
+        upload_to='banners/',
         blank=True,
         null=True,
         validators=[validate_image_size],
@@ -118,10 +113,10 @@ class Profile(models.Model):
     language = models.CharField(
         max_length=10,
         choices=[
-            ("ru", _("Русский")),
-            ("en", "English"),
+            ('ru', _('Русский')),
+            ('en', 'English'),
         ],
-        default="ru",
+        default='ru',
     )
 
     def __str__(self):
@@ -139,19 +134,19 @@ class Follow(models.Model):
     follower = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name="following",
+        related_name='following',
     )
 
     following = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name="followers",
+        related_name='followers',
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ("follower", "following")
+        unique_together = ('follower', 'following')
 
     def __str__(self):
-        return f"{self.follower.username} → {self.following.username}"
+        return f'{self.follower.username} → {self.following.username}'

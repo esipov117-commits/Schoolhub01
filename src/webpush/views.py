@@ -3,8 +3,8 @@ import json
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.http import FileResponse, JsonResponse
-from django.views.decorators.http import require_POST
 from django.utils.translation import gettext as _
+from django.views.decorators.http import require_POST
 
 from .models import PushSubscription
 
@@ -19,6 +19,11 @@ def _json_body(request):
 def _no_cache(response):
     response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
     return response
+
+
+def _file_response(path, content_type):
+    """Отдаёт файл потоком; FileResponse сам закроет его после отправки."""
+    return FileResponse(open(path, 'rb'), content_type=content_type)
 
 
 @login_required
@@ -67,17 +72,17 @@ def unsubscribe(request):
 
 def service_worker(request):
     """Service worker отдаётся с корня, чтобы его scope был «/»."""
-    response = FileResponse(
-        open(settings.BASE_DIR / 'static' / 'js' / 'sw.js', 'rb'),
-        content_type='application/javascript; charset=utf-8',
+    response = _file_response(
+        settings.BASE_DIR / 'static' / 'js' / 'sw.js',
+        'application/javascript; charset=utf-8',
     )
     response['Service-Worker-Allowed'] = '/'
     return _no_cache(response)
 
 
 def manifest(request):
-    response = FileResponse(
-        open(settings.BASE_DIR / 'static' / 'manifest.webmanifest', 'rb'),
-        content_type='application/manifest+json',
+    response = _file_response(
+        settings.BASE_DIR / 'static' / 'manifest.webmanifest',
+        'application/manifest+json',
     )
     return _no_cache(response)

@@ -1,3 +1,4 @@
+import contextlib
 import json
 import mimetypes
 import os
@@ -10,12 +11,12 @@ from cryptography.fernet import InvalidToken
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.db.models import Count, Q, OuterRef, Subquery
+from django.db.models import Count, OuterRef, Q, Subquery
 from django.http import Http404, HttpResponse, JsonResponse
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
-from django.views.decorators.http import require_POST
 from django.utils.translation import gettext as _
+from django.views.decorators.http import require_POST
 
 from webpush.push import notify_new_message
 
@@ -47,14 +48,25 @@ INLINE_IMAGE_EXTENSIONS = IMAGE_EXTENSIONS - {'.heic', '.heif'}
 VIDEO_EXTENSIONS = {'.mp4', '.mov', '.webm', '.m4v', '.avi', '.mkv'}
 AUDIO_EXTENSIONS = {'.mp3', '.wav', '.ogg', '.oga', '.m4a', '.aac', '.flac', '.opus'}
 DOCUMENT_EXTENSIONS = {
-    '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
-    '.odt', '.ods', '.odp', '.rtf', '.txt', '.csv', '.md',
+    '.pdf',
+    '.doc',
+    '.docx',
+    '.xls',
+    '.xlsx',
+    '.ppt',
+    '.pptx',
+    '.odt',
+    '.ods',
+    '.odp',
+    '.rtf',
+    '.txt',
+    '.csv',
+    '.md',
 }
 ARCHIVE_EXTENSIONS = {'.zip', '.rar', '.7z', '.tar', '.gz', '.bz2'}
 
 ALLOWED_ATTACHMENT_EXTENSIONS = (
-    IMAGE_EXTENSIONS | VIDEO_EXTENSIONS | AUDIO_EXTENSIONS
-    | DOCUMENT_EXTENSIONS | ARCHIVE_EXTENSIONS
+    IMAGE_EXTENSIONS | VIDEO_EXTENSIONS | AUDIO_EXTENSIONS | DOCUMENT_EXTENSIONS | ARCHIVE_EXTENSIONS
 )
 
 
@@ -63,10 +75,7 @@ def _ordered_reactions(reactions):
     if not reactions:
         return []
     ordered = [(emoji, reactions[emoji]) for emoji in REACTION_EMOJIS if reactions.get(emoji)]
-    ordered += [
-        (emoji, users) for emoji, users in reactions.items()
-        if emoji not in REACTION_EMOJIS and users
-    ]
+    ordered += [(emoji, users) for emoji, users in reactions.items() if emoji not in REACTION_EMOJIS and users]
     return ordered
 
 
@@ -128,14 +137,16 @@ def _clean_attachments(raw, chat_id):
         except (TypeError, ValueError):
             size = 0
 
-        cleaned.append({
-            'file_id': file_id,
-            'url': _attachment_url(chat_id, file_id),
-            'mime_type': mime_type,
-            'original_name': original_name,
-            'size': max(size, 0),
-            'is_image': ext in INLINE_IMAGE_EXTENSIONS,
-        })
+        cleaned.append(
+            {
+                'file_id': file_id,
+                'url': _attachment_url(chat_id, file_id),
+                'mime_type': mime_type,
+                'original_name': original_name,
+                'size': max(size, 0),
+                'is_image': ext in INLINE_IMAGE_EXTENSIONS,
+            }
+        )
     return cleaned
 
 
@@ -150,19 +161,14 @@ def _dialogs_qs(request):
     """Все диалоги пользователя одним запросом: счётчик непрочитанных,
     id последнего сообщения и участники (с профилями) — без N+1."""
     return (
-        request.user.chats
-        .annotate(
+        request.user.chats.annotate(
             unread=Count(
                 'messages',
-                filter=~Q(messages__sender=request.user)
-                & ~Q(messages__read_by__contains=[str(request.user.pk)]),
+                filter=~Q(messages__sender=request.user) & ~Q(messages__read_by__contains=[str(request.user.pk)]),
                 distinct=True,
             ),
             last_message_id=Subquery(
-                Message.objects
-                .filter(chat=OuterRef('pk'))
-                .order_by('-created_at', '-pk')
-                .values('pk')[:1]
+                Message.objects.filter(chat=OuterRef('pk')).order_by('-created_at', '-pk').values('pk')[:1]
             ),
         )
         .prefetch_related('participants__profile')
@@ -179,10 +185,7 @@ def _bulk_dialogs(request, chats, include_last_text=True):
     last_ids = [c.last_message_id for c in chats if c.last_message_id]
     last_map = {}
     if last_ids:
-        last_map = {
-            m.pk: m
-            for m in Message.objects.filter(pk__in=last_ids)
-        }
+        last_map = {m.pk: m for m in Message.objects.filter(pk__in=last_ids)}
 
     dialogs = []
     for chat in chats:
@@ -194,14 +197,16 @@ def _bulk_dialogs(request, chats, include_last_text=True):
         last_text = msg.text_for(request.user) if (msg and include_last_text) else ''
         if not last_text and msg and msg.attachments:
             last_text = _('Вложение')
-        dialogs.append({
-            'chat': chat,
-            'other': other,
-            'last': msg,
-            'last_text': last_text,
-            'unread': chat.unread,
-            'avatar': _avatar_url(other) if other else None,
-        })
+        dialogs.append(
+            {
+                'chat': chat,
+                'other': other,
+                'last': msg,
+                'last_text': last_text,
+                'unread': chat.unread,
+                'avatar': _avatar_url(other) if other else None,
+            }
+        )
     return dialogs
 
 
@@ -222,42 +227,40 @@ def chat_room(request, chat_id):
     if request.method == 'POST':
         return send_message(request, chat_id)
 
-    messages = list(
-        chat.messages
-        .select_related('sender')
-        .order_by('-created_at', '-pk')[:CHAT_MESSAGE_WINDOW]
-    )
+    messages = list(chat.messages.select_related('sender').order_by('-created_at', '-pk')[:CHAT_MESSAGE_WINDOW])
     messages.reverse()
 
     # Помечаем прочитанными одним batch-запросом вместо N сохранений.
-    to_mark = [
-        m for m in messages
-        if m.sender_id != request.user.pk and str(request.user.pk) not in m.read_by
-    ]
+    to_mark = [m for m in messages if m.sender_id != request.user.pk and str(request.user.pk) not in m.read_by]
     for m in to_mark:
         m.read_by.append(str(request.user.pk))
     if to_mark:
         Message.objects.bulk_update(to_mark, ['read_by'], batch_size=100)
 
     # НОВОЕ: Передаем во фронтенд вложения и реакции для каждого сообщения
-    return render(request, 'chat/chat_room.html', {
-        'chat': chat,
-        'other': other,
-        'other_avatar': _avatar_url(other) if other else None,
-        'messages': [
-            {
-                'm': m, 
-                'text': m.text_for(request.user),
-                'attachments': m.attachments,  # Массив JSON отправляем в шаблон
-                'reactions': m.reactions,      # Словарь JSON отправляем в шаблон
-                'reactions_list': _ordered_reactions(m.reactions),
-            } for m in messages
-        ],
-        'last_id': messages[-1].pk if messages else 0,
-        'max_attachment_size': MAX_ATTACHMENT_SIZE,
-        'max_attachments': MAX_ATTACHMENTS,
-        'reaction_emojis': REACTION_EMOJIS,
-    })
+    return render(
+        request,
+        'chat/chat_room.html',
+        {
+            'chat': chat,
+            'other': other,
+            'other_avatar': _avatar_url(other) if other else None,
+            'messages': [
+                {
+                    'm': m,
+                    'text': m.text_for(request.user),
+                    'attachments': m.attachments,  # Массив JSON отправляем в шаблон
+                    'reactions': m.reactions,  # Словарь JSON отправляем в шаблон
+                    'reactions_list': _ordered_reactions(m.reactions),
+                }
+                for m in messages
+            ],
+            'last_id': messages[-1].pk if messages else 0,
+            'max_attachment_size': MAX_ATTACHMENT_SIZE,
+            'max_attachments': MAX_ATTACHMENTS,
+            'reaction_emojis': REACTION_EMOJIS,
+        },
+    )
 
 
 @login_required
@@ -265,7 +268,7 @@ def chat_room(request, chat_id):
 def send_message(request, chat_id):
     chat = _get_chat(request, chat_id)
     text = request.POST.get('body', '').strip()
-    
+
     # НОВОЕ: Читаем JSON-строку вложений от фронтенда (если она передана).
     # Проверяем, что URL ведут только в папку загрузок этого чата.
     attachments_data = _clean_attachments(
@@ -282,20 +285,20 @@ def send_message(request, chat_id):
     # Используем наш обновленный метод модели, передавая массив вложений
     message = Message.create_encrypted(chat, request.user, text, attachments_data=attachments_data)
 
-    try:
+    # Push — вспомогательная функция: сбой отправки не должен ломать чат.
+    with contextlib.suppress(Exception):
         notify_new_message(message, request.user)
-    except Exception:
-        # Push — вспомогательная функция: сбой отправки не должен ломать чат.
-        pass
 
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return JsonResponse({
-            'ok': True,
-            'id': message.pk,
-            'text': text,
-            'attachments': message.attachments,  # НОВОЕ: Возвращаем вложения в ответе
-            'created_at': message.created_at.strftime('%H:%M'),
-        })
+        return JsonResponse(
+            {
+                'ok': True,
+                'id': message.pk,
+                'text': text,
+                'attachments': message.attachments,  # НОВОЕ: Возвращаем вложения в ответе
+                'created_at': message.created_at.strftime('%H:%M'),
+            }
+        )
     return redirect('chat_room', chat_id=chat.pk)
 
 
@@ -345,21 +348,21 @@ def upload_attachment(request, chat_id):
                 tmp_path.unlink(missing_ok=True)
                 raise
             saved_paths.append(path)
-            mime_type, _ = _attachment_mime(original_name)
-            result.append({
-                'file_id': file_id,
-                'url': _attachment_url(chat.pk, file_id),
-                'mime_type': mime_type or 'application/octet-stream',
-                'original_name': original_name or 'file',
-                'size': uploaded.size,
-                'is_image': ext in INLINE_IMAGE_EXTENSIONS,
-            })
+            mime_type, _ext = _attachment_mime(original_name)
+            result.append(
+                {
+                    'file_id': file_id,
+                    'url': _attachment_url(chat.pk, file_id),
+                    'mime_type': mime_type or 'application/octet-stream',
+                    'original_name': original_name or 'file',
+                    'size': uploaded.size,
+                    'is_image': ext in INLINE_IMAGE_EXTENSIONS,
+                }
+            )
     except Exception:
         for path in saved_paths:
-            try:
+            with contextlib.suppress(Exception):
                 path.unlink(missing_ok=True)
-            except Exception:
-                pass
         return JsonResponse({'ok': False, 'error': _('Не удалось сохранить файл')}, status=500)
 
     return JsonResponse({'ok': True, 'attachments': result}, status=201)
@@ -367,11 +370,9 @@ def upload_attachment(request, chat_id):
 
 def _find_attachment(chat_id, file_id):
     """Метаданные вложения из сообщения этого чата."""
-    rows = (
-        Message.objects
-        .filter(chat_id=chat_id, attachments__contains=[{'file_id': file_id}])
-        .values_list('attachments', flat=True)[:20]
-    )
+    rows = Message.objects.filter(chat_id=chat_id, attachments__contains=[{'file_id': file_id}]).values_list(
+        'attachments', flat=True
+    )[:20]
     for attachments in rows:
         for item in attachments or []:
             if isinstance(item, dict) and str(item.get('file_id')) == file_id:
@@ -391,7 +392,7 @@ def chat_attachment(request, chat_id, file_id):
     try:
         data = crypto.decrypt_file(path.read_bytes())
     except (InvalidToken, ValueError, TypeError):
-        raise Http404
+        raise Http404 from None
 
     original_name = _attachment_name(meta)
     mime_type, ext = _attachment_mime(original_name)
@@ -403,9 +404,7 @@ def chat_attachment(request, chat_id, file_id):
         content_type=mime_type if is_image else 'application/octet-stream',
     )
     disposition = 'inline' if is_image else 'attachment'
-    response['Content-Disposition'] = (
-        f"{disposition}; filename*=UTF-8''{quote(original_name)}"
-    )
+    response['Content-Disposition'] = f"{disposition}; filename*=UTF-8''{quote(original_name)}"
     response['X-Content-Type-Options'] = 'nosniff'
     response['Cache-Control'] = 'private, no-store'
     return response
@@ -421,29 +420,24 @@ def poll_messages(request, chat_id):
         after = 0
 
     messages = chat.messages.filter(pk__gt=after).select_related('sender').order_by('created_at')
-    recent = (
-        chat.messages
-        .order_by('-created_at', '-pk')
-        .values('id', 'reactions')[:CHAT_REACTION_WINDOW]
+    recent = chat.messages.order_by('-created_at', '-pk').values('id', 'reactions')[:CHAT_REACTION_WINDOW]
+    return JsonResponse(
+        {
+            'messages': [
+                {
+                    'id': m.pk,
+                    'is_mine': m.sender_id == request.user.pk,
+                    'sender': m.sender.username,
+                    'text': m.text_for(request.user),
+                    'attachments': m.attachments,  # НОВОЕ: Передаем вложения при длинном опросе
+                    'reactions': m.reactions,  # НОВОЕ: Передаем реакции при длинном опросе
+                    'created_at': m.created_at.strftime('%H:%M'),
+                }
+                for m in messages
+            ],
+            'reactions': [{'id': item['id'], 'reactions': item['reactions']} for item in recent],
+        }
     )
-    return JsonResponse({
-        'messages': [
-            {
-                'id': m.pk,
-                'is_mine': m.sender_id == request.user.pk,
-                'sender': m.sender.username,
-                'text': m.text_for(request.user),
-                'attachments': m.attachments,  # НОВОЕ: Передаем вложения при длинном опросе
-                'reactions': m.reactions,      # НОВОЕ: Передаем реакции при длинном опросе
-                'created_at': m.created_at.strftime('%H:%M'),
-            }
-            for m in messages
-        ],
-        'reactions': [
-            {'id': item['id'], 'reactions': item['reactions']}
-            for item in recent
-        ],
-    })
 
 
 @login_required
@@ -452,7 +446,7 @@ def toggle_reaction_view(request, message_id):
     """НОВОЕ: Эндпоинт для переключения (добавления/удаления) реакции пользователя."""
     # Получаем сообщение, проверяя, что пользователь является участником чата
     message = get_object_or_404(Message, pk=message_id, chat__participants=request.user)
-    
+
     # Пытаемся получить эмодзи как из POST-формы, так и из сырого JSON
     emoji = request.POST.get('emoji', '').strip()
     if not emoji and request.content_type == 'application/json':
@@ -470,11 +464,13 @@ def toggle_reaction_view(request, message_id):
     # Вызываем атомарный метод изменения JSONB поля из модели Message
     message.toggle_reaction(request.user, emoji)
 
-    return JsonResponse({
-        'ok': True,
-        'id': message.pk,
-        'reactions': message.reactions  # Возвращаем обновленное состояние реакций
-    })
+    return JsonResponse(
+        {
+            'ok': True,
+            'id': message.pk,
+            'reactions': message.reactions,  # Возвращаем обновленное состояние реакций
+        }
+    )
 
 
 @login_required
@@ -488,8 +484,7 @@ def unread_api(request):
     chat_ids = [d['chat'].pk for d in relevant]
     last_unread_map = {}
     unread_messages = (
-        Message.objects
-        .filter(chat_id__in=chat_ids)
+        Message.objects.filter(chat_id__in=chat_ids)
         .exclude(sender=request.user)
         .exclude(read_by__contains=[str(request.user.pk)])
         .select_related('sender')
@@ -506,14 +501,16 @@ def unread_api(request):
         if not preview and last_unread and last_unread.attachments:
             preview = _('Вложение')
         total += d['unread']
-        items.append({
-            'chat_id': d['chat'].pk,
-            'sender': d['other'].username,
-            'avatar': d['avatar'],
-            'preview': preview,
-            'time': last_unread.created_at.strftime('%H:%M') if last_unread else '',
-            'count': d['unread'],
-        })
+        items.append(
+            {
+                'chat_id': d['chat'].pk,
+                'sender': d['other'].username,
+                'avatar': d['avatar'],
+                'preview': preview,
+                'time': last_unread.created_at.strftime('%H:%M') if last_unread else '',
+                'count': d['unread'],
+            }
+        )
     return JsonResponse({'count': total, 'items': items})
 
 
@@ -525,14 +522,8 @@ def start_chat(request):
     if other == request.user:
         return redirect('chat')
 
-    chat = (
-        Chat.objects
-        .filter(participants=request.user)
-        .filter(participants=other)
-        .first()
-    )
+    chat = Chat.objects.filter(participants=request.user).filter(participants=other).first()
     if not chat:
         chat = Chat.objects.create()
         chat.participants.set([request.user, other])
     return redirect('chat_room', chat_id=chat.pk)
-

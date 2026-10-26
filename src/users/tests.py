@@ -1,6 +1,5 @@
 import tempfile
 from io import BytesIO
-from pathlib import Path
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -16,6 +15,7 @@ from .views import REMEMBERED_USER_COOKIE, _encode_cookie_username, _get_remembe
 
 def _make_image_file(name='wall.png'):
     from PIL import Image
+
     buf = BytesIO()
     Image.new('RGB', (80, 60), 'blue').save(buf, 'PNG')
     buf.seek(0)
@@ -80,15 +80,16 @@ class ProfileSectionPagesTests(TestCase):
     def test_wall_post_shows_images(self):
         post = Post.objects.create(author=self.user, content='с фото')
         media = PostImage.objects.create(
-            post=post, image=_make_image_file(), media_type='image',
+            post=post,
+            image=_make_image_file(),
+            media_type='image',
         )
-        with tempfile.TemporaryDirectory() as tmp:
-            with override_settings(MEDIA_ROOT=tmp):
-                self.client.force_login(self.user)
-                response = self.client.get(reverse('profile'))
-                self.assertEqual(response.status_code, 200)
-                self.assertContains(response, 'wall-post-media')
-                self.assertContains(response, media.image.url)
+        with tempfile.TemporaryDirectory() as tmp, override_settings(MEDIA_ROOT=tmp):
+            self.client.force_login(self.user)
+            response = self.client.get(reverse('profile'))
+            self.assertEqual(response.status_code, 200)
+            self.assertContains(response, 'wall-post-media')
+            self.assertContains(response, media.image.url)
 
     def test_profile_about_card_wraps_long_bio(self):
         self.user.profile.bio = 'ОченьДлинноеСловоБезПробелов ' * 20
@@ -127,7 +128,8 @@ class RegisterTests(TestCase):
 
     def test_register_rejects_duplicate_username(self):
         User.objects.create_user(
-            username='newuser', password='x',
+            username='newuser',
+            password='x',
         )
         response = self.client.post(reverse('register'), self.payload)
 
@@ -142,7 +144,8 @@ class RememberedUserCookieTests(TestCase):
 
     def setUp(self):
         self.user = User.objects.create_user(
-            username='Владислав', password='secret123',
+            username='Владислав',
+            password='secret123',
         )
 
     def test_encode_username_is_ascii(self):
@@ -151,15 +154,23 @@ class RememberedUserCookieTests(TestCase):
         self.assertTrue(all(ord(c) < 128 for c in value))
 
     def test_roundtrip_encoded_cookie(self):
-        request = type('Request', (), {
-            'COOKIES': {REMEMBERED_USER_COOKIE: _encode_cookie_username(self.user.username)},
-        })()
+        request = type(
+            'Request',
+            (),
+            {
+                'COOKIES': {REMEMBERED_USER_COOKIE: _encode_cookie_username(self.user.username)},
+            },
+        )()
         self.assertEqual(_get_remembered_user(request), self.user)
 
     def test_legacy_non_ascii_cookie_ignored(self):
-        request = type('Request', (), {
-            'COOKIES': {REMEMBERED_USER_COOKIE: 'Владислав'},
-        })()
+        request = type(
+            'Request',
+            (),
+            {
+                'COOKIES': {REMEMBERED_USER_COOKIE: 'Владислав'},
+            },
+        )()
         self.assertIsNone(_get_remembered_user(request))
 
     def test_login_sets_ascii_safe_cookie(self):
